@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">KnockME</string>
+    <string name="title_activity_login">LoginActivity</string>
+
+    <string name="facebook_app_id">660377585299971</string>
+    <string name="fb_login_protocol_scheme">fb660377585299971</string>
+    <string name="facebook_client_token">87f984dc5e7955c044299324404a303a</string>
+    <string name="preference_file_key">knockme_localdata</string>
+
+
+</resources>

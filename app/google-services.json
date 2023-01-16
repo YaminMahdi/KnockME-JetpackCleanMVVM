@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "378856926888",
+    "firebase_url": "https://knockme-web-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "knockme-web",
+    "storage_bucket": "knockme-web.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:378856926888:android:ce86deaa4e9cecc8471c9d",
+        "android_client_info": {
+          "package_name": "com.mlab.knockme"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "378856926888-to7r0n671kahr3l8u3s7k45k1m9o3n4t.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDvOgDyvJk7URuunlJ-L0_DTGt7fmHmgCE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "378856926888-to7r0n671kahr3l8u3s7k45k1m9o3n4t.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
