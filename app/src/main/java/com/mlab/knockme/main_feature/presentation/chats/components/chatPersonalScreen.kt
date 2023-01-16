@@ -1,10 +1,11 @@
 package com.mlab.knockme.main_feature.presentation.chats.components
 
-import android.graphics.Paint.Align
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -15,7 +16,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -25,9 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color.Companion.Transparent
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -35,9 +33,6 @@ import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import com.mlab.knockme.R
-import com.mlab.knockme.auth_feature.domain.model.UserProfile
-import com.mlab.knockme.auth_feature.presentation.login.components.textFieldColors
-import com.mlab.knockme.main_feature.presentation.main.components.BottomNav
 import com.mlab.knockme.profile_feature.presentation.components.TitleInfo
 import com.mlab.knockme.ui.theme.*
 
@@ -84,7 +79,7 @@ fun SearchBox() {
 
     OutlinedTextField(
         value = data,
-        placeholder = { Text("Type Student ID.",) },
+        placeholder = { Text("Type Student ID.") },
         leadingIcon = {
             Icon(
                 imageVector = Icons.Rounded.Search,
@@ -117,6 +112,7 @@ fun searchFieldColors() =
         unfocusedLeadingIconColor = LessWhite
     )
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LoadChatList(chatList: List<UserChatInfo>) {
     LazyColumn(
@@ -124,17 +120,21 @@ fun LoadChatList(chatList: List<UserChatInfo>) {
             .fillMaxHeight(),
         content = {
             items(chatList) { proView ->
-                ChatView(proView)
+                ChatView(
+                    proView,
+                    modifier = Modifier
+                        .animateItemPlacement()
+                )
             }
         }
     )
 }
 
 @Composable
-fun ChatView(proView: UserChatInfo) {
+fun ChatView(proView: UserChatInfo, modifier: Modifier) {
     Row(
         verticalAlignment=Alignment.CenterVertically,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(
                 top = 10.dp,

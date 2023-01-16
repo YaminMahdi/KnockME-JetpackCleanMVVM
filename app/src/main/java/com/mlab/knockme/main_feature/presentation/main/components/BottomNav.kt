@@ -1,5 +1,6 @@
 package com.mlab.knockme.main_feature.presentation.main.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -52,7 +53,8 @@ fun BottomNav(row: @Composable ()-> Unit) {
         modifier = modifier
             .fillMaxWidth()
             .background(DeepBlueLess)
-            .padding(vertical = 10.dp, horizontal = 5.dp)
+            .padding(vertical = 10.dp, horizontal = 5.dp),
+        
     ) {
         row.invoke()
 //        items.forEachIndexed { index, item ->
