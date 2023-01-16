@@ -28,14 +28,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import com.mlab.knockme.R
+import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.ui.theme.*
 
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(viewModel: MainViewModel= hiltViewModel()) {
     Column(
         modifier = Modifier
             .background(DeepBlue)

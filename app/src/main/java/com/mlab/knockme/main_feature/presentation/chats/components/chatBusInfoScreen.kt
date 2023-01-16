@@ -6,12 +6,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.mlab.knockme.main_feature.domain.model.Msg
+import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.profile_feature.presentation.components.TitleInfo
 import com.mlab.knockme.ui.theme.DeepBlue
 import com.mlab.knockme.ui.theme.KnockMETheme
 
 @Composable
-fun ChatBusInfoScreen() {
+fun ChatBusInfoScreen(viewModel: MainViewModel= hiltViewModel()) {
     Column(
         modifier = Modifier
             .background(DeepBlue)
@@ -19,18 +22,19 @@ fun ChatBusInfoScreen() {
         TitleInfo(title = "Bus Info")
         LoadChatList(chatList =
         listOf(
-            UserChatInfo("Yamin Mahdi","", lastMsg = "hi, I'm mahdi"),
-            UserChatInfo("Yamin Mahdi","", lastMsg = "fgnfdjgnfjdnhgffgnhngnhfjknh nhfhnfghfghfgjhihi, I'm mahdi"),
-            UserChatInfo("Yamin Mahdi","", lastMsg = "hi, I'm mahdi"),
-            UserChatInfo("Yamin Mahdi","", lastMsg = "hi, I'm mahdi"),
-            UserChatInfo("Yamin Mahdi","", lastMsg = "hi, I'm mahdi"),
-            UserChatInfo("Yamin Mahdi","", lastMsg = "hi, I'm mahdi"),
-            UserChatInfo("Yamin Mahdi","", lastMsg = "hi, I'm mahdi"),
-            UserChatInfo("Yamin Mahdi","", lastMsg = "hi, I'm mahdi"),
-            UserChatInfo("Yamin Mahdi","", lastMsg = "hi, I'm mahdi"),
-            UserChatInfo("Yamin Mahdi","", lastMsg = "hi, I'm mahdi"),
-            UserChatInfo("Yamin Mahdi","", lastMsg = "hi, I'm mahdi"),
-            UserChatInfo("Yamin Mahdi","", lastMsg = "hi, I'm mahdi")
+            Msg("Yamin Mahdi","", "hi, I'm mahdi","",120),
+            Msg("Yamin Mahdi","", msg = "fgnfdjgnfjdnhgffgnhngnhfjknh nhfhnfghfghfgjhihi, I'm mahdi","",120),
+            Msg("Yamin Mahdi","", "hi, I'm mahdi","",120),
+            Msg("Yamin Mahdi","", "hi, I'm mahdi","",120),
+            Msg("Yamin Mahdi","", "hi, I'm mahdi","",120),
+            Msg("Yamin Mahdi","", "hi, I'm mahdi","",120),
+            Msg("Yamin Mahdi","", "hi, I'm mahdi","",120),
+            Msg("Yamin Mahdi","", "hi, I'm mahdi","",120),
+            Msg("Yamin Mahdi","", "hi, I'm mahdi","",120),
+            Msg("Yamin Mahdi","", "hi, I'm mahdi","",120),
+            Msg("Yamin Mahdi","", "hi, I'm mahdi","",120),
+            Msg("Yamin Mahdi","", "hi, I'm mahdi","",120),
+            Msg("Yamin Mahdi","", "hi, I'm mahdi","",120)
         ))
     }
 }

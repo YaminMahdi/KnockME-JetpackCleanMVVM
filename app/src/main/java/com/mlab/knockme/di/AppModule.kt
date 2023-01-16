@@ -2,6 +2,7 @@ package com.mlab.knockme.di
 
 import android.app.Application
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ktx.database
 import com.google.firebase.firestore.FirebaseFirestore
@@ -18,11 +19,13 @@ import com.mlab.knockme.auth_feature.domain.use_cases.FirebaseSignOut
 import com.mlab.knockme.auth_feature.domain.use_cases.GetStudentIdInfo
 import com.mlab.knockme.auth_feature.domain.use_cases.GetStudentInfo
 import com.mlab.knockme.auth_feature.domain.use_cases.IsUserAuthenticated
-import com.mlab.knockme.main_feature.data.repo.MsgRepoImpl
-import com.mlab.knockme.main_feature.domain.repo.MsgRepo
+import com.mlab.knockme.main_feature.data.repo.MainRepoImpl
+import com.mlab.knockme.main_feature.domain.repo.MainRepo
 import com.mlab.knockme.main_feature.domain.use_case.DeleteMsg
+import com.mlab.knockme.main_feature.domain.use_case.GetChatProfiles
+import com.mlab.knockme.main_feature.domain.use_case.GetChats
 import com.mlab.knockme.main_feature.domain.use_case.GetMsg
-import com.mlab.knockme.main_feature.domain.use_case.MsgUseCases
+import com.mlab.knockme.main_feature.domain.use_case.MainUseCases
 import com.mlab.knockme.main_feature.domain.use_case.SendMsg
 import dagger.Module
 import dagger.Provides
@@ -30,7 +33,6 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.create
 import javax.inject.Singleton
 
 @Module
@@ -40,7 +42,7 @@ object AppModule {
     @Provides
     @Singleton
     fun provideFirebaseAuth(app: Application) =
-        FirebaseAuth.getInstance()
+        Firebase.auth
 
     @Provides
     @Singleton
@@ -83,14 +85,16 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideMsgRepo(db: FirebaseDatabase): MsgRepo{
-        return MsgRepoImpl(db)
+    fun provideMainRepo(db: FirebaseDatabase, api: PortalApi): MainRepo{
+        return MainRepoImpl(db,api)
     }
 
     @Provides
     @Singleton
-    fun provideMsgUseCases(repo: MsgRepo) =
-        MsgUseCases(
+    fun provideMainUseCases(repo: MainRepo) =
+        MainUseCases(
+            GetChatProfiles(repo),
+            GetChats(repo),
             GetMsg(repo),
             SendMsg(repo),
             DeleteMsg(repo)
