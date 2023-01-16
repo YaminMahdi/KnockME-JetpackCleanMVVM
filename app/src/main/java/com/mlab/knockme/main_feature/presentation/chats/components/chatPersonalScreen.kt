@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.CircularProgressIndicator
@@ -24,6 +25,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -31,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -43,6 +46,15 @@ import com.mlab.knockme.main_feature.domain.model.Msg
 import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.profile_feature.presentation.components.TitleInfo
 import com.mlab.knockme.ui.theme.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.time.LocalDateTime
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun ChatPersonalScreen(
@@ -50,9 +62,14 @@ fun ChatPersonalScreen(
 ) {
     val context: Context =LocalContext.current
     val state by viewModel.state.collectAsState()
-    LaunchedEffect(key1 = true){
+    val sharedPreferences = context.getSharedPreferences(
+        context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
+    )
+    //val preferencesEditor = sharedPreferences.edit()
+    val id = sharedPreferences.getString("studentId",null)
+    LaunchedEffect(key1 = "1"){
         //pop backstack
-        viewModel.getChatProfiles("personalMsg/193-15-1071/profiles"){
+        viewModel.getChatProfiles("personalMsg/$id/profiles"){
             Toast.makeText(context, "Chat couldn't be loaded- $it", Toast.LENGTH_SHORT).show()
         }
     }
@@ -61,9 +78,9 @@ fun ChatPersonalScreen(
             .background(DeepBlue)
             .fillMaxSize()){
         TitleInfo(title = "Personal")
-        SearchBox()
-
+        SearchBox(state)
         LoadChatList(state.chatList)
+
 //        LoadChatList(chatList =
 //        listOf(
 //            UserChatInfo("Yamin Mahdi","", lastMsg = "hi, I'm mahdi"),
@@ -94,12 +111,13 @@ fun ChatPersonalScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchBox() {
-    var data by rememberSaveable { mutableStateOf("") }
+fun SearchBox(state: ChatListState) {
+    var data by remember { mutableStateOf(state.searchText) }
 
     OutlinedTextField(
         value = data,
         placeholder = { Text("Type Student ID.") },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         leadingIcon = {
             Icon(
                 imageVector = Icons.Rounded.Search,
@@ -114,6 +132,9 @@ fun SearchBox() {
             .padding(horizontal = 16.dp),
         onValueChange = {
             data = it
+            if (it.length>10){
+                data = it //todo
+            }
         }
     )
 }
@@ -152,6 +173,11 @@ fun LoadChatList(chatList: List<Msg>) {
 
 @Composable
 fun ChatView(proView: Msg, modifier: Modifier) {
+    //val currentTimeMillis = System.currentTimeMillis()
+    var date = SimpleDateFormat("dd MMM, hh:mm a", Locale.US).format(proView.time)
+    val day = SimpleDateFormat("dd", Locale.US).format(System.currentTimeMillis())
+    if (day.toInt() ==date.split(" ")[0].toInt())
+        date = date.split(", ")[1]
     Row(
         verticalAlignment=Alignment.CenterVertically,
         modifier = modifier
@@ -171,7 +197,7 @@ fun ChatView(proView: Msg, modifier: Modifier) {
             modifier = Modifier
                 .height(100.dp)
                 .aspectRatio(1f)
-                .padding(5.dp)
+                .padding(10.dp)
                 .clip(RoundedCornerShape(50.dp))
                 .background(DarkerButtonBlue)
         ) {
@@ -201,13 +227,13 @@ fun ChatView(proView: Msg, modifier: Modifier) {
 
         ) {
             Text(
-                text = proView.nm,
+                text = proView.nm!!,
                 style = MaterialTheme.typography.headlineMedium,
                 overflow = TextOverflow.Ellipsis,
                 softWrap = false
             )
             Text(
-                text = proView.msg,
+                text = proView.msg!!,
                 style = MaterialTheme.typography.bodyMedium,
                 overflow = TextOverflow.Ellipsis,
                 softWrap = false,
@@ -216,7 +242,7 @@ fun ChatView(proView: Msg, modifier: Modifier) {
                     .padding(vertical = 5.dp)
             )
             Text(
-                text = proView.time.toString(),
+                text = if (proView.time!=0L) date else "",
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier
                     .align(Alignment.End)
@@ -230,6 +256,6 @@ fun ChatView(proView: Msg, modifier: Modifier) {
 @Composable
 fun PreviewsProfile() {
     KnockMETheme {
-//        ChatPersonalScreen()
+        ChatPersonalScreen()
     }
 }

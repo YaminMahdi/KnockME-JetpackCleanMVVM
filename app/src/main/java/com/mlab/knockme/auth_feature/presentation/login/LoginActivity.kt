@@ -107,7 +107,8 @@ class LoginActivity : ComponentActivity() {
                                         is Resource.Success ->{
                                             Log.d("TAG", "onCreate Success: ${it.message}")
                                             val intent = Intent(this@LoginActivity, MainActivity::class.java)
-                                            intent.putExtra("id",id)
+                                            preferencesEditor.putString("studentId", id).apply()
+                                            //intent.putExtra("id",id)
                                             startActivity(intent)
                                             finish()
                                         }

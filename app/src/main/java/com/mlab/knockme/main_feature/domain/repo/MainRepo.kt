@@ -21,4 +21,10 @@ interface MainRepo {
         Failed: (msg:String) -> Unit
     )
 
+    fun searchById(
+        id: String,
+        Success: (profileList: List<Msg>) -> Unit,
+        Failed: (msg:String) -> Unit
+    )
+
 }

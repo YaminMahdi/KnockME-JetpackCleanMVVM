@@ -11,7 +11,7 @@ class SendMsg@Inject constructor(
 ) {
     @Throws(InvalidMsgExp::class)
     suspend operator fun invoke(path: String, msg: Msg){
-        if(msg.msg.isBlank())
+        if(msg.msg!!.isBlank())
             throw InvalidMsgExp("Message can't be blank.")
         repo.sendMessages(path,msg)
     }

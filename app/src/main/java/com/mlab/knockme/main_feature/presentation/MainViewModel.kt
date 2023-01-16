@@ -1,5 +1,8 @@
 package com.mlab.knockme.main_feature.presentation
 
+import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -27,15 +30,20 @@ class MainViewModel @Inject constructor(
     val msg = _msg.asStateFlow()
 
     private val chatList = savedStateHandle.getStateFlow("chatList", emptyList<Msg>())
+    val chatListState = chatList
+
     private val searchText = savedStateHandle.getStateFlow("searchText", "")
     private val isSearchActive = savedStateHandle.getStateFlow("isSearchActive", false)
 
     val state = combine(chatList,searchText,isSearchActive){chatList,searchText,isSearchActive ->
         ChatListState(chatList, searchText, isSearchActive) //1 searchNotes.execute(notes, searchText) ,
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000) , ChatListState())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(0) , ChatListState())
     private var getMsgJob: Job? =null
+    private var getChatsProfileJob: Job? =null
+    private var getChatsJob: Job? =null
 
-    
+
+
     suspend fun getMeg(path: String) {
         getMsgJob?.cancel()
         getMsgJob= mainUseCases.getMsg(path)
@@ -49,7 +57,8 @@ class MainViewModel @Inject constructor(
         path: String,
         Failed: (msg:String) -> Unit
     ){
-        viewModelScope.launch{
+        getChatsProfileJob?.cancel()
+        getChatsProfileJob= viewModelScope.launch{
             mainUseCases.getChatProfiles(
                 path, {
                     savedStateHandle["chatList"] = it
@@ -72,7 +81,8 @@ class MainViewModel @Inject constructor(
         Success: (profileList: List<Msg>) -> Unit,
         Failed: (msg:String) -> Unit
     ){
-        viewModelScope.launch{
+        getChatsJob?.cancel()
+        getChatsJob= viewModelScope.launch{
             mainUseCases.getChats(path, Success, Failed)
         }
     }

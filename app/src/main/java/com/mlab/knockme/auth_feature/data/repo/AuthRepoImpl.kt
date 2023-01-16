@@ -20,6 +20,7 @@ import com.mlab.knockme.auth_feature.domain.model.FBResponse
 import com.mlab.knockme.auth_feature.domain.model.LiveResultInfo
 import com.mlab.knockme.auth_feature.domain.model.PaymentInfo
 import com.mlab.knockme.auth_feature.domain.model.PrivateInfo
+import com.mlab.knockme.auth_feature.domain.model.PrivateInfoExtended
 import com.mlab.knockme.auth_feature.domain.model.PublicInfo
 import com.mlab.knockme.auth_feature.domain.model.StudentInfo
 import com.mlab.knockme.auth_feature.domain.model.UserProfile
@@ -162,8 +163,8 @@ class AuthRepoImpl @Inject constructor(
 //            val x =mapper.fromJson(mapper.toJson(document.data), UserProfile::class.java).publicInfo.fbId
                 if (document != null &&
                     document.exists() &&
-                    (((mapper.fromJson(mapper.toJson(document.data), UserProfile::class.java).publicInfo.fbId) == fbInfo.fbId) ||
-                            ((mapper.fromJson(mapper.toJson(document.data), UserProfile::class.java).publicInfo.fbId) == id))
+                    (((mapper.fromJson(mapper.toJson(document.data), UserProfile::class.java).privateInfo.fbId) == fbInfo.fbId) ||
+                            ((mapper.fromJson(mapper.toJson(document.data), UserProfile::class.java).privateInfo.fbId) == id))
                 ) {
                     Log.d("OnSuccessListener", "Login Success for: ${document.data}")
                     GlobalScope.launch(Dispatchers.IO) {
@@ -251,19 +252,19 @@ class AuthRepoImpl @Inject constructor(
                                                 publicInfo = PublicInfo(
                                                     id= id,
                                                     nm = publicInfo.studentName!!,
+                                                    progShortName = publicInfo.progShortName!!,
+                                                    batchNo = publicInfo.batchNo!!,
+                                                    cgpa = cgpa
+                                                ),
+                                                privateInfo = PrivateInfoExtended(
                                                     fbId = fbInfo.fbId,
                                                     fbLink = fbInfo.fbLink,
                                                     pic = fbInfo.pic,
-                                                    progShortName = publicInfo.progShortName!!,
-                                                    batchNo = publicInfo.batchNo!!,
-                                                    cgpa = cgpa,
-                                                    ip = locationInfo.ip!!,
-                                                    loc = locationInfo.loc!!
-                                                ),
-                                                privateInfo = PrivateInfo(
                                                     bloodGroup = privateInfo.bloodGroup,
                                                     email = privateInfo.email,
-                                                    permanentHouse = privateInfo.permanentHouse
+                                                    permanentHouse = privateInfo.permanentHouse,
+                                                    ip = locationInfo.ip!!,
+                                                    loc = locationInfo.loc!!
                                                 ),
                                                 paymentInfo = PaymentInfo(
                                                     totalCredit = paymentInfo.totalCredit,
@@ -277,11 +278,16 @@ class AuthRepoImpl @Inject constructor(
                                         Log.d("TAG", "getStudentInfoFinal: $userProfile")
                                         //val userProfileMap=mapper.fromJson(mapper.toJson(userProfile), Map::class.java)
                                         //Log.d("TAG", "getStudentInfoFinal: $userProfileMap")
+                                        myRef.set(userProfile).addOnCompleteListener {
+                                            GlobalScope.launch(Dispatchers.IO){
+                                                if(it.isSuccessful)
+                                                    send(Resource.Success(userProfile))
+                                                else
+                                                    send(Resource.Error("Firebase Server Error.",userProfile))
+                                            }
+                                        }
 
-                                        if(myRef.set(userProfile).isSuccessful)
-                                            send(Resource.Success(userProfile))
-                                        else
-                                            send(Resource.Error("Firebase Server Error.",userProfile))
+
 
 
 
