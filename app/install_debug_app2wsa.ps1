@@ -3,10 +3,10 @@ Write-Host "# # Batch APK Installer for WSA by yk # #"
 Write-Host "# # # # # # # # # # # # # # # # # # # # #"
 #Read-Host
 
-adb devices
-adb disconnect
-adb connect 127.0.0.1:58526
-adb devices
+tools.\adb devices
+tools.\adb disconnect
+tools.\adb connect 127.0.0.1:58526
+tools.\adb devices
 
 
 $files =  Get-ChildItem .\debug\*.apk | %{$_.FullName}
