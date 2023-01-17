@@ -1,5 +1,6 @@
 package com.mlab.knockme.main_feature.presentation
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -8,6 +9,7 @@ import com.mlab.knockme.main_feature.domain.use_case.MainUseCases
 import com.mlab.knockme.main_feature.presentation.chats.components.ChatListState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
@@ -70,18 +72,43 @@ class MainViewModel @Inject constructor(
         Loading: (msg: String) -> Unit,
         Failed: (msg:String) -> Unit
     ){
+        val searchList= mutableListOf<Msg>()
         savedStateHandle["isSearchActive"] = true
-        savedStateHandle["chatList"] = emptyList<Msg>()
+        savedStateHandle["chatList"] = searchList
         if (id.length>9){
             searchJob?.cancel()
-            searchJob= viewModelScope.launch{
-                mainUseCases.getOrCreateUserProfileInfo(
-                    id, {
-                        savedStateHandle["chatList"] = it
-                    },
-                    Loading ,Failed)
-            }
+            searchJob=
+                viewModelScope.launch{
+                    delay(100)
+                    getIdRange(id).forEachIndexed{ i,ID->
+                        delay(200)
+                        mainUseCases.getOrCreateUserProfileInfo(
+                            ID, {msg ->
+                                Log.d("TAG69", "searchUser: $msg")
+                                if(msg.id==id)
+                                    searchList.add(0,msg)
+                                else
+                                    searchList.add(msg)
+                                //searchList.sortBy { it.id }  //Array index out of range: 11
+                                val x =mutableListOf<Msg>()
+                                x.addAll(searchList)
+                                savedStateHandle["chatList"] = x
+                            }, Loading ,Failed
+                        )
+                    }
+                }
+
         }
+    }
+    private fun getIdRange(id: String): List<String>{
+        val idRange = mutableListOf(id)
+        val last = id.last().toString()
+        val idWithOutLast =id.dropLast(1)
+        for(i in 0..9){
+            if(i!=last.toInt())
+                idRange.add(idWithOutLast+i.toString())
+        }
+        return idRange
     }
 
     fun onSearchTextChange (text: String) {

@@ -1,5 +1,8 @@
 package com.mlab.knockme.auth_feature.data.data_source.dto
 
+import com.mlab.knockme.auth_feature.domain.model.ResultInfo
+import com.mlab.knockme.auth_feature.domain.model.SemesterInfo
+
 data class ResultInfoDto(
     val blockCause: Any,
     val blocked: String,
@@ -18,4 +21,22 @@ data class ResultInfoDto(
     val teval: String,
     val tevalSubmitted: String,
     val totalCredit: Double
-)
+){
+    fun toResultInfo()=
+        ResultInfo(courseId,
+            courseTitle = courseTitle,
+            customCourseId = customCourseId,
+            gradeLetter = gradeLetter,
+            pointEquivalent = pointEquivalent,
+            totalCredit = totalCredit
+        )
+
+    fun toSemesterInfo(creditTaken:Double)=
+        SemesterInfo(
+            semesterId = semesterId,
+            semesterName = semesterName,
+            semesterYear = semesterYear,
+            sgpa = cgpa,
+            creditTaken = creditTaken
+        )
+}

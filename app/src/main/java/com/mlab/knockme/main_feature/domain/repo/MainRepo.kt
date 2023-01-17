@@ -33,7 +33,7 @@ interface MainRepo {
 
     fun getOrCreateUserProfileInfo(
         id: String,
-        Success: (profileList: List<Msg>) -> Unit,
+        Success: (Msg) -> Unit,
         Loading: (msg: String) -> Unit,
         Failed: (msg:String) -> Unit
     )

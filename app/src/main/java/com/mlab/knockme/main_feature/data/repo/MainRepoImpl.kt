@@ -9,12 +9,15 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ktx.getValue
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.toObject
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.mlab.knockme.auth_feature.data.data_source.PortalApi
+import com.mlab.knockme.auth_feature.domain.model.FullResultInfo
 import com.mlab.knockme.auth_feature.domain.model.PublicInfo
+import com.mlab.knockme.auth_feature.domain.model.ResultInfo
 import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
 import com.mlab.knockme.auth_feature.domain.model.UserProfile
 import com.mlab.knockme.main_feature.domain.model.Msg
@@ -28,6 +31,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -47,6 +51,7 @@ class MainRepoImpl(
     private lateinit var msgList: MutableList<Msg>
     private val mapper: Gson by lazy { GsonBuilder().serializeNulls().create() }
     private var searchJob: Job? =null
+    private val searchData= mutableListOf<Msg>()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun getMessages(path: String): StateFlow<List<Msg>> {
@@ -225,46 +230,59 @@ class MainRepoImpl(
     @OptIn(DelicateCoroutinesApi::class)
     override fun getOrCreateUserProfileInfo(
         id: String,
-        Success: (profileList: List<Msg>) -> Unit,
+        Success: (Msg) -> Unit,
         Loading: (msg: String) -> Unit,
         Failed: (msg: String) -> Unit,
     ) {
         val docRef = firestore.collection("userProfile").document(id)
+        var loadfromPortal=false
         docRef.get()
             .addOnSuccessListener { document ->
-                if (document != null && document.exists() &&
-                    mapper.fromJson(mapper.toJson(document.data), UserProfile::class.java).publicInfo.cgpa != 0.0
-                ) {
+                if (document != null && document.exists()) {
                     Log.d("getOrCreateUserProfileInfo", "DocumentSnapshot data: ${document.data}")
                     val profile = mapper.fromJson(mapper.toJson(document.data), UserProfile::class.java)
+                    var msgDis=""
+                    if(profile.publicInfo.cgpa == 0.0) {
+                        loadfromPortal = true
+                        msgDis = profile.publicInfo.progShortName
+                    } else {
+                        msgDis = profile.publicInfo.progShortName + "    CGPA: ${profile.publicInfo.cgpa}"
+                        Loading.invoke("Server Error. Couldn't load CGPA.")
+                    }
                     val shortProfile = Msg(
                         id = id,
                         nm = profile.publicInfo.nm,
-                        msg = profile.publicInfo.progShortName +"   CGPA: ${profile.publicInfo.cgpa}",
+                        msg = msgDis,
                         pic = profile.privateInfo.pic,
-                        time = 0L)
-                    Success.invoke(listOf(shortProfile))
-                } else {
+                        time = profile.publicInfo.lastUpdated)
+                    //searchData.add(0,shortProfile)
+                    Success.invoke(shortProfile)
+
+                }
+                if(loadfromPortal) {
                     Loading.invoke("Creating User Profile..")
                     Log.d("getOrCreateUserProfileInfo", "No user found. Creating One")
-                    searchJob?.cancel()
-                    searchJob = GlobalScope.launch(Dispatchers.IO){
+//                    searchJob?.cancel()
+//                    searchJob =
+                    GlobalScope.launch(Dispatchers.IO){
                         try {
                             val studentInfo = api.getStudentIdInfo(id).toStudentInfo()
                             Log.d("getStudentInfo", "publicInfo: $studentInfo")
                             if(!studentInfo.studentId.isNullOrEmpty())
                             {
                                 Loading.invoke("Getting CGPA Info..")
-                                getCgpa(id,getSemesterList(id), {
+                                getCgpa(
+                                    id = id,
+                                    loading = {
                                     when (it) {
                                         -1 -> Failed.invoke("Oops, something went wrong.")
                                         -2 -> Failed.invoke("Couldn't reach server.")
                                         else -> Loading.invoke("Semester $it result loaded.")
                                     } },
-                                    {cgpa ->
+                                    success = { cgpa, fullResultInfo ->
                                         var msgDis=""
                                         if(cgpa!=0.0) {
-                                            msgDis = studentInfo.progShortName + "   CGPA: $cgpa"
+                                            msgDis = studentInfo.progShortName + "    CGPA: $cgpa"
 
                                         } else {
                                             msgDis = studentInfo.progShortName.toString()
@@ -275,20 +293,34 @@ class MainRepoImpl(
                                             nm = studentInfo.studentName!!,
                                             progShortName = studentInfo.progShortName!!,
                                             batchNo = studentInfo.batchNo!!,
-                                            cgpa = cgpa
+                                            cgpa = cgpa,
+                                            lastUpdated = System.currentTimeMillis()
                                         )
                                         val shortProfile = Msg(
                                             id = id,
                                             nm = studentInfo.studentName,
                                             msg = msgDis,
-                                            pic = "", time = 0L
+                                            pic = "",
+                                            time = System.currentTimeMillis()
                                         )
-                                        Success.invoke(listOf(shortProfile))
-                                        docRef.set(hashMapOf("publicInfo" to publicInfo)).addOnCompleteListener {
-                                            if(it.isSuccessful)
-                                                Loading.invoke("User Added to Firebase.")
-                                            else
-                                                Loading.invoke("Firebase Server Error.")
+                                        //searchData.add(0,shortProfile)
+                                        Success.invoke(shortProfile)
+                                        if(!document.exists()) {
+                                            docRef.set(hashMapOf("publicInfo" to publicInfo)).addOnCompleteListener {
+                                                if(it.isSuccessful) {
+                                                    firestore
+                                                        .collection("public")
+                                                        .document("info")
+                                                        .update("profileCount", FieldValue.increment(1))
+                                                    Loading.invoke("User Added to Firebase.")
+
+                                                } else
+                                                    Loading.invoke("Firebase Server Error.")
+                                            }
+                                            docRef.set(hashMapOf("fullResultInfo" to fullResultInfo))
+                                        } else {
+                                            docRef.update("publicInfo" , publicInfo)
+                                            docRef.update("fullResultInfo" , fullResultInfo)
                                         }
                                     })
                             }
@@ -321,31 +353,44 @@ class MainRepoImpl(
     @OptIn(DelicateCoroutinesApi::class)
     private suspend fun getCgpa(
         id: String,
-        semesterList: List<String>,
+        semesterList: List<String> = getSemesterList(id),
         loading: (index: Int) -> Unit,
-        success: (cgpa: Double) -> Unit
+        success: (cgpa: Double,fullResultInfo : List<FullResultInfo>) -> Unit
     ) {
         var weightedCgpa = 0.0
         var totalCreditWeight = 0.0
         var resultFound = 0
+        val fullResultInfo = mutableListOf<FullResultInfo>()
         semesterList.forEachIndexed { i, semesterId ->
             GlobalScope.launch(Dispatchers.IO) {
+                val semesterResultInfo = FullResultInfo()
                 try {
+                    delay(i*100.toLong())
                     val resultInfo = api.getResultInfo(semesterId, id)
                     Log.d("TAG", "getCgpa $semesterId resultInfo: $resultInfo")
                     if (resultInfo.isNotEmpty()) {
+
                         loading.invoke(semesterList.size-i)
+                        var creditTaken = 0.0
+                        var rInfo = mutableListOf<ResultInfo>()
                         resultInfo.forEach { courseInfo ->
                             weightedCgpa += courseInfo.pointEquivalent * courseInfo.totalCredit
-                            totalCreditWeight += courseInfo.totalCredit
+                            creditTaken += courseInfo.totalCredit
+                            rInfo.add(courseInfo.toResultInfo())
                         }
+                        totalCreditWeight += creditTaken
+
+                        //add a semester result to list
+                        semesterResultInfo.resultInfo = rInfo
+                        semesterResultInfo.semesterInfo = resultInfo[0].toSemesterInfo(creditTaken)
+                        fullResultInfo.add(semesterResultInfo)  //adding
                     }
                     resultFound++
                     if (resultFound == semesterList.size) {
                         var cgpa = weightedCgpa / totalCreditWeight
                         if(!cgpa.isNaN())
                             cgpa= (cgpa* 100.0).roundToInt() / 100.0
-                        success.invoke(cgpa)
+                        success.invoke(cgpa,fullResultInfo)
                     }
                 } catch (e: HttpException) {
                     loading.invoke(-1)
@@ -353,7 +398,7 @@ class MainRepoImpl(
                     this.cancel()
 
                 }  catch (e: EOFException) {
-                    success.invoke(0.0)
+                    success.invoke(0.0, emptyList())
                     Log.d("TAG", "getCgpa: ${e.message} ${e.localizedMessage} $semesterId")
                     this.cancel()
                 }catch (e: IOException) {
@@ -368,6 +413,12 @@ class MainRepoImpl(
 
     private fun getSemesterList(id: String): List<String> {
         val year = Calendar.getInstance().get(Calendar.YEAR)
+        val month = Calendar.getInstance().get(Calendar.MONTH)
+        val endYearSemesterCount =
+            if(month<4) 1
+            else if(month<8) 2
+            else 3
+
         val yearEnd = year % 100
         val initial = id.slice(0..2).toInt()  //.split('-')[0].toInt()
         val yr: Int = initial / 10
@@ -377,6 +428,8 @@ class MainRepoImpl(
         for (y in yr..yearEnd) {
             for (s in semester..3) {
                 list.add(y.toString() + s.toString())
+                if(y==yearEnd && s==endYearSemesterCount)
+                    break
             }
             semester = 1
         }
