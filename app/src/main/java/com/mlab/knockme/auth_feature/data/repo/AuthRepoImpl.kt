@@ -444,8 +444,9 @@ class AuthRepoImpl @Inject constructor(
         val year = Calendar.getInstance().get(Calendar.YEAR)
         val month = Calendar.getInstance().get(Calendar.MONTH)
         val endYearSemesterCount =
-            if (month < 4) 1
-            else if (month < 8) 2
+            if (month < 3) 0
+            else if (month < 7) 1
+            else if (month < 11) 2
             else 3
 
         val yearEnd = year % 100
@@ -456,9 +457,9 @@ class AuthRepoImpl @Inject constructor(
 
         for (y in yr..yearEnd) {
             for (s in semester..3) {
-                list.add(y.toString() + s.toString())
-                if (y == yearEnd && s == endYearSemesterCount)
+                if (y == yearEnd && s > endYearSemesterCount)
                     break
+                list.add(y.toString() + s.toString())
             }
             semester = 1
         }
