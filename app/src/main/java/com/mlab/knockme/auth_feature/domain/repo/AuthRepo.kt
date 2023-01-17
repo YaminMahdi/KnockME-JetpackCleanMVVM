@@ -1,10 +1,8 @@
 package com.mlab.knockme.auth_feature.domain.repo
 
-import android.view.View
 import com.facebook.AccessToken
 import com.facebook.CallbackManager
 import com.facebook.login.widget.LoginButton
-import com.mlab.knockme.auth_feature.data.data_source.dto.StudentInfoDto
 import com.mlab.knockme.auth_feature.domain.model.FBResponse
 import com.mlab.knockme.auth_feature.domain.model.StudentInfo
 import com.mlab.knockme.auth_feature.domain.model.UserProfile

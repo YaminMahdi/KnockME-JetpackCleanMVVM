@@ -19,7 +19,6 @@ import com.mlab.knockme.auth_feature.data.data_source.PortalApi
 import com.mlab.knockme.auth_feature.domain.model.FBResponse
 import com.mlab.knockme.auth_feature.domain.model.LiveResultInfo
 import com.mlab.knockme.auth_feature.domain.model.PaymentInfo
-import com.mlab.knockme.auth_feature.domain.model.PrivateInfo
 import com.mlab.knockme.auth_feature.domain.model.PrivateInfoExtended
 import com.mlab.knockme.auth_feature.domain.model.PublicInfo
 import com.mlab.knockme.auth_feature.domain.model.StudentInfo
@@ -53,7 +52,6 @@ class AuthRepoImpl @Inject constructor(
     private val api: PortalApi,
     private val firestore: FirebaseFirestore
 ) : AuthRepo {
-    var signSuccessful = false
     private lateinit var myRef: DocumentReference
 
     override fun isUserAuthenticatedInFirebase(): Boolean {
@@ -342,8 +340,10 @@ class AuthRepoImpl @Inject constructor(
                     }
                     resultFound++
                     if (resultFound == semesterList.size) {
-                        val x= (weightedCgpa / totalCreditWeight * 100.0).roundToInt() / 100.0
-                        success.invoke(x)
+                        var cgpa = weightedCgpa / totalCreditWeight
+                        if(!cgpa.isNaN())
+                            cgpa= (cgpa* 100.0).roundToInt() / 100.0
+                        success.invoke(cgpa)
                     }
                 } catch (e: HttpException) {
                     loading.invoke(-1)

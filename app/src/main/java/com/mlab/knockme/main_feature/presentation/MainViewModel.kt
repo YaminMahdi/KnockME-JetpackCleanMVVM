@@ -1,8 +1,5 @@
 package com.mlab.knockme.main_feature.presentation
 
-import androidx.compose.runtime.State
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -41,6 +38,8 @@ class MainViewModel @Inject constructor(
     private var getMsgJob: Job? =null
     private var getChatsProfileJob: Job? =null
     private var getChatsJob: Job? =null
+    private var searchJob: Job? =null
+
 
 
 
@@ -63,6 +62,25 @@ class MainViewModel @Inject constructor(
                 path, {
                     savedStateHandle["chatList"] = it
                 }, Failed)
+        }
+    }
+
+    fun searchUser(
+        id: String,
+        Loading: (msg: String) -> Unit,
+        Failed: (msg:String) -> Unit
+    ){
+        savedStateHandle["isSearchActive"] = true
+        savedStateHandle["chatList"] = emptyList<Msg>()
+        if (id.length>9){
+            searchJob?.cancel()
+            searchJob= viewModelScope.launch{
+                mainUseCases.getOrCreateUserProfileInfo(
+                    id, {
+                        savedStateHandle["chatList"] = it
+                    },
+                    Loading ,Failed)
+            }
         }
     }
 

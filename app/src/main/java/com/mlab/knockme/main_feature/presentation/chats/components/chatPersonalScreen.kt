@@ -38,6 +38,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
@@ -78,7 +79,7 @@ fun ChatPersonalScreen(
             .background(DeepBlue)
             .fillMaxSize()){
         TitleInfo(title = "Personal")
-        SearchBox(state)
+        SearchBox(state,viewModel)
         LoadChatList(state.chatList)
 
 //        LoadChatList(chatList =
@@ -111,7 +112,7 @@ fun ChatPersonalScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchBox(state: ChatListState) {
+fun SearchBox(state: ChatListState, viewModel: MainViewModel) {
     var data by remember { mutableStateOf(state.searchText) }
 
     OutlinedTextField(
@@ -132,9 +133,13 @@ fun SearchBox(state: ChatListState) {
             .padding(horizontal = 16.dp),
         onValueChange = {
             data = it
-            if (it.length>10){
-                data = it //todo
-            }
+            viewModel.searchUser(data,
+                {loadingMsg ->
+
+                },{errorMsg ->
+
+                }
+            )
         }
     )
 }

@@ -25,6 +25,9 @@ import com.mlab.knockme.main_feature.domain.use_case.DeleteMsg
 import com.mlab.knockme.main_feature.domain.use_case.GetChatProfiles
 import com.mlab.knockme.main_feature.domain.use_case.GetChats
 import com.mlab.knockme.main_feature.domain.use_case.GetMsg
+import com.mlab.knockme.main_feature.domain.use_case.GetOrCreateUserProfileInfo
+import com.mlab.knockme.main_feature.domain.use_case.GetUserBasicInfo
+import com.mlab.knockme.main_feature.domain.use_case.GetUserProfileInfo
 import com.mlab.knockme.main_feature.domain.use_case.MainUseCases
 import com.mlab.knockme.main_feature.domain.use_case.SendMsg
 import dagger.Module
@@ -85,8 +88,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideMainRepo(db: FirebaseDatabase, api: PortalApi): MainRepo{
-        return MainRepoImpl(db,api)
+    fun provideMainRepo(firebase: FirebaseDatabase,firestore: FirebaseFirestore, api: PortalApi): MainRepo{
+        return MainRepoImpl(firebase,firestore,api)
     }
 
     @Provides
@@ -95,6 +98,9 @@ object AppModule {
         MainUseCases(
             GetChatProfiles(repo),
             GetChats(repo),
+            GetOrCreateUserProfileInfo(repo),
+            GetUserBasicInfo(repo),
+            GetUserProfileInfo(repo),
             GetMsg(repo),
             SendMsg(repo),
             DeleteMsg(repo)
