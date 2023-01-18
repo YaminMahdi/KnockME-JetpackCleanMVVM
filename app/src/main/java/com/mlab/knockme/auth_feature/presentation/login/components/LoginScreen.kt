@@ -36,22 +36,22 @@ fun LoginScreen(update: (View) -> Unit) {
 
     val screenHeight = configuration.screenHeightDp.dp
     val screenWidth = configuration.screenWidthDp.dp
-    if(Build.VERSION.SDK_INT < Build.VERSION_CODES.S)
-    {
-        Cloudy(radius =5){
-            Image(
-                painter = painterResource(R.drawable.bg),
-                contentDescription = null,
-                modifier = Modifier
-                    .fillMaxSize(),
-                contentScale = ContentScale.Crop,
-                colorFilter = ColorFilter
-                    .tint(Color(63, 183, 235,120), blendMode = BlendMode.Darken)
-            )
-        }
-    }
-    else
-    {
+//    if(Build.VERSION.SDK_INT < Build.VERSION_CODES.S)
+//    {
+//        Cloudy(radius =5){
+//            Image(
+//                painter = painterResource(R.drawable.bg),
+//                contentDescription = null,
+//                modifier = Modifier
+//                    .fillMaxSize(),
+//                contentScale = ContentScale.Crop,
+//                colorFilter = ColorFilter
+//                    .tint(Color(63, 183, 235,120), blendMode = BlendMode.Darken)
+//            )
+//        }
+//    }
+//    else
+//    {
 //        Image(
 //            painter = painterResource(R.drawable.bg),
 //            contentDescription = null,
@@ -62,7 +62,7 @@ fun LoginScreen(update: (View) -> Unit) {
 //            colorFilter = ColorFilter
 //                .tint(Color(63, 183, 235,120), blendMode = BlendMode.Darken)
 //        )
-    }
+//    }
 
 
     Surface(
@@ -88,9 +88,6 @@ fun LoginScreen(update: (View) -> Unit) {
             AndroidView(
                 factory = { context ->
                     val view = LayoutInflater.from(context).inflate(R.layout.login_btn, null, false)
-                    view.setOnClickListener {
-
-                    }
                     // do whatever you want...
                     view // return the view
                 },

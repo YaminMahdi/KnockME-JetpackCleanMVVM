@@ -235,8 +235,9 @@ class MainRepoImpl @Inject constructor(
         Loading: (msg: String) -> Unit,
         Failed: (msg: String) -> Unit,
     ) {
+        Loading.invoke("Verifying ID- $id")
         val docRef = firestore.collection("userProfile").document(id)
-        var loadfromPortal=false
+        var loadfromPortal=true
         docRef.get()
             .addOnSuccessListener { document ->
                 if (document != null && document.exists()) {
@@ -244,11 +245,12 @@ class MainRepoImpl @Inject constructor(
                     val profile = mapper.fromJson(mapper.toJson(document.data), UserProfile::class.java)
                     var msgDis=""
                     if(profile.publicInfo.cgpa == 0.0) {
-                        loadfromPortal = true
-                        msgDis = profile.publicInfo.progShortName
+                        msgDis = "ID: ${profile.publicInfo.id}"
+                        Loading.invoke("Server Error. Couldn't Calculate CGPA for ID- $id. Retrying..")
                     } else {
-                        msgDis = profile.publicInfo.progShortName + "    CGPA: ${profile.publicInfo.cgpa}"
-                        Loading.invoke("Server Error. Couldn't load CGPA.")
+                        msgDis = "ID: ${profile.publicInfo.id}      CGPA: ${profile.publicInfo.cgpa}"
+                        loadfromPortal = false
+                        Loading.invoke("Loaded Result From Backup Server For ID- $id.")
                     }
                     val shortProfile = Msg(
                         id = id,
@@ -261,7 +263,6 @@ class MainRepoImpl @Inject constructor(
 
                 }
                 if(loadfromPortal) {
-                    Loading.invoke("Creating User Profile..")
                     Log.d("getOrCreateUserProfileInfo", "No user found. Creating One")
 //                    searchJob?.cancel()
 //                    searchJob =
@@ -271,23 +272,22 @@ class MainRepoImpl @Inject constructor(
                             Log.d("getStudentInfo", "publicInfo: $studentInfo")
                             if(!studentInfo.studentId.isNullOrEmpty())
                             {
-                                Loading.invoke("Getting CGPA Info..")
+                                Loading.invoke("ID- $id Is Valid. Getting CGPA Info..")
                                 getCgpa(
                                     id = id,
                                     loading = {
                                     when (it) {
-                                        -1 -> Failed.invoke("Oops, something went wrong.")
-                                        -2 -> Failed.invoke("Couldn't reach server.")
-                                        else -> Loading.invoke("Semester $it result loaded.")
+                                        -1 -> Failed.invoke("Oops, Something Went Wrong.")
+                                        -2 -> Failed.invoke("Couldn't Reach Server.")
+                                        else -> Loading.invoke("Getting SGPA For $id. Loading Done For Semester $it .")
                                     } },
                                     success = { cgpa, fullResultInfo ->
                                         var msgDis=""
                                         if(cgpa!=0.0) {
-                                            msgDis = studentInfo.progShortName + "    CGPA: $cgpa"
-
+                                            msgDis = "ID: ${studentInfo.studentId}      CGPA: $cgpa"
                                         } else {
-                                            msgDis = studentInfo.progShortName.toString()
-                                            Loading.invoke("Server Error. Couldn't load CGPA.")
+                                            msgDis = "ID: ${studentInfo.studentId}"
+                                            Loading.invoke("Server Error. Couldn't Get All Semester SGPA For - $id.")
                                         }
                                         val publicInfo = PublicInfo(
                                             id = id,
@@ -313,31 +313,30 @@ class MainRepoImpl @Inject constructor(
                                                         .collection("public")
                                                         .document("info")
                                                         .update("profileCount", FieldValue.increment(1))
-                                                    Loading.invoke("User Added to Firebase.")
+                                                    Loading.invoke("Info for $id Added To Backup Server.")
 
                                                 } else
-                                                    Loading.invoke("Firebase Server Error.")
+                                                    Loading.invoke("Firebase Server Error. Couldn't Save Info For $id To Backup Server.")
                                             }
-                                            docRef.set(hashMapOf("fullResultInfo" to fullResultInfo))
+                                            docRef.update("fullResultInfo" , fullResultInfo)
                                         } else {
                                             docRef.update("publicInfo" , publicInfo)
                                             docRef.update("fullResultInfo" , fullResultInfo)
                                         }
                                     })
                             }
-                            else
-                            {
+                            else {
                                 Failed.invoke("No Student with ID- $id")
                             }
 
                         }catch (e: HttpException) {
-                            // send(Resource.Error("Oops, something went wrong."))
+                            Failed.invoke("Oops, Something Went Wrong.")
                             Log.d("TAG", "getStudentIdInfo: ${e.message} ${e.localizedMessage}}")
                         } catch (e: EOFException) {
-                            // send(Resource.Error("Student Portal Server Error."))
+                            Failed.invoke("Student Portal Server Error.")
                             Log.d("TAG", "getStudentIdInfo: ${e.message} ${e.localizedMessage}")
                         } catch (e: IOException) {
-                            // send(Resource.Error("Couldn't reach server."))
+                            Failed.invoke("Couldn't Reach Server.")
                             Log.d("TAG", "getStudentIdInfo: ${e.message} ${e.localizedMessage}")
                         }
                     }
@@ -366,7 +365,7 @@ class MainRepoImpl @Inject constructor(
             GlobalScope.launch(Dispatchers.IO) {
                 val semesterResultInfo = FullResultInfo()
                 try {
-                    delay(i*100.toLong())
+                    delay(i*200.toLong())
                     val resultInfo = api.getResultInfo(semesterId, id)
                     Log.d("TAG", "getCgpa $semesterId resultInfo: $resultInfo")
                     if (resultInfo.isNotEmpty()) {

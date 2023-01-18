@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mlab.knockme.auth_feature.presentation.login.LoadingState
 import com.mlab.knockme.main_feature.domain.model.Msg
 import com.mlab.knockme.main_feature.domain.use_case.MainUseCases
 import com.mlab.knockme.main_feature.presentation.chats.components.ChatListState
@@ -25,6 +26,10 @@ class MainViewModel @Inject constructor(
     private val mainUseCases: MainUseCases,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+
+    private val _loadingText = savedStateHandle.getStateFlow("loadingText", "Loading..")
+    val loadingText = _loadingText
+
     private val _msg= MutableStateFlow<List<Msg>>(emptyList())
     val msg = _msg.asStateFlow()
 
@@ -34,8 +39,8 @@ class MainViewModel @Inject constructor(
     private val searchText = savedStateHandle.getStateFlow("searchText", "")
     private val isSearchActive = savedStateHandle.getStateFlow("isSearchActive", false)
 
-    val state = combine(chatList,searchText,isSearchActive){chatList,searchText,isSearchActive ->
-        ChatListState(chatList, searchText, isSearchActive) //1 searchNotes.execute(notes, searchText) ,
+    val state = combine(chatList,searchText,isSearchActive,loadingText){chatList,searchText,isSearchActive,loadingText ->
+        ChatListState(chatList, searchText, isSearchActive,loadingText) //1 searchNotes.execute(notes, searchText) ,
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(0) , ChatListState())
     private var getMsgJob: Job? =null
     private var getChatsProfileJob: Job? =null
@@ -73,30 +78,58 @@ class MainViewModel @Inject constructor(
         Failed: (msg:String) -> Unit
     ){
         val searchList= mutableListOf<Msg>()
-        savedStateHandle["isSearchActive"] = true
         savedStateHandle["chatList"] = searchList
+        savedStateHandle["searchText"] = id
+
+        if(id.length<2)
+            savedStateHandle["isSearchActive"] = false
         if (id.length>9){
+            var userCount=10
+            var done=0
+            savedStateHandle["isSearchActive"] = true
             searchJob?.cancel()
             searchJob=
                 viewModelScope.launch{
-                    delay(100)
+                    delay(500)
                     getIdRange(id).forEachIndexed{ i,ID->
-                        delay(200)
+                        if(i!=0)
+                            delay(i*120L)
                         mainUseCases.getOrCreateUserProfileInfo(
-                            ID, {msg ->
-                                Log.d("TAG69", "searchUser: $msg")
-                                if(msg.id==id)
-                                    searchList.add(0,msg)
+                            ID, {user ->
+                                Log.d("TAG69", "searchUser: $user")
+                                if(user.id==id)
+                                    searchList.add(0,user)
                                 else
-                                    searchList.add(msg)
+                                    searchList.add(user)
                                 //searchList.sortBy { it.id }  //Array index out of range: 11
                                 val x =mutableListOf<Msg>()
                                 x.addAll(searchList)
                                 savedStateHandle["chatList"] = x
-                            }, Loading ,Failed
+                                done++
+                                Log.d("countX", "searchUser: $done $userCount")
+                                if(done>=userCount-1)
+                                    lateSearchDeactivate()
+                            }, {
+                                savedStateHandle["loadingText"] = it
+                            } ,{
+                                savedStateHandle["loadingText"] = it
+                                    userCount--
+                                if(done>=userCount-1)
+                                    lateSearchDeactivate()
+                                Log.d("countX", "searchUser: $done $userCount")
+
+                            }
                         )
                     }
                 }
+
+        }
+    }
+
+    private fun lateSearchDeactivate(){
+        viewModelScope.launch {
+            delay(1000)
+            savedStateHandle["isSearchActive"] = false
 
         }
     }

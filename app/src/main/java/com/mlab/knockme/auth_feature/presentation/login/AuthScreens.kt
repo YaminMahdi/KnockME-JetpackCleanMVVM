@@ -4,6 +4,8 @@ sealed class AuthScreens(val route:String){
     object LogFacebookScreen : AuthScreens("login_fb")
     object LogPortalScreen : AuthScreens("login_sp")  //?fbId={fbId}&pic={pic}
 
+    object LoadingInfoScreen : AuthScreens("loading")
+
     fun withArgs(args: Map<String,String>):String =
         buildString {
             append(route)

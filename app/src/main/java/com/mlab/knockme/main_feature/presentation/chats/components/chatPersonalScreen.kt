@@ -16,8 +16,10 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -31,9 +33,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -68,18 +73,26 @@ fun ChatPersonalScreen(
     )
     //val preferencesEditor = sharedPreferences.edit()
     val id = sharedPreferences.getString("studentId",null)
-    LaunchedEffect(key1 = "1"){
+    LaunchedEffect(key1 = state){
         //pop backstack
-        viewModel.getChatProfiles("personalMsg/$id/profiles"){
-            Toast.makeText(context, "Chat couldn't be loaded- $it", Toast.LENGTH_SHORT).show()
+        if(!state.isSearchActive&&state.searchText.length<2){
+            viewModel.getChatProfiles("personalMsg/$id/profiles"){
+                Toast.makeText(context, "Chat couldn't be loaded- $it", Toast.LENGTH_SHORT).show()
+            }
         }
     }
+
     Column(
         modifier = Modifier
             .background(DeepBlue)
             .fillMaxSize()){
         TitleInfo(title = "Personal")
         SearchBox(state,viewModel)
+        if(state.isSearchActive)
+            progressBar()
+        else {
+            Spacer(modifier = Modifier.size(17.dp))
+        }
         LoadChatList(state.chatList)
 
 //        LoadChatList(chatList =
@@ -98,15 +111,26 @@ fun ChatPersonalScreen(
 //            UserChatInfo("Yamin Mahdi","", lastMsg = "hi, I'm mahdi")
 //        ))
     }
-//    Box(
-//        modifier = Modifier
-//            .background(DeepBlue)
-//            .fillMaxSize())
-//    {
-//
-//        //BottomNav(modifier  = Modifier.align(Alignment.BottomCenter))
-//
-//    }
+    if(state.isSearchActive) {
+    Box(modifier = Modifier
+        .fillMaxSize()
+
+    ) {
+        Text(
+            text = state.loadingText,
+            style = MaterialTheme.typography.headlineSmall,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 20.dp)
+                .padding(40.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(DarkerButtonBlue)
+                .padding(16.dp)
+        )
+    }
+
+    }
 
 }
 
@@ -158,6 +182,22 @@ fun searchFieldColors() =
         unfocusedLeadingIconColor = LessWhite
     )
 
+@Composable
+private fun progressBar(){
+    Column(modifier = Modifier.fillMaxWidth()) {
+        LinearProgressIndicator(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(top = 10.dp)
+                .height(7.dp)
+            ,
+            color = BlueViolet3,
+            trackColor = DeepBlueLess,
+            strokeCap= StrokeCap.Round
+        )
+    }
+}
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LoadChatList(chatList: List<Msg>) {

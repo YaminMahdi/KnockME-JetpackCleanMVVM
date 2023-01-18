@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,8 +33,14 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.mlab.knockme.ui.theme.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginPortalScreen(onClick:(id:String,pass:String)->Unit) {
+
+    var hidden by remember{ mutableStateOf(true) }
+
+    val data by remember{ mutableStateOf("Loading..") }
+
     Box(modifier = Modifier
         .fillMaxSize()
         .background(DeepBlue)
@@ -43,9 +50,53 @@ fun LoginPortalScreen(onClick:(id:String,pass:String)->Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
                 ){
             titlePortal()
-            InputFields(onClick)
+            var id by rememberSaveable { mutableStateOf("") }
+            var password by rememberSaveable { mutableStateOf("") }
+            //var passwordHidden by rememberSaveable { mutableStateOf(true) }
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                TextField(
+                    value = id,
+                    onValueChange = { id = it },
+                    label = {Text("ID")},
+                    placeholder = {Text("Input Student ID")},
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    colors = textFieldColors()
+                )
+                Spacer(modifier = Modifier.padding(10.dp))
+                TextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Password") },
+                    placeholder = {Text("Input Portal Password")},
+                    singleLine = true,
+                    colors = textFieldColors(),
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                )
+                Button(
+                    modifier = Modifier
+                        .padding(top=70.dp),
+                    onClick = {
+                        hidden = false
+                        onClick.invoke(id,password)
+                    },
+                    shape= RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor= ButtonBlue)
+                ) {
+                    Text(text = "VERIFY", color = TextWhite)
+                }
+            }
         }
         NbNote(modifier= Modifier.align(Alignment.BottomCenter))
+//        if(!hidden){
+//
+//            LoadingScreen(msg)
+//        }
     }
 }
 
@@ -79,46 +130,7 @@ fun textFieldColors() =
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InputFields(onClick:(id:String,pass:String)->Unit) {
-    var id by rememberSaveable { mutableStateOf("") }
-    var password by rememberSaveable { mutableStateOf("") }
-    //var passwordHidden by rememberSaveable { mutableStateOf(true) }
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        TextField(
-            value = id,
-            onValueChange = { id = it },
-            label = {Text("ID")},
-            placeholder = {Text("Input Student ID")},
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            singleLine = true,
-            colors = textFieldColors()
-        )
-        Spacer(modifier = Modifier.padding(10.dp))
-        TextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            placeholder = {Text("Input Portal Password")},
-            singleLine = true,
-            colors = textFieldColors(),
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-        )
-        Button(
-            modifier = Modifier
-                .padding(top=70.dp),
-            onClick = {
-                 onClick.invoke(id,password)
-            },
-            shape= RoundedCornerShape(10.dp),
-            colors = ButtonDefaults.buttonColors(containerColor= ButtonBlue)
-        ) {
-            Text(text = "VERIFY", color = TextWhite)
-        }
-    }
 
 }
 
@@ -150,8 +162,6 @@ fun NbNote(modifier: Modifier) {
 @Composable
 fun LoginPortalView() {
     KnockMETheme {
-        LoginPortalScreen { _, _ ->
-
-        }
+        //LoginPortalScreen(onClick = { s: String, s1: String -> })
     }
 }
