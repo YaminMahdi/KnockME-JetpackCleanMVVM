@@ -6,5 +6,5 @@ data class ChatListState(
     val chatList: List<Msg> = emptyList(),
     val searchText: String = "",
     val isSearchActive: Boolean=false,
-    val loadingText: String="Loading.."
+    val loadingText: String="Loading.. "
 )

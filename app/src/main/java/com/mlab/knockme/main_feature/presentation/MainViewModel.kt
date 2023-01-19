@@ -113,7 +113,7 @@ class MainViewModel @Inject constructor(
                                 savedStateHandle["loadingText"] = it
                             } ,{
                                 savedStateHandle["loadingText"] = it
-                                    userCount--
+                                userCount--
                                 if(done>=userCount-1)
                                     lateSearchDeactivate()
                                 Log.d("countX", "searchUser: $done $userCount")
