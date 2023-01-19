@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "378856926888-6mmlbrgks1arss5ci9t6omon0ccr66ko.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mlab.knockme",
+            "certificate_hash": "da56c48ccd47a9466ea479b0440aa0a8e8d1d645"
+          }
+        },
+        {
           "client_id": "378856926888-to7r0n671kahr3l8u3s7k45k1m9o3n4t.apps.googleusercontent.com",
           "client_type": 3
         }

@@ -38,6 +38,7 @@ import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import com.mlab.knockme.R
 import com.mlab.knockme.main_feature.presentation.MainViewModel
+import com.mlab.knockme.main_feature.presentation.main.components.bounceClick
 import com.mlab.knockme.ui.theme.*
 
 @Composable
@@ -246,6 +247,7 @@ fun FeatureItem(
             .clickable {
 
             }
+            .bounceClick()
             .clip(RoundedCornerShape(20.dp))
             .background(feature.darkColor)
     ) {

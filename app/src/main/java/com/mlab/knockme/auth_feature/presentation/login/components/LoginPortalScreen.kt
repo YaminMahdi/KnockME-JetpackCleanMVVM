@@ -31,6 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.mlab.knockme.main_feature.presentation.main.components.bounceClick
 import com.mlab.knockme.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -80,7 +81,9 @@ fun LoginPortalScreen(onClick:(id:String,pass:String)->Unit) {
                 )
                 Button(
                     modifier = Modifier
-                        .padding(top=70.dp),
+                        .padding(top=70.dp)
+                        .bounceClick()
+                    ,
                     onClick = {
                         hidden = false
                         onClick.invoke(id,password)
