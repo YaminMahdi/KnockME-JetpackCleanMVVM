@@ -7,6 +7,11 @@ plugins {
 }
 
 android {
+    signingConfigs {
+        debug {
+            storeFile file('C:\\Documents\\keys\\debugME1.keystore')
+        }
+    }
     namespace 'com.mlab.knockme'
     compileSdk 33
 

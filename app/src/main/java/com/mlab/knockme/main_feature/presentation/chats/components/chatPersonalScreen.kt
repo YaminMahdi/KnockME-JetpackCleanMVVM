@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 
@@ -13,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -50,6 +52,7 @@ import coil.compose.SubcomposeAsyncImageContent
 import com.mlab.knockme.R
 import com.mlab.knockme.main_feature.domain.model.Msg
 import com.mlab.knockme.main_feature.presentation.MainViewModel
+import com.mlab.knockme.main_feature.presentation.main.components.bounceClick
 import com.mlab.knockme.profile_feature.presentation.components.TitleInfo
 import com.mlab.knockme.ui.theme.*
 import kotlinx.coroutines.Dispatchers
@@ -232,9 +235,15 @@ fun ChatView(proView: Msg, modifier: Modifier) {
                 start = 10.dp,
                 end = 10.dp
             )
-            .clickable {
+            .bounceClick()
+            .clip(RoundedCornerShape(10.dp))
+            .clickable(
+                interactionSource = MutableInteractionSource(),
+                indication = rememberRipple(color = Color.White),
+                onClick = {
 
-            }
+                }
+            )
     ) {
         SubcomposeAsyncImage(
             model = proView.pic,
@@ -283,7 +292,7 @@ fun ChatView(proView: Msg, modifier: Modifier) {
                 overflow = TextOverflow.Ellipsis,
                 softWrap = false,
                 modifier = Modifier
-                    .fillMaxWidth(.7f)
+                    .fillMaxWidth(.9f)
                     .padding(vertical = 5.dp)
             )
             Text(
