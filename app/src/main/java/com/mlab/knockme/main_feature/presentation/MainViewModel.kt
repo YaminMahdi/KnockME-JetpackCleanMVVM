@@ -4,10 +4,11 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mlab.knockme.auth_feature.presentation.login.LoadingState
 import com.mlab.knockme.main_feature.domain.model.Msg
+import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
 import com.mlab.knockme.main_feature.domain.use_case.MainUseCases
-import com.mlab.knockme.main_feature.presentation.chats.components.ChatListState
+import com.mlab.knockme.main_feature.domain.model.ChatListState
+import com.mlab.knockme.main_feature.domain.model.ViewProfileState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -39,9 +40,12 @@ class MainViewModel @Inject constructor(
     private val searchText = savedStateHandle.getStateFlow("searchText", "")
     private val isSearchActive = savedStateHandle.getStateFlow("isSearchActive", false)
 
-    val state = combine(chatList,searchText,isSearchActive,loadingText){chatList,searchText,isSearchActive,loadingText ->
+    val state = combine(chatList,searchText,isSearchActive,loadingText)
+    {chatList,searchText,isSearchActive,loadingText ->
         ChatListState(chatList, searchText, isSearchActive,loadingText) //1 searchNotes.execute(notes, searchText) ,
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(0) , ChatListState())
+    }.stateIn(viewModelScope, SharingStarted.Eagerly , ChatListState())
+
+
     private var getMsgJob: Job? =null
     private var getChatsProfileJob: Job? =null
     private var getChatsJob: Job? =null
@@ -143,6 +147,35 @@ class MainViewModel @Inject constructor(
         }
         return idRange
     }
+
+
+    //profile view
+    private val isLoading = savedStateHandle.getStateFlow("isLoading", true)
+    private val hasPrivateInfo = savedStateHandle.getStateFlow("hasPrivateInfo", false)
+    private val userBasicInfo = savedStateHandle.getStateFlow("userBasicInfo", UserBasicInfo())
+
+    val stateProfile = combine(isLoading,hasPrivateInfo,userBasicInfo)
+    {x,y,z ->
+        ViewProfileState(x, y, z)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly , ViewProfileState())
+    fun getUserBasicInfo(id: String){
+        savedStateHandle["isLoading"] = true
+
+        viewModelScope.launch {
+            mainUseCases.getUserBasicInfo(id,
+                {
+                    savedStateHandle["userBasicInfo"] = it
+                    if(!it.privateInfo.email.isNullOrEmpty())
+                        savedStateHandle["hasPrivateInfo"] = true
+                },{
+                    savedStateHandle["isLoading"] = false
+                })
+        }
+    }
+
+
+
+
 
     fun onSearchTextChange (text: String) {
         savedStateHandle["searchText"] = text

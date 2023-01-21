@@ -1,4 +1,4 @@
-package com.mlab.knockme.main_feature.presentation.main.components
+package com.mlab.knockme.core.util
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
@@ -17,7 +17,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 enum class ButtonState { Pressed, Idle }
 fun Modifier.bounceClick() = composed {
     var buttonState by remember { mutableStateOf(ButtonState.Idle) }
-    val scale by animateFloatAsState(if (buttonState == ButtonState.Pressed) 0.70f else 1f)
+    val scale by animateFloatAsState(if (buttonState == ButtonState.Pressed) 0.85f else 1f)
 
     this
         .graphicsLayer {

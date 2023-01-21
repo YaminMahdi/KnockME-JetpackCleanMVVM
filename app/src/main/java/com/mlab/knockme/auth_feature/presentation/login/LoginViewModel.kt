@@ -1,9 +1,7 @@
 package com.mlab.knockme.auth_feature.presentation.login
 
-import android.content.Intent
 import android.util.Log
 import androidx.compose.runtime.State
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -12,13 +10,10 @@ import com.facebook.AccessToken
 import com.facebook.CallbackManager
 import com.facebook.login.widget.LoginButton
 import com.mlab.knockme.auth_feature.domain.model.FBResponse
-import com.mlab.knockme.auth_feature.domain.model.StudentInfo
 import com.mlab.knockme.auth_feature.domain.model.UserProfile
 import com.mlab.knockme.auth_feature.domain.use_cases.AuthUseCases
 import com.mlab.knockme.auth_feature.util.SignResponse
 import com.mlab.knockme.core.util.Resource
-import com.mlab.knockme.main_feature.presentation.MainActivity
-import com.mlab.knockme.main_feature.presentation.chats.components.ChatListState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow

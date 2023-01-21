@@ -62,8 +62,6 @@ import kotlinx.coroutines.launch
 fun LoadingScreen( data: String
 
 ) {
-
-
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,

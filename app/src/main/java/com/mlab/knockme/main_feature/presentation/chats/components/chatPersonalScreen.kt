@@ -21,7 +21,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -30,7 +29,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,28 +43,24 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import com.mlab.knockme.R
 import com.mlab.knockme.main_feature.domain.model.Msg
 import com.mlab.knockme.main_feature.presentation.MainViewModel
-import com.mlab.knockme.main_feature.presentation.main.components.bounceClick
+import com.mlab.knockme.main_feature.domain.model.ChatListState
+import com.mlab.knockme.core.util.bounceClick
+import com.mlab.knockme.main_feature.presentation.ChatInnerScreens
 import com.mlab.knockme.profile_feature.presentation.components.TitleInfo
 import com.mlab.knockme.ui.theme.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.time.LocalDateTime
-import java.util.Calendar
-import java.util.Date
 import java.util.Locale
 
 @Composable
 fun ChatPersonalScreen(
+    navController: NavHostController,
     viewModel: MainViewModel= hiltViewModel()
 ) {
     val context: Context =LocalContext.current
@@ -96,7 +90,7 @@ fun ChatPersonalScreen(
         else {
             Spacer(modifier = Modifier.size(17.dp))
         }
-        LoadChatList(state.chatList)
+        LoadChatList(state.chatList,navController)
 
 //        LoadChatList(chatList =
 //        listOf(
@@ -203,7 +197,7 @@ private fun progressBar(){
 }
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun LoadChatList(chatList: List<Msg>) {
+fun LoadChatList(chatList: List<Msg>,navController: NavHostController) {
     LazyColumn(
         modifier = Modifier
             .fillMaxHeight(),
@@ -213,14 +207,16 @@ fun LoadChatList(chatList: List<Msg>) {
                     proView,
                     modifier = Modifier
                         .animateItemPlacement()
-                )
+                ){ id ->
+                    navController.navigate(ChatInnerScreens.UserProfileScreen.route+id)
+                }
             }
         }
     )
 }
 
 @Composable
-fun ChatView(proView: Msg, modifier: Modifier) {
+fun ChatView(proView: Msg, modifier: Modifier,onClick: (id: String) -> Unit) {
     //val currentTimeMillis = System.currentTimeMillis()
     var date = SimpleDateFormat("dd MMM, hh:mm a", Locale.US).format(proView.time)
     val day = SimpleDateFormat("dd", Locale.US).format(System.currentTimeMillis())
@@ -241,7 +237,7 @@ fun ChatView(proView: Msg, modifier: Modifier) {
                 interactionSource = MutableInteractionSource(),
                 indication = rememberRipple(color = Color.White),
                 onClick = {
-
+                    onClick.invoke(proView.id!!)
                 }
             )
     ) {
@@ -310,6 +306,6 @@ fun ChatView(proView: Msg, modifier: Modifier) {
 @Composable
 fun PreviewsProfile() {
     KnockMETheme {
-        ChatPersonalScreen()
+//        ChatPersonalScreen()
     }
 }

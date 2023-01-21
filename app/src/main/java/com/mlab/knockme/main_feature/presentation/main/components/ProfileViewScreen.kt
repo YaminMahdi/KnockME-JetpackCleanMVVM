@@ -13,31 +13,54 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
+import com.himanshoe.charty.combined.CombinedBarChart
+import com.himanshoe.charty.combined.config.CombinedBarConfig
+import com.himanshoe.charty.combined.model.CombinedBarData
+import com.himanshoe.charty.common.axis.AxisConfig
+import com.himanshoe.charty.common.dimens.ChartDimens
 import com.mlab.knockme.R
+import com.mlab.knockme.auth_feature.domain.model.PrivateInfo
+import com.mlab.knockme.auth_feature.domain.model.PrivateInfoExtended
+import com.mlab.knockme.core.util.bounceClick
+import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
+import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.profile_feature.presentation.components.Ic
 import com.mlab.knockme.ui.theme.*
 
 @Composable
-fun ProfilelVIewScreen() {
+fun ProfileViewScreen(
+    id: String="193-15-1071",
+    viewModel: MainViewModel = hiltViewModel()
+
+) {
+    val state by viewModel.stateProfile.collectAsState()
+
+    LaunchedEffect(key1 = state){
+        viewModel.getUserBasicInfo("193-15-1071")
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -46,36 +69,73 @@ fun ProfilelVIewScreen() {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         TopBar()
-        Profile(",", "Ahmad Umar Mahdi")
-        SocialLink()
-        Details()
-        Address()
-    }
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .padding(26.dp),
-        contentAlignment = Alignment.BottomEnd)
-    {
-        Box(modifier = Modifier
-        .clip(RoundedCornerShape(10.dp))
-        .background(BlueViolet1)
-        .padding(10.dp)
-        ){
-            Column(modifier = Modifier
-                .align(Alignment.Center)) {
-                Text(
-                    text = "Last Updated:",
-                    fontSize=10.sp,
-                    style=MaterialTheme.typography.headlineSmall,
-                )
-                Text(
-                    text = "5 Days Ago",
-                    style=MaterialTheme.typography.headlineMedium,
-                )
+        Profile(state.userBasicInfo.privateInfo.pic, state.userBasicInfo.publicInfo.nm)
+        SocialLink(state.userBasicInfo.privateInfo)
+        Column(
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
+                .weight(weight = 1f, fill = false)
+
+        ) {
+            if(!state.isLoading)
+            {
+                BarChart(state.userBasicInfo.fullResultInfo.map { it.toCombinedBarData() })
             }
+            //                listOf(
+//                    CombinedBarData("F-19", 3.33F, 3.33F),
+//                    CombinedBarData("S-20", 3.63F, 3.63F),
+//                    CombinedBarData("S-20", 3.73F, 3.73F),
+//                    CombinedBarData("F-20", 3.53F, 3.53F),
+//                    CombinedBarData("S-21", 3.23F, 3.23F),
+//                    CombinedBarData("S-21", 3.93F, 3.93F),
+//                    CombinedBarData("F-20", 3.53F, 3.53F),
+//                    CombinedBarData("S-21", 3.23F, 3.23F),
+//                    CombinedBarData("S-21", 3.93F, 3.93F),
+//                    CombinedBarData("F-20", 3.53F, 3.53F),
+//            CombinedBarData("S-21", 3.23F,3.23F),
+//            CombinedBarData("S-21", 3.93F,3.93F)
+//                )
+            Text(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .alpha(.7f)
+                    .padding(5.dp),
+                text = "Last Updated: A Day Ago",
+                fontSize = 8.sp,
+                style = MaterialTheme.typography.headlineSmall,
+                textAlign = TextAlign.End
+            )
+            Details(state.userBasicInfo)
+            Address(state.userBasicInfo)
         }
 
     }
+//    Box(modifier = Modifier
+//        .fillMaxSize()
+//        .padding(26.dp)
+//        .alpha(.7f),
+//        contentAlignment = Alignment.BottomEnd)
+//    {
+//        Box(modifier = Modifier
+//            .clip(RoundedCornerShape(10.dp))
+//            .background(BlueViolet1)
+//            .padding(10.dp)
+//        ){
+//            Column(modifier = Modifier
+//                .align(Alignment.Center)) {
+//                Text(
+//                    text = "Last Updated:",
+//                    fontSize=10.sp,
+//                    style=MaterialTheme.typography.headlineSmall,
+//                )
+//                Text(
+//                    text = "5 Days Ago",
+//                    style=MaterialTheme.typography.headlineMedium,
+//                )
+//            }
+//        }
+//
+//    }
 
 }
 
@@ -200,7 +260,7 @@ fun CgpaToast(modifier: Modifier, cgpa: String) {
 }
 
 @Composable
-fun SocialLink() {
+fun SocialLink(privateInfo: PrivateInfoExtended) {
     Row(
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
@@ -218,7 +278,7 @@ fun SocialLink() {
             shape = RoundedCornerShape(10.dp),
             colors = ButtonDefaults.buttonColors(containerColor = DeepBlueLess)
         ) {
-            Row (Modifier.padding(vertical = 7.dp)){
+            Row(Modifier.padding(vertical = 7.dp)) {
                 Text(
                     text = "Knock",
                     color = TextWhite,
@@ -229,7 +289,7 @@ fun SocialLink() {
                 Text(
                     text = "ME",
                     color = LightBlue,
-                    fontSize=22.sp,
+                    fontSize = 22.sp,
                     fontFamily = ubuntu,
                     fontWeight = FontWeight.Bold
 
@@ -252,20 +312,20 @@ fun SocialLink() {
                     interactionSource = MutableInteractionSource(),
                     indication = rememberRipple(color = Color.White),
                     onClick = {
-
+                        privateInfo.fbLink
                     }
                 )
                 .background(DeepBlueLess)
                 .padding(10.dp)
                 .size(35.dp)
-            ) {
-                    Text(
-                        text = "f",
-                        fontSize = 30.sp,
-                        style = MaterialTheme.typography.headlineLarge,
-                        fontFamily = bakbakBold
-                    )
-                }
+        ) {
+            Text(
+                text = "f",
+                fontSize = 30.sp,
+                style = MaterialTheme.typography.headlineLarge,
+                fontFamily = bakbakBold
+            )
+        }
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -276,7 +336,7 @@ fun SocialLink() {
                     interactionSource = MutableInteractionSource(),
                     indication = rememberRipple(color = Color.White),
                     onClick = {
-
+                        privateInfo.email
                     }
                 )
                 .background(DeepBlueLess)
@@ -285,32 +345,97 @@ fun SocialLink() {
         ) {
             Text(
                 text = "@",
-                fontSize=24.sp,
+                fontSize = 24.sp,
                 style = MaterialTheme.typography.headlineLarge,
                 fontFamily = ubuntu,
                 modifier = Modifier
-                    .padding(bottom=3.dp)
+                    .padding(bottom = 3.dp)
             )
         }
     }
 
 }
 
+@Composable
+fun BarChart(barDataList: List<CombinedBarData>) {
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = "SGPA Graph:",
+            style = MaterialTheme.typography.headlineSmall
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(5.dp)
+                .padding(top = 10.dp)
+                .bounceClick()
+                .clip(RoundedCornerShape(10.dp))
+                .background(DeepBlueLess)
+        ) {
+            CombinedBarChart(
+                modifier = Modifier
+                    .padding(horizontal = 20.dp, vertical = 40.dp)
+                    .fillMaxWidth()
+                    .height(100.dp),
+                onClick = {
+
+                },// returns CombinedBarData}
+                barColors = listOf(Beige1, LightRed, BlueViolet1),
+                lineColors = listOf(Color.Transparent, Color.Transparent),
+                combinedBarData = barDataList,
+                combinedBarConfig = CombinedBarConfig(
+                    hasRoundedCorner = true,
+                    hasLineLabel = true,
+                    lineLabelColor = Color.Transparent to Color.White
+                ),
+                axisConfig = AxisConfig(
+                    xAxisColor = Color.LightGray,
+                    showAxis = true,
+                    isAxisDashed = false,
+                    showUnitLabels = false,
+                    showXLabels = true,
+                    yAxisColor = Color.LightGray,
+                    textColor = Color.White
+                ),
+                chartDimens = ChartDimens(
+                    if (barDataList.size < 2)
+                        150.dp
+                    else if (barDataList.size < 3)
+                        100.dp
+                    else if (barDataList.size < 5)
+                        50.dp
+                    else if (barDataList.size < 7)
+                        20.dp
+                    else if (barDataList.size < 9)
+                        10.dp
+                    else
+                        30.dp
+                )
+            )
+        }
+
+    }
+
+
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun Details() {
-    Column(modifier= Modifier.fillMaxWidth()) {
+fun Details(userBasicInfo: UserBasicInfo) {
+    Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "Details:",
-            style=MaterialTheme.typography.headlineSmall
+            style = MaterialTheme.typography.headlineSmall
         )
         FlowRow(
             modifier = Modifier.padding(5.dp),
         ) {
-            DetailsItems("ID: 193-15-1071", LightGreen2)
-            DetailsItems("Batch: 54", BlueViolet1)
-            DetailsItems("Blood: O+", LightRed)
-            DetailsItems("Prog: B.Sc. in CSE", LightBlue)
+            DetailsItems("ID: ${userBasicInfo.publicInfo.id}", LightGreen2)
+            DetailsItems("Batch: ${userBasicInfo.publicInfo.batchNo}", BlueViolet1)
+            DetailsItems("Blood: ${userBasicInfo.privateInfo.bloodGroup}", LightRed)
+            DetailsItems("Prog: ${userBasicInfo.publicInfo.progShortName}", LightBlue)
         }
 
     }
@@ -318,46 +443,49 @@ fun Details() {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun Address() {
-    Column(modifier= Modifier.fillMaxWidth()) {
+fun Address(userBasicInfo: UserBasicInfo) {
+    Column(modifier = Modifier.fillMaxWidth()) {
         Spacer(modifier = Modifier.size(25.dp))
         Text(
             text = "Address:",
-            style=MaterialTheme.typography.headlineSmall
+            style = MaterialTheme.typography.headlineSmall
         )
         FlowRow(
             modifier = Modifier.padding(5.dp),
         ) {
-            DetailsItems("Current: Dhaka, Bangladesh", Beige3)
-            DetailsItems("Home: Jessore, Jessore, Jessore, Khulna, Bangladesh", DarkerButtonBlue)
+            DetailsItems("Current: ${userBasicInfo.privateInfo.loc}", Beige3)
+            DetailsItems("Home: ${userBasicInfo.privateInfo.permanentHouse}", DarkerButtonBlue)
         }
 
     }
 }
 
 @Composable
-fun DetailsItems(data: String,color: Color) {
-    Box(modifier = Modifier
-        .padding(top = 10.dp, end = 10.dp)
-        .clip(RoundedCornerShape(10.dp))
-        .background(color)
-        .padding(10.dp)
-    ){
+fun DetailsItems(data: String, color: Color) {
+    Box(
+        modifier = Modifier
+            .padding(top = 10.dp, end = 10.dp)
+            .bounceClick()
+            .clip(RoundedCornerShape(10.dp))
+            .clickable { }
+            .background(color)
+            .padding(10.dp)
+    ) {
         Text(
             text = data,
-            style=MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier
                 .align(Alignment.Center)
         )
     }
-    
+
 }
 
 @Preview(showBackground = true)
 @Composable
-fun ProfilelVIewScreenPre() {
+fun ProfileViewScreenPre() {
     KnockMETheme() {
-        ProfilelVIewScreen()
+        ProfileViewScreen()
     }
 
 }

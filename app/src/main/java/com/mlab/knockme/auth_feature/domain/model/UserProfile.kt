@@ -14,5 +14,5 @@ data class UserProfile(
 )
 {
     fun toUserBasicInfo() =
-        UserBasicInfo(publicInfo, privateInfo)
+        UserBasicInfo(publicInfo, privateInfo,fullResultInfo)
 }

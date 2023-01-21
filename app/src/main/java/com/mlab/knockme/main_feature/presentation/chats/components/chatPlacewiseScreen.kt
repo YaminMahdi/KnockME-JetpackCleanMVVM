@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import com.mlab.knockme.R
 import com.mlab.knockme.main_feature.domain.model.Msg
 import com.mlab.knockme.main_feature.presentation.MainViewModel
@@ -21,7 +22,10 @@ import com.mlab.knockme.ui.theme.DeepBlue
 import com.mlab.knockme.ui.theme.KnockMETheme
 
 @Composable
-fun ChatPlacewiseScreen(viewModel: MainViewModel= hiltViewModel()) {
+fun ChatPlacewiseScreen(
+    navController: NavHostController,
+    viewModel: MainViewModel= hiltViewModel()
+) {
     val context: Context = LocalContext.current
     val chatList by viewModel.chatListState.collectAsState()
     val sharedPreferences = context.getSharedPreferences(
@@ -40,7 +44,7 @@ fun ChatPlacewiseScreen(viewModel: MainViewModel= hiltViewModel()) {
             .background(DeepBlue)
             .fillMaxSize()){
         TitleInfo(title = "Placewise")
-        LoadChatList(chatList = chatList)
+        LoadChatList(chatList = chatList,navController)
     }
 }
 
@@ -48,6 +52,6 @@ fun ChatPlacewiseScreen(viewModel: MainViewModel= hiltViewModel()) {
 @Composable
 fun PreviewsChatP() {
     KnockMETheme {
-        ChatPlacewiseScreen()
+       // ChatPlacewiseScreen()
     }
 }

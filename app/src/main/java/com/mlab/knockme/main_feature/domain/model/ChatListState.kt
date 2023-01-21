@@ -1,4 +1,4 @@
-package com.mlab.knockme.main_feature.presentation.chats.components
+package com.mlab.knockme.main_feature.domain.model
 
 import com.mlab.knockme.main_feature.domain.model.Msg
 

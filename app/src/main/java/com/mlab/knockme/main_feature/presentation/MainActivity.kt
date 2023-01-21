@@ -86,13 +86,13 @@ fun Main() {
     ) { bottomPadding ->
         NavHost(navController, startDestination = MainScreens.CtPersonalScreen.route, Modifier.padding(bottomPadding)) {
             composable(MainScreens.CtPersonalScreen.route) {
-                ChatPersonalScreen()
+                ChatMainMsgNav(1)
             }
             composable(MainScreens.CtPlacewiseScreen.route) {
-                ChatPlacewiseScreen()
+                ChatMainMsgNav(2)
             }
             composable(MainScreens.CtBusInfoScreen.route) {
-                ChatBusInfoScreen()
+                ChatMainMsgNav(3)
             }
             composable(MainScreens.ProScreen.route) {
                 ProfileScreen()
