@@ -384,12 +384,12 @@ class AuthRepoImpl @Inject constructor(
         id: String,
         semesterList: List<String> = getSemesterList(id),
         loading: (index: Int) -> Unit,
-        success: (cgpa: Double, fullResultInfo: List<FullResultInfo>) -> Unit
+        success: (cgpa: Double, fullResultInfo: ArrayList<FullResultInfo>) -> Unit
     ) {
         var weightedCgpa = 0.0
         var totalCreditWeight = 0.0
         var resultFound = 0
-        val fullResultInfo = mutableListOf<FullResultInfo>()
+        val fullResultInfo = arrayListOf<FullResultInfo>()
         semesterList.forEachIndexed { i, semesterId ->
             GlobalScope.launch(Dispatchers.IO) {
                 val semesterResultInfo = FullResultInfo()
@@ -401,7 +401,7 @@ class AuthRepoImpl @Inject constructor(
 
                         loading.invoke(semesterList.size - i)
                         var creditTaken = 0.0
-                        val rInfo = mutableListOf<ResultInfo>()
+                        val rInfo = arrayListOf<ResultInfo>()
                         resultInfo.forEach { courseInfo ->
                             weightedCgpa += courseInfo.pointEquivalent * courseInfo.totalCredit
                             creditTaken += courseInfo.totalCredit
@@ -427,7 +427,7 @@ class AuthRepoImpl @Inject constructor(
                     this.cancel()
 
                 } catch (e: EOFException) {
-                    success.invoke(0.0, emptyList())
+                    success.invoke(0.0, arrayListOf())
                     Log.d("TAG", "getCgpa: ${e.message} ${e.localizedMessage} $semesterId")
                     this.cancel()
                 } catch (e: IOException) {

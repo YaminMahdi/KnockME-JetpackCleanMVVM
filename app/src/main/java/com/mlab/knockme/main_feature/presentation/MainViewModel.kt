@@ -1,6 +1,7 @@
 package com.mlab.knockme.main_feature.presentation
 
 import android.util.Log
+import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -151,21 +152,24 @@ class MainViewModel @Inject constructor(
 
     //profile view
     private val isLoading = savedStateHandle.getStateFlow("isLoading", true)
+    //val isLoading = _isLoading
     private val hasPrivateInfo = savedStateHandle.getStateFlow("hasPrivateInfo", false)
+    //val hasPrivateInfo = _hasPrivateInfo
     private val userBasicInfo = savedStateHandle.getStateFlow("userBasicInfo", UserBasicInfo())
-
+    //val userBasicInfo = _userBasicInfo
+    //val stateProfile = ViewProfileState(isLoading.collectAsState(),hasPrivateInfo,userBasicInfo)
     val stateProfile = combine(isLoading,hasPrivateInfo,userBasicInfo)
     {x,y,z ->
         ViewProfileState(x, y, z)
     }.stateIn(viewModelScope, SharingStarted.Eagerly , ViewProfileState())
-    fun getUserBasicInfo(id: String){
-        savedStateHandle["isLoading"] = true
 
+    fun getUserBasicInfo(id: String){
         viewModelScope.launch {
             mainUseCases.getUserBasicInfo(id,
                 {
                     savedStateHandle["userBasicInfo"] = it
-                    if(!it.privateInfo.email.isNullOrEmpty())
+                    savedStateHandle["isLoading"] = false
+                    if(!it.privateInfo?.email.isNullOrEmpty())
                         savedStateHandle["hasPrivateInfo"] = true
                 },{
                     savedStateHandle["isLoading"] = false

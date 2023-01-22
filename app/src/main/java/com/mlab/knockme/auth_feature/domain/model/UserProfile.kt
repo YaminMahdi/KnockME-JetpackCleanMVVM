@@ -9,7 +9,7 @@ data class UserProfile(
     val paymentInfo: PaymentInfo=PaymentInfo(),
     val courseInfo: List<CourseInfo> = emptyList(),
     val liveResultInfo: List<LiveResultInfo> = emptyList(),
-    val fullResultInfo: List<FullResultInfo> = emptyList()  //aida ase
+    val fullResultInfo: ArrayList<FullResultInfo> = arrayListOf()  //aida ase
 
 )
 {

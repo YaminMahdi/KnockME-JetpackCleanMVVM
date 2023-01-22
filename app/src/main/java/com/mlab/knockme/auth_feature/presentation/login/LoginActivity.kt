@@ -12,11 +12,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.facebook.AccessToken
 import com.facebook.CallbackManager
 import com.facebook.login.widget.LoginButton
@@ -133,6 +131,7 @@ class LoginActivity : ComponentActivity() {
                                             Log.d("TAG", "onCreate Error: ${it.message}")
 
                                         }
+
                                     }
                                 }
                             }

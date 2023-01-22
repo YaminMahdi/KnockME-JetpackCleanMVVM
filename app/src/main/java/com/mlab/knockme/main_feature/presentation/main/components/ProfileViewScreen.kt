@@ -13,11 +13,10 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,12 +26,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
@@ -42,8 +39,8 @@ import com.himanshoe.charty.combined.model.CombinedBarData
 import com.himanshoe.charty.common.axis.AxisConfig
 import com.himanshoe.charty.common.dimens.ChartDimens
 import com.mlab.knockme.R
-import com.mlab.knockme.auth_feature.domain.model.PrivateInfo
 import com.mlab.knockme.auth_feature.domain.model.PrivateInfoExtended
+import com.mlab.knockme.auth_feature.domain.model.PublicInfo
 import com.mlab.knockme.core.util.bounceClick
 import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
 import com.mlab.knockme.main_feature.presentation.MainViewModel
@@ -52,15 +49,18 @@ import com.mlab.knockme.ui.theme.*
 
 @Composable
 fun ProfileViewScreen(
-    id: String="193-15-1071",
+    id: String="193-15-107",
     viewModel: MainViewModel = hiltViewModel()
 
 ) {
     val state by viewModel.stateProfile.collectAsState()
-
-    LaunchedEffect(key1 = state){
-        viewModel.getUserBasicInfo("193-15-1071")
-    }
+//    val isLoading by viewModel.isLoading.collectAsState()
+//    val hasPrivateInfo  by viewModel.hasPrivateInfo.collectAsState()
+//    val userBasicInfo  by viewModel.userBasicInfo.collectAsState()
+    viewModel.getUserBasicInfo(id)
+//    LaunchedEffect(key1 = state){
+//
+//    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -69,8 +69,12 @@ fun ProfileViewScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         TopBar()
-        Profile(state.userBasicInfo.privateInfo.pic, state.userBasicInfo.publicInfo.nm)
-        SocialLink(state.userBasicInfo.privateInfo)
+        Profile(
+            pic = state.userBasicInfo.privateInfo?.pic,
+            publicInfo = state.userBasicInfo.publicInfo,
+            isLoading = state.isLoading
+        )
+        SocialLink(state.userBasicInfo.privateInfo!!)
         Column(
             modifier = Modifier
                 .verticalScroll(rememberScrollState())
@@ -79,7 +83,7 @@ fun ProfileViewScreen(
         ) {
             if(!state.isLoading)
             {
-                BarChart(state.userBasicInfo.fullResultInfo.map { it.toCombinedBarData() })
+                BarChart(state.userBasicInfo.fullResultInfo!!.map { it.toCombinedBarData() })
             }
             //                listOf(
 //                    CombinedBarData("F-19", 3.33F, 3.33F),
@@ -168,7 +172,7 @@ fun TopBar() {
 }
 
 @Composable
-fun Profile(pic: String, name: String) {
+fun Profile(pic: String?, publicInfo: PublicInfo?, isLoading: Boolean) {
     Box(
         modifier = Modifier
             .width(300.dp),
@@ -179,7 +183,7 @@ fun Profile(pic: String, name: String) {
         ) {
             SubcomposeAsyncImage(
                 model = pic,
-                contentDescription = name,
+                contentDescription = publicInfo?.nm,
                 modifier = Modifier
                     .width(160.dp)
                     .aspectRatio(1f)
@@ -209,7 +213,7 @@ fun Profile(pic: String, name: String) {
                 }
             }
             Text(
-                text = name,
+                text = publicInfo?.nm!!,
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.headlineLarge,
             )
@@ -217,7 +221,9 @@ fun Profile(pic: String, name: String) {
         CgpaToast(
             modifier = Modifier
                 .align(Alignment.TopStart)
-                .padding(start = 185.dp, top = 25.dp), "3.65"
+                .padding(start = 185.dp, top = 25.dp),
+            cgpa = publicInfo?.cgpa.toString(),
+            isLoading = isLoading
         )
 
 
@@ -225,8 +231,8 @@ fun Profile(pic: String, name: String) {
 }
 
 @Composable
-fun CgpaToast(modifier: Modifier, cgpa: String) {
-    var isLoaded by remember { mutableStateOf(false) }
+fun CgpaToast(modifier: Modifier, cgpa: String, isLoading: Boolean) {
+    var isLoaded by remember { mutableStateOf(!isLoading) }
 
     val toastHeight by animateDpAsState(
         targetValue = if (isLoaded) 25.dp else 15.dp, animationSpec = spring(
@@ -432,9 +438,9 @@ fun Details(userBasicInfo: UserBasicInfo) {
         FlowRow(
             modifier = Modifier.padding(5.dp),
         ) {
-            DetailsItems("ID: ${userBasicInfo.publicInfo.id}", LightGreen2)
+            DetailsItems("ID: ${userBasicInfo.publicInfo!!.id}", LightGreen2)
             DetailsItems("Batch: ${userBasicInfo.publicInfo.batchNo}", BlueViolet1)
-            DetailsItems("Blood: ${userBasicInfo.privateInfo.bloodGroup}", LightRed)
+            DetailsItems("Blood: ${userBasicInfo.privateInfo!!.bloodGroup}", LightRed)
             DetailsItems("Prog: ${userBasicInfo.publicInfo.progShortName}", LightBlue)
         }
 
@@ -453,7 +459,7 @@ fun Address(userBasicInfo: UserBasicInfo) {
         FlowRow(
             modifier = Modifier.padding(5.dp),
         ) {
-            DetailsItems("Current: ${userBasicInfo.privateInfo.loc}", Beige3)
+            DetailsItems("Current: ${userBasicInfo.privateInfo!!.loc}", Beige3)
             DetailsItems("Home: ${userBasicInfo.privateInfo.permanentHouse}", DarkerButtonBlue)
         }
 
@@ -484,7 +490,7 @@ fun DetailsItems(data: String, color: Color) {
 @Preview(showBackground = true)
 @Composable
 fun ProfileViewScreenPre() {
-    KnockMETheme() {
+    KnockMETheme {
         ProfileViewScreen()
     }
 

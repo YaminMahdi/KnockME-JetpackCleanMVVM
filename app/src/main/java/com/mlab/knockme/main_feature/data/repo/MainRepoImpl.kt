@@ -1,17 +1,14 @@
 package com.mlab.knockme.main_feature.data.repo
 
 import android.util.Log
-import com.google.android.gms.tasks.Task
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ktx.getValue
-import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ktx.toObject
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.mlab.knockme.auth_feature.data.data_source.PortalApi
@@ -372,7 +369,7 @@ class MainRepoImpl @Inject constructor(
 
                         loading.invoke(semesterList.size-i)
                         var creditTaken = 0.0
-                        var rInfo = mutableListOf<ResultInfo>()
+                        val rInfo = arrayListOf<ResultInfo>()
                         resultInfo.forEach { courseInfo ->
                             weightedCgpa += courseInfo.pointEquivalent * courseInfo.totalCredit
                             creditTaken += courseInfo.totalCredit
