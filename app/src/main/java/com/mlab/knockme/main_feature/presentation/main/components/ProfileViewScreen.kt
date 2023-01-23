@@ -54,6 +54,10 @@ fun ProfileViewScreen(
 
 ) {
     val state by viewModel.stateProfile.collectAsState()
+    val navVisibility = viewModel.isNavVisible.collectAsState().value
+    if(navVisibility)
+        viewModel.setNavVisibility(false)
+
 //    val isLoading by viewModel.isLoading.collectAsState()
 //    val hasPrivateInfo  by viewModel.hasPrivateInfo.collectAsState()
 //    val userBasicInfo  by viewModel.userBasicInfo.collectAsState()

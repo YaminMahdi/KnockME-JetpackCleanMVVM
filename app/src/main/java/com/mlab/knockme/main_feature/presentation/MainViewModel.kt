@@ -29,6 +29,11 @@ class MainViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
+    val _isNavVisible = savedStateHandle.getStateFlow("isNavVisible", true)
+    val isNavVisible = _isNavVisible.stateIn(viewModelScope, SharingStarted.Eagerly , true)
+    fun setNavVisibility(visible : Boolean) {
+        savedStateHandle["visible"] = visible
+    }
     private val _loadingText = savedStateHandle.getStateFlow("loadingText", "Loading..")
     val loadingText = _loadingText
 

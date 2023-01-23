@@ -1,6 +1,8 @@
 package com.mlab.knockme.main_feature.presentation
 
 import androidx.compose.runtime.Composable
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -10,8 +12,8 @@ import com.mlab.knockme.main_feature.presentation.chats.components.ChatPlacewise
 import com.mlab.knockme.main_feature.presentation.main.components.ProfileViewScreen
 
 @Composable
-fun ChatMainMsgNav ( chatScreen: Int){  //        Failed: (msg: String) -> Unit
-    val navController = rememberNavController()
+fun ChatMainMsgNav ( chatScreen: Int, navController: NavHostController){  //        Failed: (msg: String) -> Unit
+    //val navController = rememberNavController()
     NavHost(navController = navController,
     startDestination = ChatInnerScreens.ChatScreen.route
     ){
@@ -26,9 +28,7 @@ fun ChatMainMsgNav ( chatScreen: Int){  //        Failed: (msg: String) -> Unit
                 3 -> ChatBusInfoScreen(navController)
             }
         }
-        composable(
-            route =
-            ChatInnerScreens.UserProfileScreen.route+"{id}"
+        composable(route = ChatInnerScreens.UserProfileScreen.route+"{id}"
 //            arguments = listOf(
 //                navArgument("id"){ type= NavType.StringType })
         ){
