@@ -13,6 +13,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 enum class ButtonState { Pressed, Idle }
 fun Modifier.bounceClick() = composed {
@@ -27,7 +30,7 @@ fun Modifier.bounceClick() = composed {
         .clickable(
             interactionSource = remember { MutableInteractionSource() },
             indication = null,
-            onClick = {  }
+            onClick = { }
         )
         .pointerInput(buttonState) {
             awaitPointerEventScope {
@@ -40,4 +43,19 @@ fun Modifier.bounceClick() = composed {
                 }
             }
         }
+}
+
+fun Long.toDateTime(): String{
+    var date = SimpleDateFormat("dd MMM, hh:mm a", Locale.US).format(this)
+    val day = SimpleDateFormat("dd", Locale.US).format(System.currentTimeMillis())
+    if (day.toInt() == date.split(" ")[0].toInt())
+        date = date.split(", ")[1]
+    return date.toString()
+}
+
+fun Long.toDayPassed(): String{
+    val today = System.currentTimeMillis()
+    val msDiff = today - this
+    val daysDiff = TimeUnit.MILLISECONDS.toDays(msDiff)
+    return "$daysDiff Days Ago"
 }

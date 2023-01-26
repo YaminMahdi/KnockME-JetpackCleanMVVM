@@ -3,6 +3,7 @@ package com.mlab.knockme.main_feature.presentation
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.slideInVertically
@@ -21,6 +22,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -42,11 +44,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val viewModel: MainViewModel by viewModels()
 
         setContent {
             KnockMETheme {
                 // A surface container using the 'background' color from the theme
-                Main()
+                Main(viewModel)
             }
         }
     }
@@ -54,8 +57,8 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
-fun Main() {
-    val viewModel: MainViewModel = hiltViewModel()
+fun Main(viewModel: MainViewModel) {
+    //val viewModel: MainViewModel = hiltViewModel()
     val navController = rememberNavController()
     val navItems = listOf(
         MainScreens.CtPersonalScreen,
@@ -124,7 +127,7 @@ fun Main() {
             }
             composable(ChatInnerScreens.UserProfileScreen.route+"{id}"){
                 // ProfileViewScreen(navController, it.arguments?.getString("id"))
-                ProfileViewScreen(it.arguments?.getString("id")!!)
+                ProfileViewScreen(it.arguments?.getString("id")!!,navController)
             }
         }
     }
@@ -138,7 +141,7 @@ fun Main() {
 @Composable
 fun GreetingPreview() {
     KnockMETheme {
-        Main()
+        Main(hiltViewModel())
     }
 }
 

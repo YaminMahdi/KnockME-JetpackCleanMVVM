@@ -1,5 +1,9 @@
 package com.mlab.knockme.main_feature.presentation.main.components
 
+import android.annotation.SuppressLint
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
@@ -15,21 +19,23 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
@@ -47,16 +53,15 @@ import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.profile_feature.presentation.components.Ic
 import com.mlab.knockme.ui.theme.*
 
+
 @Composable
 fun ProfileViewScreen(
     id: String="193-15-107",
+    navController: NavHostController,
     viewModel: MainViewModel = hiltViewModel()
 
 ) {
     val state by viewModel.stateProfile.collectAsState()
-    val navVisibility = viewModel.isNavVisible.collectAsState().value
-    if(navVisibility)
-        viewModel.setNavVisibility(false)
 
 //    val isLoading by viewModel.isLoading.collectAsState()
 //    val hasPrivateInfo  by viewModel.hasPrivateInfo.collectAsState()
@@ -72,23 +77,24 @@ fun ProfileViewScreen(
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        TopBar()
+        TopBar(navController)
         Profile(
             pic = state.userBasicInfo.privateInfo?.pic,
             publicInfo = state.userBasicInfo.publicInfo,
             isLoading = state.isLoading
         )
-        SocialLink(state.userBasicInfo.privateInfo!!)
+        SocialLink(state.userBasicInfo.privateInfo!!, state.hasPrivateInfo)
         Column(
             modifier = Modifier
                 .verticalScroll(rememberScrollState())
                 .weight(weight = 1f, fill = false)
 
         ) {
-            if(!state.isLoading)
-            {
-                BarChart(state.userBasicInfo.fullResultInfo!!.map { it.toCombinedBarData() })
-            }
+            if(!state.isLoading&&!state.userBasicInfo.fullResultInfo.isNullOrEmpty())
+                BarChart(
+                    state.userBasicInfo.fullResultInfo!!.map { it.toCombinedBarData() },
+                    state.userBasicInfo.publicInfo
+                    )
             //                listOf(
 //                    CombinedBarData("F-19", 3.33F, 3.33F),
 //                    CombinedBarData("S-20", 3.63F, 3.63F),
@@ -113,8 +119,9 @@ fun ProfileViewScreen(
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.End
             )
-            Details(state.userBasicInfo)
-            Address(state.userBasicInfo)
+            Details(state.userBasicInfo, state.hasPrivateInfo)
+            if(state.hasPrivateInfo)
+                Address(state.userBasicInfo)
         }
 
     }
@@ -148,7 +155,7 @@ fun ProfileViewScreen(
 }
 
 @Composable
-fun TopBar() {
+fun TopBar(navController: NavHostController) {
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
@@ -166,7 +173,7 @@ fun TopBar() {
                     interactionSource = MutableInteractionSource(),
                     indication = rememberRipple(color = Color.White),
                     onClick = {
-
+                        navController.popBackStack()
                     }
                 )
                 .padding(10.dp)
@@ -186,8 +193,8 @@ fun Profile(pic: String?, publicInfo: PublicInfo?, isLoading: Boolean) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             SubcomposeAsyncImage(
-                model = pic,
-                contentDescription = publicInfo?.nm,
+                model = if(!pic.isNullOrEmpty()) pic else "",
+                contentDescription = null,
                 modifier = Modifier
                     .width(160.dp)
                     .aspectRatio(1f)
@@ -217,7 +224,7 @@ fun Profile(pic: String?, publicInfo: PublicInfo?, isLoading: Boolean) {
                 }
             }
             Text(
-                text = publicInfo?.nm!!,
+                text = if(!publicInfo?.nm.isNullOrEmpty()) publicInfo?.nm!! else "",
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.headlineLarge,
             )
@@ -226,7 +233,7 @@ fun Profile(pic: String?, publicInfo: PublicInfo?, isLoading: Boolean) {
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(start = 185.dp, top = 25.dp),
-            cgpa = publicInfo?.cgpa.toString(),
+            pb = publicInfo,
             isLoading = isLoading
         )
 
@@ -235,29 +242,47 @@ fun Profile(pic: String?, publicInfo: PublicInfo?, isLoading: Boolean) {
 }
 
 @Composable
-fun CgpaToast(modifier: Modifier, cgpa: String, isLoading: Boolean) {
-    var isLoaded by remember { mutableStateOf(!isLoading) }
+fun CgpaToast(modifier: Modifier, pb: PublicInfo?, isLoading: Boolean) {
+    //var isLoaded by remember { mutableStateOf(!isLoading) }
 
     val toastHeight by animateDpAsState(
-        targetValue = if (isLoaded) 25.dp else 15.dp, animationSpec = spring(
+        targetValue = if (!isLoading) 25.dp else 15.dp, animationSpec = spring(
             dampingRatio = Spring.DampingRatioHighBouncy, stiffness = Spring.StiffnessMedium
         )
     )
     val toastWidth by animateDpAsState(
-        targetValue = if (isLoaded) 90.dp else 15.dp, animationSpec = spring(
+        targetValue = if (!isLoading) 90.dp else 15.dp, animationSpec = spring(
             dampingRatio = Spring.DampingRatioHighBouncy, stiffness = Spring.StiffnessMedium
         )
     )
+    val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
+
     Box(
         modifier = modifier
             .height(toastHeight)
             .width(toastWidth)
+            .bounceClick()
             .clip(RoundedCornerShape(20.dp))
             .background(LightGreen2)
-            .clickable { isLoaded = !isLoaded }
+            .clickable {
+                clipboardManager.setText(AnnotatedString(pb?.id.orEmpty()))
+                var intent = context.packageManager.getLaunchIntentForPackage("net.startbit.diucgpa")
+                if (intent != null) {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intent)
+                } else {
+                    intent = Intent(Intent.ACTION_VIEW)
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    intent.data = Uri.parse("market://details?id=" + "net.startbit.diucgpa")
+                    context.startActivity(intent)
+                }
+                Toast.makeText(context, "Student ID copied, paste it in DIU CGPA App.", Toast.LENGTH_LONG).show()
+
+            }
     ) {
-        if (isLoaded) Text(
-            text = "CGPA: $cgpa",
+        if (!isLoading) Text(
+            text = "CGPA: ${pb?.cgpa}",
             fontSize = toastHeight.value.sp / 2,
             style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.align(Alignment.Center)
@@ -269,8 +294,9 @@ fun CgpaToast(modifier: Modifier, cgpa: String, isLoading: Boolean) {
 //    }
 }
 
+@SuppressLint("IntentReset")
 @Composable
-fun SocialLink(privateInfo: PrivateInfoExtended) {
+fun SocialLink(privateInfo: PrivateInfoExtended, hasPrivateInfo: Boolean) {
     Row(
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
@@ -279,9 +305,12 @@ fun SocialLink(privateInfo: PrivateInfoExtended) {
             .padding(vertical = 30.dp)
 
     ) {
+        val uriHandler = LocalUriHandler.current
+        val context = LocalContext.current
         Button(
             modifier = Modifier
-                .bounceClick(),
+                .bounceClick()
+            ,
             onClick = {
 
             },
@@ -312,65 +341,100 @@ fun SocialLink(privateInfo: PrivateInfoExtended) {
                 tint = TextWhite
             )
         }
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .padding(start = 14.dp)
-                .bounceClick()
-                .clip(RoundedCornerShape(10.dp))
-                .clickable(
-                    interactionSource = MutableInteractionSource(),
-                    indication = rememberRipple(color = Color.White),
-                    onClick = {
-                        privateInfo.fbLink
-                    }
-                )
-                .background(DeepBlueLess)
-                .padding(10.dp)
-                .size(35.dp)
-        ) {
-            Text(
-                text = "f",
-                fontSize = 30.sp,
-                style = MaterialTheme.typography.headlineLarge,
-                fontFamily = bakbakBold
-            )
-        }
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .padding(start = 14.dp)
-                .bounceClick()
-                .clip(RoundedCornerShape(10.dp))
-                .clickable(
-                    interactionSource = MutableInteractionSource(),
-                    indication = rememberRipple(color = Color.White),
-                    onClick = {
-                        privateInfo.email
-                    }
-                )
-                .background(DeepBlueLess)
-                .padding(10.dp)
-                .size(35.dp)
-        ) {
-            Text(
-                text = "@",
-                fontSize = 24.sp,
-                style = MaterialTheme.typography.headlineLarge,
-                fontFamily = ubuntu,
+        if(hasPrivateInfo)
+        {
+            Box(
+                contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .padding(bottom = 3.dp)
-            )
+                    .padding(start = 14.dp)
+                    .bounceClick()
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable(
+                        interactionSource = MutableInteractionSource(),
+                        indication = rememberRipple(color = Color.White),
+                        onClick = {
+                            if (!privateInfo.fbLink.isNullOrEmpty())
+                                uriHandler.openUri(privateInfo.fbLink!!)
+                            else
+                                Toast
+                                    .makeText(context, "Link Not Valid", Toast.LENGTH_SHORT)
+                                    .show()
+                        }
+                    )
+                    .background(DeepBlueLess)
+                    .padding(10.dp)
+                    .size(35.dp)
+            ) {
+                Text(
+                    text = "f",
+                    fontSize = 30.sp,
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontFamily = bakbakBold
+                )
+            }
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .padding(start = 14.dp)
+                    .bounceClick()
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable(
+                        interactionSource = MutableInteractionSource(),
+                        indication = rememberRipple(color = Color.White),
+                        onClick = {
+                            if (!privateInfo.email.isNullOrEmpty()) {
+                                try {
+                                    val intent = Intent(Intent.ACTION_SEND)
+                                    intent.data = Uri.parse("mailto:")
+                                    intent.type = "text/plain"
+                                    //intent.type = "vnd.android.cursor.item/email" // or "message/rfc822"
+                                    intent.putExtra(Intent.EXTRA_EMAIL, arrayOf(privateInfo.email))
+                                    //context.startActivity(intent)
+                                    context.startActivity(
+                                        Intent.createChooser(
+                                            intent,
+                                            "Choose Email Client..."
+                                        )
+                                    )
+
+                                } catch (e: Exception) {
+                                    Toast
+                                        .makeText(
+                                            context,
+                                            "No Mailing App Found",
+                                            Toast.LENGTH_SHORT
+                                        )
+                                        .show()
+                                }
+                            } else
+                                Toast
+                                    .makeText(context, "No Email Found", Toast.LENGTH_SHORT)
+                                    .show()
+                        }
+                    )
+                    .background(DeepBlueLess)
+                    .padding(10.dp)
+                    .size(35.dp)
+            ) {
+                Text(
+                    text = "@",
+                    fontSize = 24.sp,
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontFamily = ubuntu,
+                    modifier = Modifier
+                        .padding(bottom = 3.dp)
+                )
+            }
         }
     }
-
 }
 
 @Composable
-fun BarChart(barDataList: List<CombinedBarData>) {
+fun BarChart(barDataList: List<CombinedBarData>, pb: PublicInfo?) {
     Column(
         modifier = Modifier.fillMaxWidth()
     ) {
+
         Text(
             text = "SGPA Graph:",
             style = MaterialTheme.typography.headlineSmall
@@ -383,15 +447,15 @@ fun BarChart(barDataList: List<CombinedBarData>) {
                 .bounceClick()
                 .clip(RoundedCornerShape(10.dp))
                 .background(DeepBlueLess)
+
         ) {
             CombinedBarChart(
                 modifier = Modifier
                     .padding(horizontal = 20.dp, vertical = 40.dp)
                     .fillMaxWidth()
                     .height(100.dp),
-                onClick = {
 
-                },// returns CombinedBarData}
+                onClick = {},// returns CombinedBarData}
                 barColors = listOf(Beige1, LightRed, BlueViolet1),
                 lineColors = listOf(Color.Transparent, Color.Transparent),
                 combinedBarData = barDataList,
@@ -433,7 +497,7 @@ fun BarChart(barDataList: List<CombinedBarData>) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun Details(userBasicInfo: UserBasicInfo) {
+fun Details(userBasicInfo: UserBasicInfo, hasPrivateInfo: Boolean) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "Details:",
@@ -444,7 +508,8 @@ fun Details(userBasicInfo: UserBasicInfo) {
         ) {
             DetailsItems("ID: ${userBasicInfo.publicInfo!!.id}", LightGreen2)
             DetailsItems("Batch: ${userBasicInfo.publicInfo.batchNo}", BlueViolet1)
-            DetailsItems("Blood: ${userBasicInfo.privateInfo!!.bloodGroup}", LightRed)
+            if(hasPrivateInfo)
+                DetailsItems("Blood: ${userBasicInfo.privateInfo!!.bloodGroup}", LightRed)
             DetailsItems("Prog: ${userBasicInfo.publicInfo.progShortName}", LightBlue)
         }
 
@@ -495,7 +560,7 @@ fun DetailsItems(data: String, color: Color) {
 @Composable
 fun ProfileViewScreenPre() {
     KnockMETheme {
-        ProfileViewScreen()
+        //ProfileViewScreen()
     }
 
 }

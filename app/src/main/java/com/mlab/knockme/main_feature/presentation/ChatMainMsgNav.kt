@@ -33,7 +33,7 @@ fun ChatMainMsgNav ( chatScreen: Int, navController: NavHostController){  //    
 //                navArgument("id"){ type= NavType.StringType })
         ){
             // ProfileViewScreen(navController, it.arguments?.getString("id"))
-            ProfileViewScreen(it.arguments?.getString("id")!!)
+            ProfileViewScreen(it.arguments?.getString("id")!!,navController)
         }
     }
 }

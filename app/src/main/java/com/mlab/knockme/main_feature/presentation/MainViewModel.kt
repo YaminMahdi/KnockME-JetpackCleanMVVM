@@ -29,11 +29,7 @@ class MainViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    val _isNavVisible = savedStateHandle.getStateFlow("isNavVisible", true)
-    val isNavVisible = _isNavVisible.stateIn(viewModelScope, SharingStarted.Eagerly , true)
-    fun setNavVisibility(visible : Boolean) {
-        savedStateHandle["visible"] = visible
-    }
+
     private val _loadingText = savedStateHandle.getStateFlow("loadingText", "Loading..")
     val loadingText = _loadingText
 
@@ -173,7 +169,10 @@ class MainViewModel @Inject constructor(
             mainUseCases.getUserBasicInfo(id,
                 {
                     savedStateHandle["userBasicInfo"] = it
-                    savedStateHandle["isLoading"] = false
+                    viewModelScope.launch {
+                        delay(500)
+                        savedStateHandle["isLoading"] = false
+                    }
                     if(!it.privateInfo?.email.isNullOrEmpty())
                         savedStateHandle["hasPrivateInfo"] = true
                 },{

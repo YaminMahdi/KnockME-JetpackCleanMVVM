@@ -52,6 +52,8 @@ import com.mlab.knockme.main_feature.domain.model.Msg
 import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.domain.model.ChatListState
 import com.mlab.knockme.core.util.bounceClick
+import com.mlab.knockme.core.util.toDateTime
+import com.mlab.knockme.core.util.toDayPassed
 import com.mlab.knockme.main_feature.presentation.ChatInnerScreens
 import com.mlab.knockme.profile_feature.presentation.components.TitleInfo
 import com.mlab.knockme.ui.theme.*
@@ -86,11 +88,11 @@ fun ChatPersonalScreen(
         TitleInfo(title = "Personal")
         SearchBox(state,viewModel)
         if(state.isSearchActive)
-            progressBar()
+            ProgressBar()
         else {
             Spacer(modifier = Modifier.size(17.dp))
         }
-        LoadChatList(state.chatList,navController)
+        LoadChatList(state.chatList,navController,state.searchText)
 
 //        LoadChatList(chatList =
 //        listOf(
@@ -180,7 +182,7 @@ fun searchFieldColors() =
     )
 
 @Composable
-private fun progressBar(){
+private fun ProgressBar(){
     Column(modifier = Modifier.fillMaxWidth()) {
         LinearProgressIndicator(
             modifier = Modifier
@@ -197,7 +199,7 @@ private fun progressBar(){
 }
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun LoadChatList(chatList: List<Msg>,navController: NavHostController) {
+fun LoadChatList(chatList: List<Msg>,navController: NavHostController,searchText: String = "",) {
     LazyColumn(
         modifier = Modifier
             .fillMaxHeight(),
@@ -206,7 +208,8 @@ fun LoadChatList(chatList: List<Msg>,navController: NavHostController) {
                 ChatView(
                     proView,
                     modifier = Modifier
-                        .animateItemPlacement()
+                        .animateItemPlacement(),
+                    searchText
                 ){ id ->
                     navController.navigate(ChatInnerScreens.UserProfileScreen.route+id)
                 }
@@ -216,12 +219,12 @@ fun LoadChatList(chatList: List<Msg>,navController: NavHostController) {
 }
 
 @Composable
-fun ChatView(proView: Msg, modifier: Modifier,onClick: (id: String) -> Unit) {
-    //val currentTimeMillis = System.currentTimeMillis()
-    var date = SimpleDateFormat("dd MMM, hh:mm a", Locale.US).format(proView.time)
-    val day = SimpleDateFormat("dd", Locale.US).format(System.currentTimeMillis())
-    if (day.toInt() ==date.split(" ")[0].toInt())
-        date = date.split(", ")[1]
+fun ChatView(
+    proView: Msg,
+    modifier: Modifier,
+    searchText: String = "",
+    onClick: (id: String) -> Unit,
+) {
     Row(
         verticalAlignment=Alignment.CenterVertically,
         modifier = modifier
@@ -292,7 +295,9 @@ fun ChatView(proView: Msg, modifier: Modifier,onClick: (id: String) -> Unit) {
                     .padding(vertical = 5.dp)
             )
             Text(
-                text = if (proView.time!=0L) date else "",
+                text =
+                if (searchText.length<2) proView.time?.toDateTime()!!
+                else proView.time?.toDayPassed()!!,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier
                     .align(Alignment.End)
