@@ -1,15 +1,13 @@
 package com.mlab.knockme.main_feature.presentation
 
 import androidx.compose.runtime.Composable
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import com.mlab.knockme.main_feature.presentation.chats.components.ChatBusInfoScreen
-import com.mlab.knockme.main_feature.presentation.chats.components.ChatPersonalScreen
-import com.mlab.knockme.main_feature.presentation.chats.components.ChatPlacewiseScreen
-import com.mlab.knockme.main_feature.presentation.main.components.ProfileViewScreen
+import com.mlab.knockme.main_feature.presentation.chats.ChatBusInfoScreen
+import com.mlab.knockme.main_feature.presentation.chats.ChatPersonalScreen
+import com.mlab.knockme.main_feature.presentation.chats.ChatPlacewiseScreen
+import com.mlab.knockme.main_feature.presentation.main.ProfileViewScreen
 
 @Composable
 fun ChatMainMsgNav ( chatScreen: Int, navController: NavHostController){  //        Failed: (msg: String) -> Unit

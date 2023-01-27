@@ -1,4 +1,4 @@
-package com.mlab.knockme.main_feature.presentation.main.components
+package com.mlab.knockme.main_feature.presentation.main
 
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
@@ -48,6 +49,7 @@ import com.mlab.knockme.R
 import com.mlab.knockme.auth_feature.domain.model.PrivateInfoExtended
 import com.mlab.knockme.auth_feature.domain.model.PublicInfo
 import com.mlab.knockme.core.util.bounceClick
+import com.mlab.knockme.core.util.toDayPassed
 import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
 import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.profile_feature.presentation.components.Ic
@@ -114,7 +116,7 @@ fun ProfileViewScreen(
                     .fillMaxWidth()
                     .alpha(.7f)
                     .padding(5.dp),
-                text = "Last Updated: A Day Ago",
+                text = "Last Updated: ${state.userBasicInfo.publicInfo?.lastUpdated?.toDayPassed()}",
                 fontSize = 8.sp,
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.End
@@ -161,25 +163,30 @@ fun TopBar(navController: NavHostController) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Icon(
-            Icons.Rounded.ArrowBack,
-            contentDescription = "",
-            tint = Color.White,
-            modifier = Modifier
-                .size(55.dp)
-                .bounceClick()
-                .clip(RoundedCornerShape(30.dp))
-                .clickable(
-                    interactionSource = MutableInteractionSource(),
-                    indication = rememberRipple(color = Color.White),
-                    onClick = {
-                        navController.popBackStack()
-                    }
-                )
-                .padding(10.dp)
-        )
+        BackBtn(navController)
         Ic(Icons.Rounded.Refresh)
     }
+}
+
+@Composable
+fun BackBtn(navController: NavHostController) {
+    Icon(
+        Icons.Rounded.ArrowBack,
+        contentDescription = "",
+        tint = Color.White,
+        modifier = Modifier
+            .size(55.dp)
+            .bounceClick()
+            .clip(RoundedCornerShape(30.dp))
+            .clickable(
+                interactionSource = MutableInteractionSource(),
+                indication = rememberRipple(color = Color.White),
+                onClick = {
+                    navController.popBackStack()
+                }
+            )
+            .padding(10.dp)
+    )
 }
 
 @Composable
@@ -267,17 +274,26 @@ fun CgpaToast(modifier: Modifier, pb: PublicInfo?, isLoading: Boolean) {
             .background(LightGreen2)
             .clickable {
                 clipboardManager.setText(AnnotatedString(pb?.id.orEmpty()))
-                var intent = context.packageManager.getLaunchIntentForPackage("net.startbit.diucgpa")
+                var intent =
+                    context.packageManager.getLaunchIntentForPackage("net.startbit.diucgpa")
                 if (intent != null) {
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     context.startActivity(intent)
                 } else {
                     intent = Intent(Intent.ACTION_VIEW)
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    intent.data = Uri.parse("market://details?id=" + "net.startbit.diucgpa")
+                    //intent.data = Uri.parse("market://details?id=" + "net.startbit.diucgpa")
+                    intent.data =
+                        Uri.parse("https://play.google.com/store/apps/details?id=net.startbit.diucgpa")
                     context.startActivity(intent)
                 }
-                Toast.makeText(context, "Student ID copied, paste it in DIU CGPA App.", Toast.LENGTH_LONG).show()
+                Toast
+                    .makeText(
+                        context,
+                        "Student ID copied, paste it in DIU CGPA App.",
+                        Toast.LENGTH_LONG
+                    )
+                    .show()
 
             }
     ) {
@@ -558,9 +574,9 @@ fun DetailsItems(data: String, color: Color) {
 
 @Preview(showBackground = true)
 @Composable
-fun ProfileViewScreenPre() {
+fun ProfileViewScreenPr() {
     KnockMETheme {
-        //ProfileViewScreen()
+        ProfileViewScreen(navController= rememberNavController())
     }
 
 }
