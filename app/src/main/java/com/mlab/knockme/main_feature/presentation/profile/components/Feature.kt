@@ -1,4 +1,4 @@
-package com.mlab.knockme.profile_feature.presentation.components
+package com.mlab.knockme.main_feature.presentation.profile.components
 
 import androidx.annotation.DrawableRes
 import androidx.compose.ui.graphics.Color

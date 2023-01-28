@@ -11,6 +11,7 @@
     </queries>
 
     <application
+        android:windowSoftInputMode="adjustResize"
         android:name=".KnockME"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -61,6 +62,7 @@
         </activity>
 
         <activity
+            android:windowSoftInputMode="adjustResize"
             android:name=".main_feature.presentation.MainActivity"
             android:exported="true"
             android:label="@string/app_name"

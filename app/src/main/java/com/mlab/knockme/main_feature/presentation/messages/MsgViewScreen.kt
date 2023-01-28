@@ -1,6 +1,7 @@
 package com.mlab.knockme.main_feature.presentation.messages
 
-import android.widget.Toast
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -9,18 +10,21 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Send
 import androidx.compose.material.ripple.rememberRipple
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -33,32 +37,52 @@ import coil.compose.SubcomposeAsyncImageContent
 import com.mlab.knockme.R
 import com.mlab.knockme.core.util.bounceClick
 import com.mlab.knockme.core.util.toDateTime
-import com.mlab.knockme.core.util.toDayPassed
+import com.mlab.knockme.main_feature.domain.model.ChatListState
 import com.mlab.knockme.main_feature.domain.model.Msg
 import com.mlab.knockme.main_feature.presentation.ChatInnerScreens
 import com.mlab.knockme.main_feature.presentation.main.BackBtn
 import com.mlab.knockme.ui.theme.*
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 fun MsgViewScreen() {
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .background(DeepBlue)
-    ) {
-        MsgTopBar()
-        LoadMsgList(
-            msgList =
-            listOf(
-                Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423),
-                Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423),
-                Msg("193","Yamin Mahdi", "hi, I'm mahdi hi, I'm mahdi hi, I'm mahdihi, I'm mahdihi, I'm mahdihi, I'm mahdihi, I'm mahdihi, I'm mahdihi, I'm mahdihi, I'm mahdi","",46238423),
-                Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423),
-                Msg("193","Yamin Mahdi", "hi, I'm mahdi","",46238423),
-                Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423),
-                Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423)
-            ), rememberNavController()
-        )
+    //val viewModel: MainViewModel = hiltViewModel()
+//    val paddingValue = WindowInsets.ime.getBottom(LocalDensity.current)
+//    LaunchedEffect(key1 = paddingValue) {
+//        if (paddingValue>0) {
+//            //hide fab button
+//        } else {
+//            //show fab button
+//        }
+//    }
+    Scaffold(
+        topBar = { MsgTopBar()},
+    ){
+        Column(modifier = Modifier
+            .padding(it)
+            .fillMaxSize()
+            .background(DeepBlue)
+        ) {
+            LoadMsgList(
+                msgList =
+                listOf(
+                    Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423),
+                    Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423),
+                    Msg("193","Yamin Mahdi", "hi, I'm mahdi hi, I'm mahdi hi, I'm mahdihi, I'm mahdihi, I'm mahdihi, I'm mahdihi, I'm mahdihi, I'm mahdihi, I'm mahdihi, I'm mahdi","",46238423),
+                    Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423),
+                    Msg("193","Yamin Mahdi", "hi, I'm mahdi","",46238423),
+                    Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423),
+                    Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423)
+                ),
+                modifier = Modifier
+                    .weight(1f)
+                ,rememberNavController()
+            )
+            SendMsgBar(ChatListState())
+        }
     }
+
+
     
 }
 
@@ -75,6 +99,7 @@ fun MsgTopBar() {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
+                .bounceClick()
                 .clip(RoundedCornerShape(10.dp))
                 .clickable(
                     interactionSource = MutableInteractionSource(),
@@ -140,19 +165,26 @@ fun ImgView(img: String,modifier: Modifier) {
 }
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun LoadMsgList(msgList: List<Msg>, navController: NavHostController) {
+fun LoadMsgList(msgList: List<Msg>,modifier: Modifier, navController: NavHostController) {
     LazyColumn(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxHeight()
-            .padding(horizontal = 10.dp)
+            .padding(horizontal = 10.dp),
+        reverseLayout = true
     ) {
         items(msgList) { msg ->
             if(msg.id=="193")
-                MsgViewRight(msg) { id ->
+                MsgViewRight(
+                    msg,
+                    modifier = Modifier.animateItemPlacement()
+                ) { id ->
                     navController.navigate(ChatInnerScreens.UserProfileScreen.route+id)
                 }
             else
-                MsgViewLeft(msg) { id ->
+                MsgViewLeft(
+                    msg,
+                    modifier = Modifier.animateItemPlacement()
+                ) { id ->
                     navController.navigate(ChatInnerScreens.UserProfileScreen.route+id)
                 }
         }
@@ -160,9 +192,9 @@ fun LoadMsgList(msgList: List<Msg>, navController: NavHostController) {
 }
 
 @Composable
-fun MsgViewLeft(msg: Msg,onClick:(id: String)->Unit) {
+fun MsgViewLeft(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
     Row() {
-        ImgView(img = msg.pic!!, modifier = Modifier
+        ImgView(img = msg.pic!!, modifier = modifier
             .height(40.dp)
             .padding(top = 5.dp)
             .bounceClick()
@@ -229,10 +261,10 @@ fun MsgViewLeft(msg: Msg,onClick:(id: String)->Unit) {
     }
 }
 @Composable
-fun MsgViewRight(msg: Msg,onClick:(id: String)->Unit) {
+fun MsgViewRight(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
     Row(
         horizontalArrangement = Arrangement.End,
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
         Column(horizontalAlignment = Alignment.End) {
             Box(
@@ -301,6 +333,66 @@ fun MsgViewRight(msg: Msg,onClick:(id: String)->Unit) {
         )
     }
 }
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SendMsgBar(state: ChatListState) {
+    var data by remember { mutableStateOf(state.searchText) }
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .background(DeepBlueLess)
+            .padding(5.dp)
+            .imePadding()
+    ){
+        OutlinedTextField(
+            value = data,
+            placeholder = { Text("Type a message..",Modifier.padding(top=3.dp)) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+            shape = RoundedCornerShape(30.dp),
+            textStyle = TextStyle(lineHeight=16.sp, fontFamily = ubuntu),
+            colors= searchFieldColors(),
+            modifier = Modifier
+                .weight(1f)
+                .padding(7.dp),
+            onValueChange = { data = it },
+            maxLines = 2
+        )
+        Icon(
+            Icons.Rounded.Send,
+            contentDescription = "",
+            tint = Color.White,
+            modifier = Modifier
+                .size(55.dp)
+                .bounceClick()
+                .clip(RoundedCornerShape(10.dp))
+                .clickable(
+                    interactionSource = MutableInteractionSource(),
+                    indication = rememberRipple(color = Color.Transparent),
+                    onClick = {
+
+                    }
+                )
+                .padding(10.dp)
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun searchFieldColors() =
+    TextFieldDefaults.textFieldColors(
+        textColor = TextBlue,
+        containerColor = DeepBlueMoreLess,
+        cursorColor = AquaBlue,
+        placeholderColor = DeepBlueLess,
+        focusedIndicatorColor =  Color.Transparent,
+        unfocusedIndicatorColor = Color.Transparent,
+        focusedLeadingIconColor = TextWhite,
+        unfocusedLeadingIconColor = LessWhite
+    )
 
 @Preview(showBackground = true)
 @Composable

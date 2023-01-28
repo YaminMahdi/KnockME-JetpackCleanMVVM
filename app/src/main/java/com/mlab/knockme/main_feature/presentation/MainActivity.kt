@@ -4,10 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -19,18 +17,25 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
+import com.google.accompanist.navigation.animation.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.google.accompanist.navigation.animation.AnimatedNavHost
+import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.mlab.knockme.main_feature.presentation.chats.ChatBusInfoScreen
 import com.mlab.knockme.main_feature.presentation.chats.ChatPersonalScreen
 import com.mlab.knockme.main_feature.presentation.chats.ChatPlacewiseScreen
 import com.mlab.knockme.main_feature.presentation.main.components.BottomMenuItem
 import com.mlab.knockme.main_feature.presentation.main.components.BottomNav
 import com.mlab.knockme.main_feature.presentation.main.ProfileViewScreen
+import com.mlab.knockme.main_feature.presentation.messages.MsgViewScreen
 import com.mlab.knockme.profile_feature.presentation.components.ProfileScreen
 import com.mlab.knockme.ui.theme.KnockMETheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -52,7 +57,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Main(viewModel: MainViewModel) {
     //val viewModel: MainViewModel = hiltViewModel()
-    val navController = rememberNavController()
+    val navController = rememberAnimatedNavController()
     val navItems = listOf(
         MainScreens.CtPersonalScreen,
         MainScreens.CtPlacewiseScreen,
@@ -102,25 +107,36 @@ fun Main(viewModel: MainViewModel) {
 
         }
     ) { bottomPadding ->
-        NavHost(navController, startDestination = MainScreens.CtPersonalScreen.route, Modifier.padding(bottomPadding)) {
+        AnimatedNavHost(navController, startDestination = MainScreens.CtPersonalScreen.route, Modifier.padding(bottomPadding)) {
             composable(MainScreens.CtPersonalScreen.route) {
                 //ChatMainMsgNav(1, navController)
-                ChatPersonalScreen(navController)
+                ChatPersonalScreen(navController,viewModel)
             }
             composable(MainScreens.CtPlacewiseScreen.route) {
                 //ChatMainMsgNav(2, navController)
-                ChatPlacewiseScreen(navController)
+                ChatPlacewiseScreen(navController,viewModel)
             }
             composable(MainScreens.CtBusInfoScreen.route) {
                 //ChatMainMsgNav(3, navController)
-                ChatBusInfoScreen(navController)
+                ChatBusInfoScreen(navController,viewModel)
             }
             composable(MainScreens.ProScreen.route) {
                 ProfileScreen()
             }
             composable(ChatInnerScreens.UserProfileScreen.route+"{id}"){
                 // ProfileViewScreen(navController, it.arguments?.getString("id"))
-                ProfileViewScreen(it.arguments?.getString("id")!!,navController)
+                ProfileViewScreen(it.arguments?.getString("id")!!,navController,viewModel)
+            }
+            composable(
+                ChatInnerScreens.MsgScreen.route+"{id}",
+                enterTransition = {
+                    fadeIn() + slideInVertically(animationSpec = tween(1000))
+                },
+                exitTransition = {
+                    fadeOut() + slideOutVertically(animationSpec = tween(1000))
+                }
+            ){
+                MsgViewScreen()
             }
         }
     }

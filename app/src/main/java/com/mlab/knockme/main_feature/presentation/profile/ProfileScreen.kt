@@ -37,6 +37,7 @@ import coil.compose.SubcomposeAsyncImageContent
 import com.mlab.knockme.R
 import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.core.util.bounceClick
+import com.mlab.knockme.main_feature.presentation.profile.components.Feature
 import com.mlab.knockme.ui.theme.*
 
 @Composable
