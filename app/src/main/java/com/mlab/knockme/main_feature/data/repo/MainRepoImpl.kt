@@ -25,7 +25,6 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -48,8 +47,8 @@ class MainRepoImpl @Inject constructor(
 
     private lateinit var msgList: MutableList<Msg>
     private val mapper: Gson by lazy { GsonBuilder().serializeNulls().create() }
-    private var searchJob: Job? =null
-    private val searchData= mutableListOf<Msg>()
+//    private var searchJob: Job? =null
+//    private val searchData= mutableListOf<Msg>()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun getMessages(path: String): StateFlow<List<Msg>> {
@@ -234,32 +233,32 @@ class MainRepoImpl @Inject constructor(
     ) {
         Loading.invoke("Verifying ID- $id")
         val docRef = firestore.collection("userProfile").document(id)
-        var loadfromPortal=true
+        var loadFromPortal=true
         docRef.get()
             .addOnSuccessListener { document ->
                 if (document != null && document.exists()) {
                     Log.d("getOrCreateUserProfileInfo", "DocumentSnapshot data: ${document.data}")
                     val profile = mapper.fromJson(mapper.toJson(document.data), UserProfile::class.java)
-                    var msgDis=""
-                    if(profile.publicInfo.cgpa == 0.0) {
+                    val msgDis: String
+                    if(profile.publicInfo?.cgpa == 0.0) {
                         msgDis = "ID: ${profile.publicInfo.id}"
                         Loading.invoke("Server Error. Couldn't Calculate CGPA for ID- $id. Retrying..")
                     } else {
-                        msgDis = "ID: ${profile.publicInfo.id}      CGPA: ${profile.publicInfo.cgpa}"
-                        loadfromPortal = false
+                        msgDis = "ID: ${profile.publicInfo?.id}      CGPA: ${profile.publicInfo?.cgpa}"
+                        loadFromPortal = false
                         Loading.invoke("Loaded Result From Backup Server For ID- $id.")
                     }
                     val shortProfile = Msg(
                         id = id,
-                        nm = profile.publicInfo.nm,
+                        nm = profile.publicInfo?.nm,
                         msg = msgDis,
-                        pic = profile.privateInfo.pic,
-                        time = profile.publicInfo.lastUpdated)
+                        pic = profile.privateInfo?.pic,
+                        time = profile.lastUpdatedResultInfo)
                     //searchData.add(0,shortProfile)
                     Success.invoke(shortProfile)
 
                 }
-                if(loadfromPortal) {
+                if(loadFromPortal) {
                     Log.d("getOrCreateUserProfileInfo", "No user found. Creating One")
 //                    searchJob?.cancel()
 //                    searchJob =
@@ -279,7 +278,7 @@ class MainRepoImpl @Inject constructor(
                                         else -> Loading.invoke("Getting SGPA For $id. Loading Done For Semester $it .")
                                     } },
                                     success = { cgpa, fullResultInfo ->
-                                        var msgDis=""
+                                        val msgDis: String
                                         if(cgpa!=0.0) {
                                             msgDis = "ID: ${studentInfo.studentId}      CGPA: $cgpa"
                                         } else {
@@ -291,8 +290,7 @@ class MainRepoImpl @Inject constructor(
                                             nm = studentInfo.studentName!!,
                                             progShortName = studentInfo.progShortName!!,
                                             batchNo = studentInfo.batchNo!!,
-                                            cgpa = cgpa,
-                                            lastUpdated = System.currentTimeMillis()
+                                            cgpa = cgpa
                                         )
                                         val shortProfile = Msg(
                                             id = id,
@@ -316,9 +314,12 @@ class MainRepoImpl @Inject constructor(
                                                     Loading.invoke("Firebase Server Error. Couldn't Save Info For $id To Backup Server.")
                                             }
                                             docRef.update("fullResultInfo" , fullResultInfo)
+                                            docRef.update("lastUpdatedResultInfo" , System.currentTimeMillis())
+
                                         } else {
                                             docRef.update("publicInfo" , publicInfo)
                                             docRef.update("fullResultInfo" , fullResultInfo)
+                                            docRef.update("lastUpdatedResultInfo" , System.currentTimeMillis())
                                         }
                                     })
                             }

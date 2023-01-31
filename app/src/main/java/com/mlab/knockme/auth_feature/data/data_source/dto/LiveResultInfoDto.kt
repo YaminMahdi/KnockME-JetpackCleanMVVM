@@ -10,7 +10,7 @@ data class LiveResultInfoDto(
     val q3: Double,
     val quiz: Double
 ) {
-    fun toLiveResultInfo(semesterId: String) =
+    fun toLiveResultInfo(customCourseId: String,courseTitle:String, shortSemName: String) =
         LiveResultInfo(
             mid1 = mid1,
             mid2 = mid2,
@@ -18,6 +18,8 @@ data class LiveResultInfoDto(
             q2 = q2,
             q3 = q3,
             quiz = quiz,
-            semesterId = semesterId
+            customCourseId = customCourseId,
+            courseTitle = courseTitle,
+            shortSemName = shortSemName
         )
 }

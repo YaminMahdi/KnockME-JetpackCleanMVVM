@@ -8,8 +8,8 @@ data class SemesterInfo(
     var semesterName: String? ="",
     var semesterYear: Int=0,
     var sgpa: Double= 0.0,
-    var creditTaken: Double=0.0
-) : Parcelable {
+    var creditTaken: Double=0.0,
+    ) : Parcelable {
     constructor(parcel: Parcel) : this(
         parcel.readString(),
         parcel.readString(),

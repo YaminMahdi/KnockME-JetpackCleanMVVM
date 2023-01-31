@@ -16,10 +16,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.NavHost
 import com.google.accompanist.navigation.animation.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.mlab.knockme.main_feature.presentation.chats.ChatBusInfoScreen
@@ -29,13 +27,9 @@ import com.mlab.knockme.main_feature.presentation.main.components.BottomMenuItem
 import com.mlab.knockme.main_feature.presentation.main.components.BottomNav
 import com.mlab.knockme.main_feature.presentation.main.ProfileViewScreen
 import com.mlab.knockme.main_feature.presentation.messages.MsgViewScreen
-import com.mlab.knockme.profile_feature.presentation.components.ProfileScreen
+import com.mlab.knockme.main_feature.presentation.profile.ProfileScreen
 import com.mlab.knockme.ui.theme.KnockMETheme
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {

@@ -1,4 +1,4 @@
-package com.mlab.knockme.profile_feature.presentation.components
+package com.mlab.knockme.main_feature.presentation.profile
 
 import android.content.Context
 import androidx.compose.foundation.Canvas
@@ -38,6 +38,7 @@ import com.mlab.knockme.R
 import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.core.util.bounceClick
 import com.mlab.knockme.main_feature.presentation.profile.components.Feature
+import com.mlab.knockme.profile_feature.presentation.components.standardQuadFromTo
 import com.mlab.knockme.ui.theme.*
 
 @Composable

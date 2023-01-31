@@ -16,8 +16,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.mlab.knockme.R
 import com.mlab.knockme.main_feature.presentation.MainViewModel
-import com.mlab.knockme.main_feature.presentation.chats.LoadChatList
-import com.mlab.knockme.profile_feature.presentation.components.TitleInfo
+import com.mlab.knockme.main_feature.presentation.profile.TitleInfo
 import com.mlab.knockme.ui.theme.DeepBlue
 import com.mlab.knockme.ui.theme.KnockMETheme
 

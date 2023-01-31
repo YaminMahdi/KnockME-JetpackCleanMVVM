@@ -2,7 +2,6 @@ package com.mlab.knockme.main_feature.presentation.chats
 
 import android.content.Context
 import android.widget.Toast
-import androidx.activity.viewModels
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -57,7 +56,7 @@ import com.mlab.knockme.core.util.bounceClick
 import com.mlab.knockme.core.util.toDateTime
 import com.mlab.knockme.core.util.toDayPassed
 import com.mlab.knockme.main_feature.presentation.ChatInnerScreens
-import com.mlab.knockme.profile_feature.presentation.components.TitleInfo
+import com.mlab.knockme.main_feature.presentation.profile.TitleInfo
 import com.mlab.knockme.ui.theme.*
 
 @Composable

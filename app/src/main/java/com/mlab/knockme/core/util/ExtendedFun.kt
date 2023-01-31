@@ -59,3 +59,12 @@ fun Long.toDayPassed(): String{
     val daysDiff = TimeUnit.MILLISECONDS.toDays(msDiff)
     return "$daysDiff Days Ago"
 }
+
+fun String.toTeacherInitial(): String{
+    var initial=""
+    val l = this.split(" ")
+    l.drop(1).forEach {nm ->
+        initial+=nm[0]
+    }
+    return initial
+}

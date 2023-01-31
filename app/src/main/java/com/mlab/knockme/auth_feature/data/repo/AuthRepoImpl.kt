@@ -163,8 +163,8 @@ class AuthRepoImpl @Inject constructor(
 //            val city = document.toObject<UserProfile>()?.publicInfo?.fbId
 //            val x =mapper.fromJson(mapper.toJson(document.data), UserProfile::class.java).publicInfo.fbId
             if (document != null && document.exists() &&
-                (((mapper.fromJson(mapper.toJson(document.data), UserProfile::class.java).privateInfo.fbId) == fbInfo.fbId) ||
-                        ((mapper.fromJson(mapper.toJson(document.data), UserProfile::class.java).privateInfo.fbId) == id))
+                (((mapper.fromJson(mapper.toJson(document.data), UserProfile::class.java).privateInfo?.fbId) == fbInfo.fbId) ||
+                        ((mapper.fromJson(mapper.toJson(document.data), UserProfile::class.java).privateInfo?.fbId) == id))
             ) {
                 Log.d("OnSuccessListener", "Login Success for: ${document.data}")
                 GlobalScope.launch(Dispatchers.IO) {
@@ -231,8 +231,10 @@ class AuthRepoImpl @Inject constructor(
                                 send(Resource.Loading("Getting Live Result Info.."))
                                 val liveResultInfoList = mutableListOf<LiveResultInfo>()
                                 registeredCourse.onEach {
-                                    liveResultInfoList.add(api.getLiveResult(it.courseSectionId!!, authInfo.accessToken)
-                                        .toLiveResultInfo(lastSemesterId))
+                                    liveResultInfoList.add(api
+                                        .getLiveResult(it.courseSectionId!!, authInfo.accessToken)
+                                        .toLiveResultInfo(it.customCourseId!!, it.courseTitle!!, it.toShortSemName())
+                                    )
                                 }
                                 Log.d("getStudentInfo", "liveResultInfoList: $liveResultInfoList")
                                 send(Resource.Loading("Getting payment Info.."))
@@ -244,13 +246,16 @@ class AuthRepoImpl @Inject constructor(
                                 val userProfile =
                                     UserProfile(
                                         token = authInfo.accessToken,
+                                        lastUpdatedPaymentInfo = System.currentTimeMillis(),
+                                        lastUpdatedRegCourseInfo = System.currentTimeMillis(),
+                                        lastUpdatedLiveResultInfo = System.currentTimeMillis(),
+                                        lastUpdatedResultInfo = System.currentTimeMillis(),
                                         publicInfo = PublicInfo(
                                             id = id,
                                             nm = publicInfo.studentName!!,
                                             progShortName = publicInfo.progShortName!!,
                                             batchNo = publicInfo.batchNo!!,
-                                            cgpa = cgpa,
-                                            lastUpdated = System.currentTimeMillis()
+                                            cgpa = cgpa
                                         ),
                                         privateInfo = PrivateInfoExtended(
                                             fbId = fbInfo.fbId,
@@ -263,8 +268,8 @@ class AuthRepoImpl @Inject constructor(
                                             loc = locationInfo.loc!!
                                         ),
                                         paymentInfo = paymentInfo,
-                                        courseInfo = registeredCourse,
-                                        liveResultInfo = liveResultInfoList,
+                                        courseInfo = ArrayList(registeredCourse),
+                                        liveResultInfo = ArrayList(liveResultInfoList) ,
                                         fullResultInfo = fullResultInfo
                                     )
 
@@ -325,9 +330,9 @@ class AuthRepoImpl @Inject constructor(
                         val liveResultInfoList = mutableListOf<LiveResultInfo>()
                         registeredCourse.onEach {
                             liveResultInfoList.add(api
-                                    .getLiveResult(it.courseSectionId!!, authInfo.accessToken)
-                                    .toLiveResultInfo(lastSemesterId)
-                                )
+                                .getLiveResult(it.courseSectionId!!, authInfo.accessToken)
+                                .toLiveResultInfo(it.customCourseId!!, it.courseTitle!!, it.toShortSemName())
+                            )
                         }
                         Log.d("getStudentInfo", "liveResultInfoList: $liveResultInfoList")
                         send(Resource.Loading("Getting payment Info.."))

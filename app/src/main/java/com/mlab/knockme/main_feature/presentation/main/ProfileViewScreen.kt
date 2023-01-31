@@ -52,10 +52,11 @@ import com.mlab.knockme.core.util.bounceClick
 import com.mlab.knockme.core.util.toDayPassed
 import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
 import com.mlab.knockme.main_feature.presentation.MainViewModel
-import com.mlab.knockme.profile_feature.presentation.components.Ic
+import com.mlab.knockme.main_feature.presentation.profile.Ic
 import com.mlab.knockme.ui.theme.*
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileViewScreen(
     id: String="193-15-107",
@@ -72,32 +73,38 @@ fun ProfileViewScreen(
 //    LaunchedEffect(key1 = state){
 //
 //    }
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(DeepBlue)
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        TopBar(navController)
-        Profile(
-            pic = state.userBasicInfo.privateInfo?.pic,
-            publicInfo = state.userBasicInfo.publicInfo,
-            isLoading = state.isLoading
-        )
-        SocialLink(state.userBasicInfo.privateInfo!!, state.hasPrivateInfo)
-        Column(
-            modifier = Modifier
-                .verticalScroll(rememberScrollState())
-                .weight(weight = 1f, fill = false)
 
+    Scaffold(topBar = {TopBar(navController)}) {
+        Column(modifier = Modifier
+            .padding(it)
         ) {
-            if(!state.isLoading&&!state.userBasicInfo.fullResultInfo.isNullOrEmpty())
-                BarChart(
-                    state.userBasicInfo.fullResultInfo!!.map { it.toCombinedBarData() },
-                    state.userBasicInfo.publicInfo
-                    )
-            //                listOf(
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(DeepBlue)
+                    .padding(it)
+                    .padding(horizontal = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                TopBar(navController)
+                Profile(
+                    pic = state.userBasicInfo.privateInfo?.pic,
+                    publicInfo = state.userBasicInfo.publicInfo,
+                    isLoading = state.isLoading
+                )
+                SocialLink(state.userBasicInfo.privateInfo!!, state.hasPrivateInfo)
+                Column(
+                    modifier = Modifier
+                        .verticalScroll(rememberScrollState())
+                        .weight(weight = 1f, fill = false)
+
+                ) {
+                    if(!state.isLoading&&!state.userBasicInfo.fullResultInfo.isNullOrEmpty())
+                        BarChart(
+                            state.userBasicInfo.fullResultInfo!!.map { data -> data.toCombinedBarData() },
+                            state.userBasicInfo.publicInfo
+                        )
+                    //                listOf(
 //                    CombinedBarData("F-19", 3.33F, 3.33F),
 //                    CombinedBarData("S-20", 3.63F, 3.63F),
 //                    CombinedBarData("S-20", 3.73F, 3.73F),
@@ -111,22 +118,26 @@ fun ProfileViewScreen(
 //            CombinedBarData("S-21", 3.23F,3.23F),
 //            CombinedBarData("S-21", 3.93F,3.93F)
 //                )
-            Text(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .alpha(.7f)
-                    .padding(5.dp),
-                text = "Last Updated: ${state.userBasicInfo.publicInfo?.lastUpdated?.toDayPassed()}",
-                fontSize = 8.sp,
-                style = MaterialTheme.typography.headlineSmall,
-                textAlign = TextAlign.End
-            )
-            Details(state.userBasicInfo, state.hasPrivateInfo)
-            if(state.hasPrivateInfo)
-                Address(state.userBasicInfo)
-        }
+                    Text(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .alpha(.7f)
+                            .padding(5.dp),
+                        text = "Last Updated: ${state.userBasicInfo.lastUpdatedResultInfo.toDayPassed()}",
+                        fontSize = 8.sp,
+                        style = MaterialTheme.typography.headlineSmall,
+                        textAlign = TextAlign.End
+                    )
+                    Details(state.userBasicInfo, state.hasPrivateInfo)
+                    if(state.hasPrivateInfo)
+                        Address(state.userBasicInfo)
+                }
 
+            }
+
+        }
     }
+
 //    Box(modifier = Modifier
 //        .fillMaxSize()
 //        .padding(26.dp)
@@ -161,7 +172,11 @@ fun TopBar(navController: NavHostController) {
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(DeepBlue)
+            .padding(horizontal = 16.dp)
+            .padding(top = 16.dp),
     ) {
         BackBtn(navController)
         Ic(Icons.Rounded.Refresh)
@@ -574,7 +589,7 @@ fun DetailsItems(data: String, color: Color) {
 
 @Preview(showBackground = true)
 @Composable
-fun ProfileViewScreenPr() {
+fun ProfileViewScreenPre() {
     KnockMETheme {
         ProfileViewScreen(navController= rememberNavController())
     }
