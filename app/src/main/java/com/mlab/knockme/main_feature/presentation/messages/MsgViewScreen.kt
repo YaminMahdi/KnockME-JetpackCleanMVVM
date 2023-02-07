@@ -1,7 +1,8 @@
 package com.mlab.knockme.main_feature.presentation.messages
 
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.animation.*
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,7 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
@@ -29,34 +30,46 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import com.mlab.knockme.R
 import com.mlab.knockme.core.util.bounceClick
 import com.mlab.knockme.core.util.toDateTime
-import com.mlab.knockme.main_feature.domain.model.ChatListState
 import com.mlab.knockme.main_feature.domain.model.Msg
+import com.mlab.knockme.main_feature.domain.model.MsgListState
+import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
 import com.mlab.knockme.main_feature.presentation.ChatInnerScreens
+import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.main.BackBtn
 import com.mlab.knockme.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MsgViewScreen() {
-    //val viewModel: MainViewModel = hiltViewModel()
+fun MsgViewScreen(path: String, id: String, navController: NavHostController) {
+
+    val viewModel: MainViewModel = hiltViewModel()
+    val context: Context = LocalContext.current
+    val sharedPreferences = context.getSharedPreferences(
+        context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
+    )
+    //val preferencesEditor = sharedPreferences.edit()
+    val myId = sharedPreferences.getString("studentId",null)
+    val state by viewModel.msgState.collectAsState()
+    val myBasicInfo by viewModel.userBasicInfo.collectAsState()
+
+    viewModel.getMeg(path){
+        Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+    }
+    viewModel.getUserBasicInfo(myId!!)
 //    val paddingValue = WindowInsets.ime.getBottom(LocalDensity.current)
-//    LaunchedEffect(key1 = paddingValue) {
-//        if (paddingValue>0) {
-//            //hide fab button
-//        } else {
-//            //show fab button
-//        }
+//    LaunchedEffect(key1 = state.msgList) {
+//        msgList = state.msgList
 //    }
     Scaffold(
-        topBar = { MsgTopBar()},
+        topBar = { MsgTopBar(navController, id)},
     ){
         Column(modifier = Modifier
             .padding(it)
@@ -64,21 +77,27 @@ fun MsgViewScreen() {
             .background(DeepBlue)
         ) {
             LoadMsgList(
-                msgList =
-                listOf(
-                    Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423),
-                    Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423),
-                    Msg("193","Yamin Mahdi", "hi, I'm mahdi hi, I'm mahdi hi, I'm mahdihi, I'm mahdihi, I'm mahdihi, I'm mahdihi, I'm mahdihi, I'm mahdihi, I'm mahdihi, I'm mahdi","",46238423),
-                    Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423),
-                    Msg("193","Yamin Mahdi", "hi, I'm mahdi","",46238423),
-                    Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423),
-                    Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423)
-                ),
+                state = state,
+//                listOf(
+//                    Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423),
+//                    Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423),
+//                    Msg("193","Yamin Mahdi", "hi, I'm mahdi hi, I'm mahdi hi, I'm mahdihi, I'm mahdihi, I'm mahdihi, I'm mahdihi, I'm mahdihi, I'm mahdihi, I'm mahdihi, I'm mahdi","",46238423),
+//                    Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423),
+//                    Msg("193","Yamin Mahdi", "hi, I'm mahdi","",46238423),
+//                    Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423),
+//                    Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423)
+//                ),
                 modifier = Modifier
                     .weight(1f)
-                ,rememberNavController()
+                ,navController,myId
             )
-            SendMsgBar(ChatListState())
+            SendMsgBar(
+                state = state,
+                viewModel = viewModel,
+                path = path,
+                myBasicInfo = myBasicInfo,
+                context = context
+            )
         }
     }
 
@@ -87,7 +106,7 @@ fun MsgViewScreen() {
 }
 
 @Composable
-fun MsgTopBar() {
+fun MsgTopBar(navController: NavHostController, id: String) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -95,7 +114,7 @@ fun MsgTopBar() {
             .background(DeepBlueLess)
             .padding(5.dp)
     ) {
-        BackBtn(rememberNavController())
+        BackBtn(navController)
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -105,7 +124,7 @@ fun MsgTopBar() {
                     interactionSource = MutableInteractionSource(),
                     indication = rememberRipple(color = Color.White),
                     onClick = {
-
+                        navController.navigate(ChatInnerScreens.UserProfileScreen.route + id)
                     }
                 )
         ) {
@@ -165,15 +184,21 @@ fun ImgView(img: String,modifier: Modifier) {
 }
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun LoadMsgList(msgList: List<Msg>,modifier: Modifier, navController: NavHostController) {
+fun LoadMsgList(
+    state: MsgListState,
+    modifier: Modifier,
+    navController: NavHostController,
+    myId: String
+) {
+    //var lst by remember { mutableStateOf(msgList) }
     LazyColumn(
         modifier = modifier
             .fillMaxHeight()
             .padding(horizontal = 10.dp),
         reverseLayout = true
     ) {
-        items(msgList) { msg ->
-            if(msg.id=="193")
+        items(state.msgList) { msg ->
+            if(msg.id==myId)
                 MsgViewRight(
                     msg,
                     modifier = Modifier.animateItemPlacement()
@@ -337,8 +362,14 @@ fun MsgViewRight(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SendMsgBar(state: ChatListState) {
-    var data by remember { mutableStateOf(state.searchText) }
+fun SendMsgBar(
+    state: MsgListState,
+    viewModel: MainViewModel,
+    path: String,
+    myBasicInfo: UserBasicInfo,
+    context: Context
+) {
+    var data by remember { mutableStateOf(state.msgText) }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -372,7 +403,20 @@ fun SendMsgBar(state: ChatListState) {
                     interactionSource = MutableInteractionSource(),
                     indication = rememberRipple(color = Color.Transparent),
                     onClick = {
-
+                        viewModel.sendMsg(
+                            path,
+                            Msg(
+                                id = myBasicInfo.publicInfo.id,
+                                nm = myBasicInfo.publicInfo.nm,
+                                msg = data,
+                                pic = myBasicInfo.privateInfo.pic,
+                                time = System.currentTimeMillis()
+                            )
+                        ) {
+                            Toast
+                                .makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT)
+                                .show()
+                        }
                     }
                 )
                 .padding(10.dp)
@@ -398,6 +442,6 @@ fun searchFieldColors() =
 @Composable
 fun PreviewsMsgViewScreen() {
     KnockMETheme {
-        MsgViewScreen()
+        //MsgViewScreen(it.arguments?.getString("id"), navController)
     }
 }

@@ -8,6 +8,8 @@ import com.google.firebase.database.ktx.database
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.ktx.storage
 import com.mlab.knockme.auth_feature.data.data_source.PortalApi
 import com.mlab.knockme.auth_feature.data.repo.AuthRepoImpl
 import com.mlab.knockme.auth_feature.domain.repo.AuthRepo
@@ -21,15 +23,7 @@ import com.mlab.knockme.auth_feature.domain.use_cases.GetStudentInfo
 import com.mlab.knockme.auth_feature.domain.use_cases.IsUserAuthenticated
 import com.mlab.knockme.main_feature.data.repo.MainRepoImpl
 import com.mlab.knockme.main_feature.domain.repo.MainRepo
-import com.mlab.knockme.main_feature.domain.use_case.DeleteMsg
-import com.mlab.knockme.main_feature.domain.use_case.GetChatProfiles
-import com.mlab.knockme.main_feature.domain.use_case.GetChats
-import com.mlab.knockme.main_feature.domain.use_case.GetMsg
-import com.mlab.knockme.main_feature.domain.use_case.GetOrCreateUserProfileInfo
-import com.mlab.knockme.main_feature.domain.use_case.GetUserBasicInfo
-import com.mlab.knockme.main_feature.domain.use_case.GetUserProfileInfo
-import com.mlab.knockme.main_feature.domain.use_case.MainUseCases
-import com.mlab.knockme.main_feature.domain.use_case.SendMsg
+import com.mlab.knockme.main_feature.domain.use_case.*
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -54,14 +48,23 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideFirebaseStorage() =
+        Firebase.storage("gs://knockme-web.appspot.com")
+
+    @Provides
+    @Singleton
     fun provideFirebaseFirestore(app: Application) =
         Firebase.firestore
 
 
     @Provides
     @Singleton
-    fun provideAuthRepo(auth: FirebaseAuth, api: PortalApi, firestore: FirebaseFirestore) : AuthRepo{
-        return AuthRepoImpl(auth,api,firestore)
+    fun provideAuthRepo(
+        auth: FirebaseAuth, api: PortalApi,
+        firestore: FirebaseFirestore,
+        cloudStore: FirebaseStorage
+    ) : AuthRepo{
+        return AuthRepoImpl(auth,api,firestore,cloudStore)
     }
 
     @Provides
@@ -97,12 +100,15 @@ object AppModule {
     fun provideMainUseCases(repo: MainRepo) =
         MainUseCases(
             GetChatProfiles(repo),
-            GetChats(repo),
-            GetOrCreateUserProfileInfo(repo),
             GetUserBasicInfo(repo),
-            GetUserProfileInfo(repo),
+            GetUserFullProfile(repo),
+            GetOrCreateUserProfileInfo(repo),
             GetMsg(repo),
             SendMsg(repo),
-            DeleteMsg(repo)
+            DeleteMsg(repo),
+            UpdatePaymentInfo(repo),
+            UpdateRegCourseInfo(repo),
+            UpdateLiveResultInfo(repo),
+            UpdateFullResultInfo(repo)
         )
 }

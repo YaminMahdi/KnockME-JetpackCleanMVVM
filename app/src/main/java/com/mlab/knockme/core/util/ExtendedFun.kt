@@ -68,3 +68,6 @@ fun String.toTeacherInitial(): String{
     }
     return initial
 }
+
+infix fun <T> List<T>.equalsIgnoreOrder(other: List<T>) = this.size == other.size && this.toSet() == other.toSet()
+infix fun <T> List<T>.notEqualsIgnoreOrder(other: List<T>) = this.size != other.size || this.toSet() != other.toSet()

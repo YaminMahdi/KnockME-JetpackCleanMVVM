@@ -1,27 +1,20 @@
 package com.mlab.knockme.main_feature.domain.repo
 
-import com.mlab.knockme.auth_feature.domain.model.UserProfile
-import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
+import com.mlab.knockme.auth_feature.domain.model.*
 import com.mlab.knockme.main_feature.domain.model.Msg
-import kotlinx.coroutines.flow.StateFlow
+import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
 
 interface MainRepo {
-    suspend fun getMessages(path: String): StateFlow<List<Msg>>
-    suspend fun sendMessages(path: String, msg: Msg): Boolean
-    suspend fun deleteMessage(path: String, id: String): Boolean
+    fun getMessages(
+        path: String,
+        Success: (msgList: List<Msg>) -> Unit,
+        Failed: (msg:String) -> Unit
+    )
+    fun sendMessages(path: String, msg: Msg,Failed: (msg:String) -> Unit)
+    fun deleteMessage(path: String, id: String): Boolean
     fun getChatProfiles(
         path: String,
         Success: (profileList: List<Msg>) -> Unit,
-        Failed: (msg:String) -> Unit
-    )
-    fun getChats(
-        path: String,
-        Success: (profileList: List<Msg>) -> Unit,
-        Failed: (msg:String) -> Unit
-    )
-    fun getUserProfileInfo(
-        id: String,
-        Success: (userProfile: UserProfile) -> Unit,
         Failed: (msg:String) -> Unit
     )
 
@@ -31,9 +24,48 @@ interface MainRepo {
         Failed: (msg:String) -> Unit
     )
 
+    fun getUserFullProfile(
+        id: String,
+        Success: (UserProfile) -> Unit,
+        Failed: (msg:String) -> Unit
+    )
+
     fun getOrCreateUserProfileInfo(
         id: String,
         Success: (Msg) -> Unit,
+        Loading: (msg: String) -> Unit,
+        Failed: (msg:String) -> Unit
+    )
+
+
+
+    suspend fun updatePaymentInfo(
+        id: String,
+        accessToken: String,
+        paymentInfo: PaymentInfo,
+        Success: (PaymentInfo) -> Unit,
+        Failed: (msg:String) -> Unit
+    )
+    suspend fun updateRegCourseInfo(
+        id: String,
+        accessToken: String,
+        regCourseInfoList: List<CourseInfo>,
+        Success: (List<CourseInfo>) -> Unit,
+        Failed: (msg:String) -> Unit
+    )
+
+    suspend fun updateLiveResultInfo(
+        id: String,
+        accessToken: String,
+        liveResultInfoList: List<LiveResultInfo>,
+        Success: (List<LiveResultInfo>) -> Unit,
+        Failed: (msg:String) -> Unit
+    )
+
+    suspend fun updateFullResultInfo(
+        publicInfo: PublicInfo,
+        fullResultInfoList: List<FullResultInfo>,
+        Success: (List<FullResultInfo>) -> Unit,
         Loading: (msg: String) -> Unit,
         Failed: (msg:String) -> Unit
     )

@@ -26,12 +26,12 @@ fun ChatPlacewiseScreen(
     viewModel: MainViewModel= hiltViewModel()
 ) {
     val context: Context = LocalContext.current
-    val chatList by viewModel.chatListState.collectAsState()
+    val state by viewModel.state.collectAsState()
     val sharedPreferences = context.getSharedPreferences(
         context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
     )
     //val preferencesEditor = sharedPreferences.edit()
-    val id = sharedPreferences.getString("studentId",null)
+    val myId = sharedPreferences.getString("studentId",null)
     LaunchedEffect(key1 = "2"){
         //pop backstack
         viewModel.getChatProfiles("groupMsg/placewise/profiles"){
@@ -43,7 +43,7 @@ fun ChatPlacewiseScreen(
             .background(DeepBlue)
             .fillMaxSize()){
         TitleInfo(title = "Placewise")
-        LoadChatList(chatList = chatList,navController)
+        LoadChatList(state,navController,myId!!)
     }
 }
 

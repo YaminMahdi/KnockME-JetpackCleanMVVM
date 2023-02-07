@@ -1,6 +1,5 @@
 package com.mlab.knockme.auth_feature.domain.model
 
-import android.os.Parcel
 import android.os.Parcelable
 import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
 import kotlinx.parcelize.Parcelize
@@ -15,7 +14,7 @@ data class UserProfile(
     val publicInfo: PublicInfo = PublicInfo(), //aida ase
     val privateInfo: PrivateInfoExtended = PrivateInfoExtended(),
     val paymentInfo: PaymentInfo = PaymentInfo(),
-    val courseInfo: ArrayList<CourseInfo> = arrayListOf(),
+    val regCourseInfo: ArrayList<CourseInfo> = arrayListOf(),
     val liveResultInfo: ArrayList<LiveResultInfo> = arrayListOf(),
     val fullResultInfo: ArrayList<FullResultInfo> = arrayListOf()  //aida ase
 

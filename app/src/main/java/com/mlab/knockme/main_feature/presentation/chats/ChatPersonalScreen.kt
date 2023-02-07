@@ -56,6 +56,7 @@ import com.mlab.knockme.core.util.bounceClick
 import com.mlab.knockme.core.util.toDateTime
 import com.mlab.knockme.core.util.toDayPassed
 import com.mlab.knockme.main_feature.presentation.ChatInnerScreens
+import com.mlab.knockme.main_feature.presentation.MainScreens
 import com.mlab.knockme.main_feature.presentation.profile.TitleInfo
 import com.mlab.knockme.ui.theme.*
 
@@ -70,11 +71,11 @@ fun ChatPersonalScreen(
         context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
     )
     //val preferencesEditor = sharedPreferences.edit()
-    val id = sharedPreferences.getString("studentId",null)
-    LaunchedEffect(key1 = state){
+    val myId = sharedPreferences.getString("studentId",null)
+    LaunchedEffect(key1 = "1"){
         //pop backstack
         if(!state.isSearchActive&&state.searchText.length<2){
-            viewModel.getChatProfiles("personalMsg/$id/profiles"){
+            viewModel.getChatProfiles("personalMsg/$myId/profiles"){
                 Toast.makeText(context, "Chat couldn't be loaded- $it", Toast.LENGTH_SHORT).show()
             }
         }
@@ -91,7 +92,7 @@ fun ChatPersonalScreen(
         else {
             Spacer(modifier = Modifier.size(17.dp))
         }
-        LoadChatList(state.chatList,navController,state.searchText)
+        LoadChatList(state,navController,myId!!)
 
 //        LoadChatList(chatList =
 //        listOf(
@@ -198,19 +199,33 @@ private fun ProgressBar(){
 }
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun LoadChatList(chatList: List<Msg>,navController: NavHostController,searchText: String = "",) {
+fun LoadChatList(state: ChatListState,navController: NavHostController,myId: String) {
     LazyColumn(
         modifier = Modifier
             .fillMaxHeight()
     ) {
-        items(chatList) { proView ->
+        items(state.chatList) { proView ->
             ChatView(
                 proView,
                 modifier = Modifier
                     .animateItemPlacement(),
-                searchText
+                state.searchText
             ){ id ->
-                navController.navigate(ChatInnerScreens.MsgScreen.route+id)
+                if(state.searchText.length<2) {
+                    when (navController.currentDestination?.route) {
+                        MainScreens.CtPersonalScreen.route -> {
+                            val path = "personalMsg/$myId/chats/$id"
+                            navController.navigate(ChatInnerScreens.MsgScreen.route+"path=$path&id=$id")
+                        }
+                        MainScreens.CtPlacewiseScreen.route ->
+                            navController.navigate(ChatInnerScreens.MsgScreen.route+"{placeMsg/$id/chats}/{$id}")
+                        MainScreens.CtBusInfoScreen.route ->
+                            navController.navigate(ChatInnerScreens.MsgScreen.route+"{busMsg/$id/chats}/{$id}")
+                    }
+
+                }
+                else
+                    navController.navigate(ChatInnerScreens.UserProfileScreen.route+id)
             }
         }
     }

@@ -1,12 +1,7 @@
 package com.mlab.knockme.auth_feature.data.repo
 
 import android.util.Log
-import com.facebook.AccessToken
-import com.facebook.CallbackManager
-import com.facebook.FacebookCallback
-import com.facebook.FacebookException
-import com.facebook.GraphRequest
-import com.facebook.GraphRequestBatch
+import com.facebook.*
 import com.facebook.login.LoginResult
 import com.facebook.login.widget.LoginButton
 import com.google.firebase.auth.FacebookAuthProvider
@@ -14,38 +9,24 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import com.google.gson.GsonBuilder
 import com.mlab.knockme.auth_feature.data.data_source.LoginInformation
 import com.mlab.knockme.auth_feature.data.data_source.PortalApi
-import com.mlab.knockme.auth_feature.domain.model.FBResponse
-import com.mlab.knockme.auth_feature.domain.model.FullResultInfo
-import com.mlab.knockme.auth_feature.domain.model.LiveResultInfo
-import com.mlab.knockme.auth_feature.domain.model.PrivateInfoExtended
-import com.mlab.knockme.auth_feature.domain.model.PublicInfo
-import com.mlab.knockme.auth_feature.domain.model.ResultInfo
-import com.mlab.knockme.auth_feature.domain.model.StudentInfo
-import com.mlab.knockme.auth_feature.domain.model.UserProfile
+import com.mlab.knockme.auth_feature.domain.model.*
 import com.mlab.knockme.auth_feature.domain.repo.AuthRepo
 import com.mlab.knockme.auth_feature.util.SignResponse
 import com.mlab.knockme.core.util.Resource
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.*
+import retrofit2.Call
+import retrofit2.Callback
 import retrofit2.HttpException
+import retrofit2.Response
 import java.io.EOFException
 import java.io.IOException
-import java.util.Calendar
+import java.util.*
 import javax.inject.Inject
 import kotlin.math.roundToInt
 
@@ -53,7 +34,8 @@ import kotlin.math.roundToInt
 class AuthRepoImpl @Inject constructor(
     private val auth: FirebaseAuth,
     private val api: PortalApi,
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val cloudStore: FirebaseStorage
 ) : AuthRepo {
     private lateinit var myRef: DocumentReference
 
@@ -112,7 +94,7 @@ class AuthRepoImpl @Inject constructor(
                 Log.d("TAG1", "facebook:onSuccess:${result.accessToken} $result ")
                 val dataToken = FBResponse(result.accessToken)
                 getData(dataToken) { data ->
-                    Log.d("TAG2.", "facebook:onSuccess:${data.fbId} ${data.pic}")
+                    Log.d("fbLink.", "facebook:onSuccess:${data.fbId} ${data.fbLink}")
                     success.invoke(data)
                 }
                 // loginViewModel.signIn(result.accessToken)
@@ -163,8 +145,8 @@ class AuthRepoImpl @Inject constructor(
 //            val city = document.toObject<UserProfile>()?.publicInfo?.fbId
 //            val x =mapper.fromJson(mapper.toJson(document.data), UserProfile::class.java).publicInfo.fbId
             if (document != null && document.exists() &&
-                (((mapper.fromJson(mapper.toJson(document.data), UserProfile::class.java).privateInfo?.fbId) == fbInfo.fbId) ||
-                        ((mapper.fromJson(mapper.toJson(document.data), UserProfile::class.java).privateInfo?.fbId) == id))
+                (((mapper.fromJson(mapper.toJson(document.data), UserProfile::class.java).privateInfo.fbId) == fbInfo.fbId) ||
+                        ((mapper.fromJson(mapper.toJson(document.data), UserProfile::class.java).privateInfo.fbId) == id))
             ) {
                 Log.d("OnSuccessListener", "Login Success for: ${document.data}")
                 GlobalScope.launch(Dispatchers.IO) {
@@ -230,7 +212,7 @@ class AuthRepoImpl @Inject constructor(
                                 Log.d("getStudentInfo", "registeredCourse: $registeredCourse")
                                 send(Resource.Loading("Getting Live Result Info.."))
                                 val liveResultInfoList = mutableListOf<LiveResultInfo>()
-                                registeredCourse.onEach {
+                                registeredCourse.forEach {
                                     liveResultInfoList.add(api
                                         .getLiveResult(it.courseSectionId!!, authInfo.accessToken)
                                         .toLiveResultInfo(it.customCourseId!!, it.courseTitle!!, it.toShortSemName())
@@ -243,55 +225,76 @@ class AuthRepoImpl @Inject constructor(
                                 send(Resource.Loading("Getting location Info.."))
                                 val locationInfo = api.getLocationInfo().toLocationInfo()
                                 Log.d("getStudentInfo", "locationInfo: $locationInfo")
-                                val userProfile =
-                                    UserProfile(
-                                        token = authInfo.accessToken,
-                                        lastUpdatedPaymentInfo = System.currentTimeMillis(),
-                                        lastUpdatedRegCourseInfo = System.currentTimeMillis(),
-                                        lastUpdatedLiveResultInfo = System.currentTimeMillis(),
-                                        lastUpdatedResultInfo = System.currentTimeMillis(),
-                                        publicInfo = PublicInfo(
-                                            id = id,
-                                            nm = publicInfo.studentName!!,
-                                            progShortName = publicInfo.progShortName!!,
-                                            batchNo = publicInfo.batchNo!!,
-                                            cgpa = cgpa
-                                        ),
-                                        privateInfo = PrivateInfoExtended(
-                                            fbId = fbInfo.fbId,
-                                            fbLink = fbInfo.fbLink,
-                                            pic = fbInfo.pic,
-                                            bloodGroup = privateInfo.bloodGroup,
-                                            email = privateInfo.email,
-                                            permanentHouse = privateInfo.permanentHouse,
-                                            ip = locationInfo.ip!!,
-                                            loc = locationInfo.loc!!
-                                        ),
-                                        paymentInfo = paymentInfo,
-                                        courseInfo = ArrayList(registeredCourse),
-                                        liveResultInfo = ArrayList(liveResultInfoList) ,
-                                        fullResultInfo = fullResultInfo
+
+
+                                val ref = cloudStore.reference.child("users/${id}/dp.jpg")
+                                val uploadTask = ref
+                                    .putStream(
+                                        api.getImgByteStream(fbInfo.pic)
+                                        .byteStream()
                                     )
-
-                                Log.d("TAG", "getStudentInfoFinal: $userProfile")
-                                //val userProfileMap=mapper.fromJson(mapper.toJson(userProfile), Map::class.java)
-                                //Log.d("TAG", "getStudentInfoFinal: $userProfileMap")
-                                myRef.set(userProfile).addOnCompleteListener {
-                                    GlobalScope.launch(Dispatchers.IO) {
-                                        if (it.isSuccessful) {
-                                            firestore
-                                                .collection("public")
-                                                .document("info")
-                                                .update("profileCount", FieldValue.increment(1))
-                                            send(Resource.Success(userProfile))
-                                        } else
-                                            send(
-                                                Resource.Error("Firebase Server Error.", userProfile)
-                                            )
+                                uploadTask.continueWithTask { task ->
+                                    if (!task.isSuccessful) {
+                                        task.exception?.let { throw it }
                                     }
+                                    ref.downloadUrl
+                                }.addOnCompleteListener { task ->
+                                    val fbPic : String =
+                                        if (task.isSuccessful)
+                                            task.result.toString()
+                                        else
+                                            fbInfo.pic
+
+                                    val userProfile =
+                                        UserProfile(
+                                            token = authInfo.accessToken,
+                                            lastUpdatedPaymentInfo = System.currentTimeMillis(),
+                                            lastUpdatedRegCourseInfo = System.currentTimeMillis(),
+                                            lastUpdatedLiveResultInfo = System.currentTimeMillis(),
+                                            lastUpdatedResultInfo = System.currentTimeMillis(),
+                                            publicInfo = PublicInfo(
+                                                id = id,
+                                                nm = publicInfo.studentName!!,
+                                                progShortName = publicInfo.progShortName!!,
+                                                batchNo = publicInfo.batchNo!!,
+                                                cgpa = cgpa
+                                            ),
+                                            privateInfo = PrivateInfoExtended(
+                                                fbId = fbInfo.fbId,
+                                                fbLink = fbInfo.fbLink,
+                                                pic = fbPic,
+                                                bloodGroup = privateInfo.bloodGroup,
+                                                email = privateInfo.email,
+                                                permanentHouse = privateInfo.permanentHouse,
+                                                ip = locationInfo.ip!!,
+                                                loc = locationInfo.loc!!
+                                            ),
+                                            paymentInfo = paymentInfo,
+                                            regCourseInfo = ArrayList(registeredCourse),
+                                            liveResultInfo = ArrayList(liveResultInfoList) ,
+                                            fullResultInfo = fullResultInfo
+                                        )
+
+                                    Log.d("TAG", "getStudentInfoFinal: $userProfile")
+                                    //val userProfileMap=mapper.fromJson(mapper.toJson(userProfile), Map::class.java)
+                                    //Log.d("TAG", "getStudentInfoFinal: $userProfileMap")
+                                    myRef.set(userProfile).addOnCompleteListener {
+                                        GlobalScope.launch(Dispatchers.IO) {
+                                            if (it.isSuccessful) {
+                                                firestore
+                                                    .collection("public")
+                                                    .document("info")
+                                                    .update("profileCount", FieldValue.increment(1))
+                                                send(Resource.Success(userProfile))
+                                            } else
+                                                send(
+                                                    Resource.Error("Firebase Server Error.", userProfile)
+                                                )
+                                        }
+                                    }
+
+
                                 }
-
-
                             } catch (e: HttpException) {
                                 send(Resource.Error("Oops, something went wrong."))
                                 Log.d("TAG", "getStudentIdInfo: ${e.message} ${e.localizedMessage}")
@@ -490,8 +493,8 @@ class AuthRepoImpl @Inject constructor(
                 data.pic = it.jsonObject?.getJSONObject("data")?.getString("url").toString()
             })
         graphRequests.addCallback {
-            Log.d("addCallback", "getData: hii")
             success.invoke(data)
+            Log.d("addCallback", "getData: hii")
         }
         graphRequests.executeAsync()
     }

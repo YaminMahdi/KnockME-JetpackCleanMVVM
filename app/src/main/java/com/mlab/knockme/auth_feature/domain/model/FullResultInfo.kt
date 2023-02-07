@@ -7,13 +7,13 @@ import kotlinx.parcelize.Parcelize
 import java.util.ArrayList
 @Parcelize
 data class FullResultInfo(
-    var semesterInfo: SemesterInfo? = SemesterInfo(),
-    var resultInfo: ArrayList<ResultInfo>? = arrayListOf()
+    var semesterInfo: SemesterInfo = SemesterInfo(),
+    var resultInfo: ArrayList<ResultInfo> = arrayListOf()
 ) : Parcelable {
     fun toCombinedBarData()=
         CombinedBarData(
-            semesterInfo?.semesterName!![0]+"-${semesterInfo?.semesterYear!!%100}",
-            semesterInfo?.sgpa!!.toFloat(),
-            semesterInfo?.sgpa!!.toFloat()
+            semesterInfo.semesterName!![0]+"-${semesterInfo.semesterYear%100}",
+            semesterInfo.sgpa.toFloat(),
+            semesterInfo.sgpa.toFloat()
         )
 }

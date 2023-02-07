@@ -8,3 +8,8 @@ data class ChatListState(
     val isSearchActive: Boolean=false,
     val loadingText: String="Loading.. "
 )
+
+data class MsgListState(
+    val msgList: List<Msg> = emptyList(),
+    val msgText: String = ""
+)

@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -180,8 +181,11 @@ fun LiveRegCourseItem(
             Text(
                 text = courseResultInfo.courseTitle!!,
                 style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.fillMaxWidth(.8f)
-                    .align(Alignment.End),
+                modifier = Modifier
+                    .fillMaxWidth(.8f)
+                    .align(Alignment.End)
+                    .alpha(.8f)
+                ,
                 textAlign = TextAlign.End
 
             )
@@ -193,7 +197,10 @@ fun LiveRegCourseItem(
             Spacer(modifier = Modifier.size(3.dp))
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()) {
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .alpha(.8f)
+            ) {
                 Text(
                     text = "Quiz 1:  ${courseResultInfo.q1}",
                     style = MaterialTheme.typography.headlineSmall,
@@ -220,6 +227,7 @@ fun LiveRegCourseItem(
             Text(
                 text = "Midterm Improvement:  ${courseResultInfo.mid2}",
                 style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.alpha(.8f)
             )
         }
     }

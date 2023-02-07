@@ -132,11 +132,11 @@ fun RegCourseViewScreen(navController: NavHostController) {
                 modifier = Modifier
                     .weight(1f)
             ) {
-                itemsIndexed(lst) { ind, course ->
+                items(lst.size) { ind->
                     if(ind%2==0)
-                        RegCourseItem(course)
+                        RegCourseItem(lst[ind])
                     else
-                        RegCourseItem(course,Limerick1, Limerick2, Limerick3)
+                        RegCourseItem(lst[ind],Limerick1, Limerick2, Limerick3)
                 }
             }
             LastUpdated(63487325)

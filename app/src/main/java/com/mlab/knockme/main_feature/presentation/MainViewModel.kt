@@ -5,21 +5,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mlab.knockme.main_feature.domain.model.Msg
-import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
+import com.mlab.knockme.main_feature.domain.model.*
 import com.mlab.knockme.main_feature.domain.use_case.MainUseCases
-import com.mlab.knockme.main_feature.domain.model.ChatListState
-import com.mlab.knockme.main_feature.domain.model.ViewProfileState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -36,8 +27,16 @@ class MainViewModel @Inject constructor(
     private val _msg= MutableStateFlow<List<Msg>>(emptyList())
     val msg = _msg.asStateFlow()
 
+    private val msgList = savedStateHandle.getStateFlow("msgList", emptyList<Msg>())
+    private val msgText = savedStateHandle.getStateFlow("msgText", "")
+    val msgState = combine(msgList,msgText){msgList,msgText->
+        MsgListState(msgList, msgText)
+    }.stateIn(viewModelScope, SharingStarted.Lazily, MsgListState())
+
+    //val msgList = msgListState.value
+
     private val chatList = savedStateHandle.getStateFlow("chatList", emptyList<Msg>())
-    val chatListState = chatList
+    //val chatListState = chatList
 
     private val searchText = savedStateHandle.getStateFlow("searchText", "")
     private val isSearchActive = savedStateHandle.getStateFlow("isSearchActive", false)
@@ -54,15 +53,26 @@ class MainViewModel @Inject constructor(
     private var searchJob: Job? =null
 
 
-
-
-    suspend fun getMeg(path: String) {
+    fun getMeg(
+        path: String,
+        Failed: (msg: String) -> Unit
+    ) {
         getMsgJob?.cancel()
-        getMsgJob= mainUseCases.getMsg(path)
-            .onEach {
-                _msg.value =it
-            }
-            .launchIn(viewModelScope)
+        getMsgJob = viewModelScope.launch {
+            mainUseCases.getMsg(path,{
+                savedStateHandle["msgList"] = it
+            }, Failed)
+        }
+    }
+
+    fun sendMsg(
+        path: String,
+        msg: Msg,
+        Failed: (msg:String) -> Unit
+    ){
+        viewModelScope.launch {
+            mainUseCases.sendMsg(path, msg, Failed)
+        }
     }
 
     fun getChatProfiles(
@@ -70,6 +80,9 @@ class MainViewModel @Inject constructor(
         Failed: (msg:String) -> Unit
     ){
         getChatsProfileJob?.cancel()
+        savedStateHandle["chatList"] = emptyList<Msg>()
+        savedStateHandle["searchText"] = ""
+
         getChatsProfileJob= viewModelScope.launch{
             mainUseCases.getChatProfiles(
                 path, {
@@ -156,7 +169,7 @@ class MainViewModel @Inject constructor(
     //val isLoading = _isLoading
     private val hasPrivateInfo = savedStateHandle.getStateFlow("hasPrivateInfo", false)
     //val hasPrivateInfo = _hasPrivateInfo
-    private val userBasicInfo = savedStateHandle.getStateFlow("userBasicInfo", UserBasicInfo())
+    val userBasicInfo = savedStateHandle.getStateFlow("userBasicInfo", UserBasicInfo())
     //val userBasicInfo = _userBasicInfo
     //val stateProfile = ViewProfileState(isLoading.collectAsState(),hasPrivateInfo,userBasicInfo)
     val stateProfile = combine(isLoading,hasPrivateInfo,userBasicInfo)
@@ -173,16 +186,13 @@ class MainViewModel @Inject constructor(
                         delay(500)
                         savedStateHandle["isLoading"] = false
                     }
-                    if(!it.privateInfo?.email.isNullOrEmpty())
+                    if(!it.privateInfo.email.isNullOrEmpty())
                         savedStateHandle["hasPrivateInfo"] = true
                 },{
                     savedStateHandle["isLoading"] = false
                 })
         }
     }
-
-
-
 
 
     fun onSearchTextChange (text: String) {
@@ -195,14 +205,4 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun getChats(
-        path: String,
-        Success: (profileList: List<Msg>) -> Unit,
-        Failed: (msg:String) -> Unit
-    ){
-        getChatsJob?.cancel()
-        getChatsJob= viewModelScope.launch{
-            mainUseCases.getChats(path, Success, Failed)
-        }
-    }
 }

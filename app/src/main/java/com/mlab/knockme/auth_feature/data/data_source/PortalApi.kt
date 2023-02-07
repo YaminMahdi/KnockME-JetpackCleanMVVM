@@ -1,21 +1,10 @@
 package com.mlab.knockme.auth_feature.data.data_source
 
-import com.mlab.knockme.auth_feature.data.data_source.dto.CourseInfoDto
-import com.mlab.knockme.auth_feature.data.data_source.dto.LiveResultInfoDto
-import com.mlab.knockme.auth_feature.data.data_source.dto.LocationInfoDto
-import com.mlab.knockme.auth_feature.data.data_source.dto.LoginInfoDto
-import com.mlab.knockme.auth_feature.data.data_source.dto.PaymentInfoDto
-import com.mlab.knockme.auth_feature.data.data_source.dto.PrivateInfoDto
-import com.mlab.knockme.auth_feature.data.data_source.dto.ResultInfoDto
-import com.mlab.knockme.auth_feature.data.data_source.dto.SemesterInfoDto
-import com.mlab.knockme.auth_feature.data.data_source.dto.StudentInfoDto
-import retrofit2.http.Body
-import retrofit2.http.GET
-import retrofit2.http.Header
-import retrofit2.http.Headers
-import retrofit2.http.POST
-import retrofit2.http.Query
-import retrofit2.http.Url
+import com.mlab.knockme.auth_feature.data.data_source.dto.*
+import okhttp3.ResponseBody
+import retrofit2.Call
+import retrofit2.http.*
+
 
 data class LoginInformation (
     var username: String,
@@ -88,6 +77,15 @@ interface PortalApi {
         //@Url url : String="http://ip-api.com/json/",
         @Query("fields") fields : String="status,country,countryCode,regionName,city,district,query"
     ): LocationInfoDto
+
+    @GET
+    fun getRedirectUrl(@Url url: String): Call<String>
+
+    @GET
+    suspend fun getImgByteStream(@Url url: String): ResponseBody
+
+    @GET("https://knock-me.github.io/dailyHadith.json")
+    suspend fun getDailyHadith(): List<DailyHadithDto>
 
 //    @Query("fields") fields : List<String> =
 //    listOf(
