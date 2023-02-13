@@ -39,8 +39,6 @@ import com.mlab.knockme.R
 import com.mlab.knockme.core.util.bounceClick
 import com.mlab.knockme.core.util.toDateTime
 import com.mlab.knockme.main_feature.domain.model.Msg
-import com.mlab.knockme.main_feature.domain.model.MsgListState
-import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
 import com.mlab.knockme.main_feature.presentation.ChatInnerScreens
 import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.main.BackBtn
@@ -48,28 +46,29 @@ import com.mlab.knockme.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MsgViewScreen(path: String, id: String, navController: NavHostController) {
+fun MsgViewScreen(path: String, id: String,
+                  navController: NavHostController,viewModel: MainViewModel = hiltViewModel()) {
 
-    val viewModel: MainViewModel = hiltViewModel()
     val context: Context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences(
         context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
     )
     //val preferencesEditor = sharedPreferences.edit()
     val myId = sharedPreferences.getString("studentId",null)
-    val state by viewModel.msgState.collectAsState()
-    val myBasicInfo by viewModel.userBasicInfo.collectAsState()
 
-    viewModel.getMeg(path){
-        Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-    }
-    viewModel.getUserBasicInfo(myId!!)
+
 //    val paddingValue = WindowInsets.ime.getBottom(LocalDensity.current)
-//    LaunchedEffect(key1 = state.msgList) {
-//        msgList = state.msgList
-//    }
+    LaunchedEffect(key1 = "1") {
+        viewModel.getMeg(path+"chats/$id"){
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+        }
+        viewModel.getUserBasicInfo(myId!!)
+        viewModel.getTarBasicInfo(id)
+
+    }
+
     Scaffold(
-        topBar = { MsgTopBar(navController, id)},
+        topBar = { MsgTopBar(navController, id, viewModel)},
     ){
         Column(modifier = Modifier
             .padding(it)
@@ -77,7 +76,7 @@ fun MsgViewScreen(path: String, id: String, navController: NavHostController) {
             .background(DeepBlue)
         ) {
             LoadMsgList(
-                state = state,
+                viewModel = viewModel,
 //                listOf(
 //                    Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423),
 //                    Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423),
@@ -89,14 +88,13 @@ fun MsgViewScreen(path: String, id: String, navController: NavHostController) {
 //                ),
                 modifier = Modifier
                     .weight(1f)
-                ,navController,myId
+                ,navController,myId!!
             )
             SendMsgBar(
-                state = state,
                 viewModel = viewModel,
                 path = path,
-                myBasicInfo = myBasicInfo,
-                context = context
+                context = context,
+                id,myId
             )
         }
     }
@@ -106,13 +104,15 @@ fun MsgViewScreen(path: String, id: String, navController: NavHostController) {
 }
 
 @Composable
-fun MsgTopBar(navController: NavHostController, id: String) {
+fun MsgTopBar(navController: NavHostController, id: String, viewModel: MainViewModel) {
+    val tarBasicInfo by viewModel.tarBasicInfo.collectAsState()
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
             .background(DeepBlueLess)
             .padding(5.dp)
+
     ) {
         BackBtn(navController)
         Row(
@@ -129,16 +129,14 @@ fun MsgTopBar(navController: NavHostController, id: String) {
                 )
         ) {
             ImgView(
-                img = "",
+                img = tarBasicInfo.privateInfo.pic!!,
                 modifier = Modifier
                     .height(70.dp)
                     .padding(10.dp)
                     .clip(RoundedCornerShape(50.dp))
-
-
             )
             Text(
-                text = "Ahmad Umar Mahdi",
+                text = tarBasicInfo.publicInfo.nm!!,
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier
                     .padding(horizontal = 5.dp)
@@ -146,7 +144,7 @@ fun MsgTopBar(navController: NavHostController, id: String) {
                 ,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis
-                )
+            )
         }
     }
 }
@@ -185,19 +183,21 @@ fun ImgView(img: String,modifier: Modifier) {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LoadMsgList(
-    state: MsgListState,
+    viewModel: MainViewModel,
     modifier: Modifier,
     navController: NavHostController,
     myId: String
 ) {
-    //var lst by remember { mutableStateOf(msgList) }
+    //var lst by remember { mutableStateOf(state.msgList) }
+    val msgList by viewModel.msgList.collectAsState()
+
     LazyColumn(
         modifier = modifier
             .fillMaxHeight()
             .padding(horizontal = 10.dp),
         reverseLayout = true
     ) {
-        items(state.msgList) { msg ->
+        items(msgList) { msg ->
             if(msg.id==myId)
                 MsgViewRight(
                     msg,
@@ -218,7 +218,7 @@ fun LoadMsgList(
 
 @Composable
 fun MsgViewLeft(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
-    Row() {
+    Row {
         ImgView(img = msg.pic!!, modifier = modifier
             .height(40.dp)
             .padding(top = 5.dp)
@@ -235,14 +235,13 @@ fun MsgViewLeft(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
                 onClick.invoke(msg.id!!)
             }
         )
-        Column() {
+        Column {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(.7f)
             ){
                 Column(modifier = Modifier
-                    .padding(top = 5.dp)
-                    .padding(horizontal = 5.dp)
+                    .padding(6.dp)
                     .clip(
                         RoundedCornerShape(
                             topStart = 7.dp,
@@ -251,15 +250,14 @@ fun MsgViewLeft(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
                             bottomEnd = 14.dp
                         )
                     )
-                    .background(DeepBlueLess)
+                    .background(DeepBlueMoreLess)
                     .padding(8.dp)
                 ) {
                     Text(
                         text = msg.nm!!,
                         style = MaterialTheme.typography.headlineSmall,
+                        fontSize = 10.sp,
                         modifier = Modifier
-                            .padding(bottom = 4.dp)
-                            .bounceClick()
                             .clip(RoundedCornerShape(2.dp))
                             .clickable {
                                 onClick.invoke(msg.id!!)
@@ -298,8 +296,7 @@ fun MsgViewRight(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
                     .fillMaxWidth(.7f)
             ){
                 Column(modifier = Modifier
-                    .padding(top = 5.dp)
-                    .padding(horizontal = 5.dp)
+                    .padding(6.dp)
                     .clip(
                         RoundedCornerShape(
                             topStart = 14.dp,
@@ -308,15 +305,14 @@ fun MsgViewRight(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
                             bottomEnd = 14.dp
                         )
                     )
-                    .background(DeepBlueMoreLess)
+                    .background(BlueViolet3.copy(alpha = .7f))
                     .padding(8.dp)
                 ) {
                     Text(
                         text = msg.nm!!,
                         style = MaterialTheme.typography.headlineSmall,
+                        fontSize = 10.sp,
                         modifier = Modifier
-                            .padding(bottom = 4.dp)
-                            .bounceClick()
                             .clip(RoundedCornerShape(2.dp))
                             .clickable {
                                 onClick.invoke(msg.id!!)
@@ -333,7 +329,7 @@ fun MsgViewRight(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
             Text(
                 modifier = Modifier
                     .alpha(.7f)
-                    .padding(start = 6.dp)
+                    .padding(end = 6.dp)
                     .padding(2.dp),
                 text = msg.time?.toDateTime()!!,
                 fontSize = 10.sp,
@@ -363,20 +359,31 @@ fun MsgViewRight(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SendMsgBar(
-    state: MsgListState,
     viewModel: MainViewModel,
     path: String,
-    myBasicInfo: UserBasicInfo,
-    context: Context
+    context: Context,
+    id: String,
+    myId: String
 ) {
-    var data by remember { mutableStateOf(state.msgText) }
+    var data by remember { mutableStateOf("") }
+    val myBasicInfo by viewModel.userBasicInfo.collectAsState()
+    val tarBasicInfo by viewModel.tarBasicInfo.collectAsState()
+    val myPath = path+"chats/$id"
+    val myProfilePath = path+"profiles/$id"
+    var tarPath : String?= null
+    var tarProfilePath: String?= null
 
+    if(!myPath.contains("groupMsg")) {
+        tarPath = "personalMsg/$id/chats/$myId"
+        tarProfilePath = "personalMsg/$id/profiles/$myId"
+    }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .background(DeepBlueLess)
             .padding(5.dp)
             .imePadding()
+
     ){
         OutlinedTextField(
             value = data,
@@ -403,20 +410,36 @@ fun SendMsgBar(
                     interactionSource = MutableInteractionSource(),
                     indication = rememberRipple(color = Color.Transparent),
                     onClick = {
-                        viewModel.sendMsg(
-                            path,
-                            Msg(
-                                id = myBasicInfo.publicInfo.id,
-                                nm = myBasicInfo.publicInfo.nm,
-                                msg = data,
-                                pic = myBasicInfo.privateInfo.pic,
-                                time = System.currentTimeMillis()
-                            )
-                        ) {
-                            Toast
-                                .makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT)
-                                .show()
+                        val time = System.currentTimeMillis()
+                        val msg = Msg(
+                            id = myBasicInfo.publicInfo.id,
+                            nm = myBasicInfo.publicInfo.nm,
+                            msg = data,
+                            pic = myBasicInfo.privateInfo.pic,
+                            time = time
+                        )
+                        val tarProfile = Msg(
+                            id = tarBasicInfo.publicInfo.id,
+                            nm = tarBasicInfo.publicInfo.nm,
+                            msg = data,
+                            pic = tarBasicInfo.privateInfo.pic,
+                            time = time
+                        )
+                        viewModel.sendMsg(myPath, msg) {
+                            Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
                         }
+                        viewModel.refreshProfileInChats(myProfilePath, tarProfile) {
+                            Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
+                        }
+                        if (tarPath != null) {
+                            viewModel.sendMsg(tarPath, msg) {
+                                Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
+                            }
+                            viewModel.refreshProfileInChats(tarProfilePath!!, msg) {
+                                Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        data = ""
                     }
                 )
                 .padding(10.dp)

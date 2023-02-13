@@ -18,6 +18,9 @@ import androidx.navigation.compose.rememberNavController
 import com.facebook.AccessToken
 import com.facebook.CallbackManager
 import com.facebook.login.widget.LoginButton
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import com.mlab.knockme.R
 import com.mlab.knockme.auth_feature.domain.model.FBResponse
 import com.mlab.knockme.auth_feature.presentation.login.components.LoadingScreen
@@ -28,6 +31,7 @@ import com.mlab.knockme.main_feature.presentation.MainActivity
 import com.mlab.knockme.ui.theme.KnockMETheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import org.checkerframework.checker.units.qual.Current
 
 
 @AndroidEntryPoint
@@ -157,9 +161,19 @@ class LoginActivity : ComponentActivity() {
     }
 
     private fun msg(msg: String) = msg
+    @Override
+    override fun onStart() {
+        super.onStart()
+        if( Firebase.auth.currentUser != null)
+            startActivity(Intent(this,MainActivity::class.java))
+//        val sharedPreferences = this.getSharedPreferences(
+//            getString(R.string.preference_file_key), Context.MODE_PRIVATE
+//        )
+//        if(sharedPreferences.getString("studentId",null) != null)
+//            startActivity(Intent(this,MainActivity::class.java))
+    }
 
 }
-
 
 @Preview(showBackground = true)
 @Composable

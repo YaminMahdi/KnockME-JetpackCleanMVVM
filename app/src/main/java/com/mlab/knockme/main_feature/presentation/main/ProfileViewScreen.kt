@@ -1,6 +1,7 @@
 package com.mlab.knockme.main_feature.presentation.main
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
@@ -16,9 +17,7 @@ import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -50,7 +49,9 @@ import com.mlab.knockme.auth_feature.domain.model.PrivateInfoExtended
 import com.mlab.knockme.auth_feature.domain.model.PublicInfo
 import com.mlab.knockme.core.util.bounceClick
 import com.mlab.knockme.core.util.toDayPassed
+import com.mlab.knockme.main_feature.domain.model.Msg
 import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
+import com.mlab.knockme.main_feature.presentation.ChatInnerScreens
 import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.profile.Ic
 import com.mlab.knockme.ui.theme.*
@@ -59,20 +60,29 @@ import com.mlab.knockme.ui.theme.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileViewScreen(
-    id: String="193-15-107",
+    id: String="",
     navController: NavHostController,
     viewModel: MainViewModel = hiltViewModel()
 
 ) {
-    val state by viewModel.stateProfile.collectAsState()
+    val userBasicInfo by viewModel.userBasicInfo.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val hasPrivateInfo by viewModel.hasPrivateInfo.collectAsState()
 
+    val context: Context =LocalContext.current
+    val sharedPreferences = context.getSharedPreferences(
+        context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
+    )
+    //val preferencesEditor = sharedPreferences.edit()
+    val myId = sharedPreferences.getString("studentId",null)
 //    val isLoading by viewModel.isLoading.collectAsState()
 //    val hasPrivateInfo  by viewModel.hasPrivateInfo.collectAsState()
 //    val userBasicInfo  by viewModel.userBasicInfo.collectAsState()
-    viewModel.getUserBasicInfo(id)
-//    LaunchedEffect(key1 = state){
-//
-//    }
+
+    LaunchedEffect(key1 = "1"){
+        //if(isLoading)
+        viewModel.getUserBasicInfo(id)
+    }
 
     Scaffold(topBar = {TopBar(navController)}) {
         Column(
@@ -84,21 +94,21 @@ fun ProfileViewScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Profile(
-                pic = state.userBasicInfo.privateInfo.pic,
-                publicInfo = state.userBasicInfo.publicInfo,
-                isLoading = state.isLoading
+                pic = userBasicInfo.privateInfo.pic,
+                publicInfo = userBasicInfo.publicInfo,
+                isLoading = isLoading
             )
-            SocialLink(state.userBasicInfo.privateInfo, state.hasPrivateInfo)
+            SocialLink(viewModel,userBasicInfo, hasPrivateInfo, navController, id, myId!!)
             Column(
                 modifier = Modifier
                     .verticalScroll(rememberScrollState())
                     .weight(weight = 1f, fill = false)
 
             ) {
-                if(!state.isLoading&&state.userBasicInfo.fullResultInfo.isNotEmpty())
+                if(!isLoading&&userBasicInfo.fullResultInfo.isNotEmpty())
                     BarChart(
-                        state.userBasicInfo.fullResultInfo.map { data -> data.toCombinedBarData() },
-                        state.userBasicInfo.publicInfo
+                        userBasicInfo.fullResultInfo.map { data -> data.toCombinedBarData() },
+                        userBasicInfo.publicInfo
                     )
                 //                listOf(
 //                    CombinedBarData("F-19", 3.33F, 3.33F),
@@ -119,14 +129,14 @@ fun ProfileViewScreen(
                         .fillMaxWidth()
                         .alpha(.7f)
                         .padding(5.dp),
-                    text = "Last Updated: ${state.userBasicInfo.lastUpdatedResultInfo.toDayPassed()}",
+                    text = "Last Updated: ${userBasicInfo.lastUpdatedResultInfo.toDayPassed()}",
                     fontSize = 8.sp,
                     style = MaterialTheme.typography.headlineSmall,
                     textAlign = TextAlign.End
                 )
-                Details(state.userBasicInfo, state.hasPrivateInfo)
-                if(state.hasPrivateInfo)
-                    Address(state.userBasicInfo)
+                Details(userBasicInfo, hasPrivateInfo)
+                if(hasPrivateInfo)
+                    Address(userBasicInfo)
             }
 
         }
@@ -321,7 +331,14 @@ fun CgpaToast(modifier: Modifier, pb: PublicInfo?, isLoading: Boolean) {
 
 @SuppressLint("IntentReset")
 @Composable
-fun SocialLink(privateInfo: PrivateInfoExtended, hasPrivateInfo: Boolean) {
+fun SocialLink(
+    viewModel: MainViewModel,
+    userBasicInfo: UserBasicInfo,
+    hasPrivateInfo: Boolean,
+    navController: NavHostController,
+    id: String,
+    myId: String
+) {
     Row(
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
@@ -337,7 +354,25 @@ fun SocialLink(privateInfo: PrivateInfoExtended, hasPrivateInfo: Boolean) {
                 .bounceClick()
             ,
             onClick = {
+                val path = "personalMsg/$myId/chats/$id"
+                val myPath = "personalMsg/$myId/profiles/$id"
+                val tarPath = "personalMsg/$id/profiles/$myId"
 
+                val msg = Msg(
+                    id = userBasicInfo.publicInfo.id,
+                    nm = userBasicInfo.publicInfo.nm,
+                    msg = "You Knocked.",
+                    pic = userBasicInfo.privateInfo.pic,
+                    time = System.currentTimeMillis()
+                )
+                navController.navigate(ChatInnerScreens.MsgScreen.route+"path=$path&id=$id")
+                viewModel.refreshProfileInChats(myPath, msg) {
+                    Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
+                }
+                msg.msg="Knocked you."
+                viewModel.refreshProfileInChats(tarPath, msg) {
+                    Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
+                }
             },
             shape = RoundedCornerShape(10.dp),
             colors = ButtonDefaults.buttonColors(containerColor = DeepBlueLess)
@@ -378,8 +413,8 @@ fun SocialLink(privateInfo: PrivateInfoExtended, hasPrivateInfo: Boolean) {
                         interactionSource = MutableInteractionSource(),
                         indication = rememberRipple(color = Color.White),
                         onClick = {
-                            if (!privateInfo.fbLink.isNullOrEmpty())
-                                uriHandler.openUri(privateInfo.fbLink!!)
+                            if (!userBasicInfo.privateInfo.fbLink.isNullOrEmpty())
+                                uriHandler.openUri(userBasicInfo.privateInfo.fbLink!!)
                             else
                                 Toast
                                     .makeText(context, "Link Not Valid", Toast.LENGTH_SHORT)
@@ -407,13 +442,13 @@ fun SocialLink(privateInfo: PrivateInfoExtended, hasPrivateInfo: Boolean) {
                         interactionSource = MutableInteractionSource(),
                         indication = rememberRipple(color = Color.White),
                         onClick = {
-                            if (!privateInfo.email.isNullOrEmpty()) {
+                            if (!userBasicInfo.privateInfo.email.isNullOrEmpty()) {
                                 try {
                                     val intent = Intent(Intent.ACTION_SEND)
                                     intent.data = Uri.parse("mailto:")
                                     intent.type = "text/plain"
                                     //intent.type = "vnd.android.cursor.item/email" // or "message/rfc822"
-                                    intent.putExtra(Intent.EXTRA_EMAIL, arrayOf(privateInfo.email))
+                                    intent.putExtra(Intent.EXTRA_EMAIL, arrayOf(userBasicInfo.privateInfo.email))
                                     //context.startActivity(intent)
                                     context.startActivity(
                                         Intent.createChooser(
@@ -531,10 +566,10 @@ fun Details(userBasicInfo: UserBasicInfo, hasPrivateInfo: Boolean) {
         FlowRow(
             modifier = Modifier.padding(5.dp),
         ) {
-            DetailsItems("ID: ${userBasicInfo.publicInfo!!.id}", LightGreen2)
+            DetailsItems("ID: ${userBasicInfo.publicInfo.id}", LightGreen2)
             DetailsItems("Batch: ${userBasicInfo.publicInfo.batchNo}", BlueViolet1)
             if(hasPrivateInfo)
-                DetailsItems("Blood: ${userBasicInfo.privateInfo!!.bloodGroup}", LightRed)
+                DetailsItems("Blood: ${userBasicInfo.privateInfo.bloodGroup}", LightRed)
             DetailsItems("Prog: ${userBasicInfo.publicInfo.progShortName}", LightBlue)
         }
 

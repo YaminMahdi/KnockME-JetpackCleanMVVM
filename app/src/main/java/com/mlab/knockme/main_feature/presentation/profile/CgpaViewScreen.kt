@@ -18,8 +18,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,7 +31,7 @@ import com.mlab.knockme.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CgpaViewScreen(navController: NavHostController) {
+fun CgpaViewScreen(id: String, navController: NavHostController) {
     val lst = listOf(
         SemesterInfo("","Summer",2023,3.45,15.0),
         SemesterInfo("","Fall",2023,2.45,9.0),
@@ -202,6 +200,6 @@ fun SemesterInfoItem(
 @Composable
 fun Previews1() {
     KnockMETheme {
-        CgpaViewScreen(rememberNavController())
+       // CgpaViewScreen(it.arguments?.getString("id")!!, rememberNavController())
     }
 }

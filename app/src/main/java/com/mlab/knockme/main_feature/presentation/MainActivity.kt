@@ -16,10 +16,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavType
 import com.google.accompanist.navigation.animation.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.navArgument
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.mlab.knockme.main_feature.presentation.chats.ChatBusInfoScreen
@@ -29,7 +27,7 @@ import com.mlab.knockme.main_feature.presentation.main.components.BottomMenuItem
 import com.mlab.knockme.main_feature.presentation.main.components.BottomNav
 import com.mlab.knockme.main_feature.presentation.main.ProfileViewScreen
 import com.mlab.knockme.main_feature.presentation.messages.MsgViewScreen
-import com.mlab.knockme.main_feature.presentation.profile.ProfileScreen
+import com.mlab.knockme.main_feature.presentation.profile.*
 import com.mlab.knockme.ui.theme.KnockMETheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -106,22 +104,22 @@ fun Main(viewModel: MainViewModel) {
         AnimatedNavHost(navController, startDestination = MainScreens.CtPersonalScreen.route, Modifier.padding(bottomPadding)) {
             composable(MainScreens.CtPersonalScreen.route) {
                 //ChatMainMsgNav(1, navController)
-                ChatPersonalScreen(navController,viewModel)
+                ChatPersonalScreen(navController)
             }
             composable(MainScreens.CtPlacewiseScreen.route) {
                 //ChatMainMsgNav(2, navController)
-                ChatPlacewiseScreen(navController,viewModel)
+                ChatPlacewiseScreen(navController)
             }
             composable(MainScreens.CtBusInfoScreen.route) {
                 //ChatMainMsgNav(3, navController)
-                ChatBusInfoScreen(navController,viewModel)
+                ChatBusInfoScreen(navController)
             }
             composable(MainScreens.ProScreen.route) {
-                ProfileScreen()
+                ProfileScreen(navController)
             }
             composable(ChatInnerScreens.UserProfileScreen.route+"{id}"){
                 // ProfileViewScreen(navController, it.arguments?.getString("id"))
-                ProfileViewScreen(it.arguments?.getString("id")!!,navController,viewModel)
+                ProfileViewScreen(it.arguments?.getString("id")!!,navController)
             }
             composable(
                 ChatInnerScreens.MsgScreen.route+"path={path}&id={id}",
@@ -137,6 +135,21 @@ fun Main(viewModel: MainViewModel) {
                     it.arguments?.getString("id")!!,
                     navController
                 )
+            }
+            composable(ProfileInnerScreens.CgpaScreen.route+"{id}"){
+                CgpaViewScreen(it.arguments?.getString("id")!!,navController)
+            }
+            composable(ProfileInnerScreens.CgpaInnerScreen.route+"{id}"){
+                CgpaDetailsScreen(it.arguments?.getString("id")!!,navController)
+            }
+            composable(ProfileInnerScreens.DueScreen.route){
+                DueViewScreen(navController)
+            }
+            composable(ProfileInnerScreens.RegCourseScreen.route){
+                RegCourseViewScreen(navController)
+            }
+            composable(ProfileInnerScreens.LiveResultScreen.route){
+                LiveResultViewScreen(navController)
             }
         }
     }

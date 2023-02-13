@@ -11,6 +11,9 @@ interface MainRepo {
         Failed: (msg:String) -> Unit
     )
     fun sendMessages(path: String, msg: Msg,Failed: (msg:String) -> Unit)
+
+    fun refreshProfileInChats(path: String, msg: Msg,Failed: (msg:String) -> Unit)
+
     fun deleteMessage(path: String, id: String): Boolean
     fun getChatProfiles(
         path: String,

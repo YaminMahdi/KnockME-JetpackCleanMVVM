@@ -1,6 +1,7 @@
 package com.mlab.knockme.main_feature.presentation.profile
 
 import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,6 +18,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,42 +35,61 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import com.mlab.knockme.R
 import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.core.util.bounceClick
+import com.mlab.knockme.core.util.toK
+import com.mlab.knockme.core.util.toWords
+import com.mlab.knockme.main_feature.presentation.ProfileInnerScreens
 import com.mlab.knockme.main_feature.presentation.profile.components.Feature
 import com.mlab.knockme.profile_feature.presentation.components.standardQuadFromTo
 import com.mlab.knockme.ui.theme.*
 
 @Composable
-fun ProfileScreen(viewModel: MainViewModel= hiltViewModel()) {
+fun ProfileScreen(
+    navController: NavHostController,
+    viewModel: MainViewModel= hiltViewModel()
+) {
     val context: Context = LocalContext.current
     //val state by viewModel.state.collectAsState()
     val sharedPreferences = context.getSharedPreferences(
         context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
     )
     //val preferencesEditor = sharedPreferences.edit()
-    val id = sharedPreferences.getString("studentId",null)
+    val myId = sharedPreferences.getString("studentId",null)!!
+    LaunchedEffect(key1 = "1")
+    {
+        viewModel.getUserFullProfileInfo(myId) {
+            Toast.makeText(context, "Server Error", Toast.LENGTH_SHORT).show()
+        }
+    }
+    val myFullProfile by viewModel.userFullProfileInfo.collectAsState()
     Column(
         modifier = Modifier
             .background(DeepBlue)
             .fillMaxSize()){
         TitleInfo()
-        PersonInfo()
-        FeatureSection(features = listOf(
+        PersonInfo(
+            myFullProfile.publicInfo.nm!!,
+            myFullProfile.privateInfo.pic!!,
+            myFullProfile.publicInfo.progShortName!!,
+            myFullProfile.publicInfo.id!!
+            )
+        FeatureSection(navController,features = listOf(
             Feature(
                 title = "CGPA",
-                info = "3.65" ,
+                info = myFullProfile.publicInfo.cgpa.toString() ,
                 BlueViolet1,
                 BlueViolet2,
                 BlueViolet3
             ),
             Feature(
                 title = "DUE",
-                info = "30.5k",
+                info = (myFullProfile.paymentInfo.totalDebit!!-myFullProfile.paymentInfo.totalCredit!!).toK(),
                 Beige1,
                 Beige2,
                 Beige3
@@ -74,7 +97,7 @@ fun ProfileScreen(viewModel: MainViewModel= hiltViewModel()) {
             ),
             Feature(
                 title = "Course",
-                info = "SIX" ,
+                info = myFullProfile.regCourseInfo.size.toWords(),
                 Limerick1,
                 Limerick2,
                 Limerick3
@@ -148,10 +171,10 @@ fun Ic(
 
 @Composable
 fun PersonInfo(
-    name: String = "Ahmad Umar Mahdi",
-    pic: String = "",
-    program: String = "B.Sc. in CSE",
-    id: String = "193-15-1071"
+    name: String,
+    pic: String,
+    program: String,
+    id: String
 ) {
     Row(
         modifier = Modifier
@@ -209,7 +232,7 @@ fun PersonInfo(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "ID: $id",
+                text = "$id",
                 style = MaterialTheme.typography.headlineMedium
             )
         }
@@ -217,7 +240,7 @@ fun PersonInfo(
 
 }
 @Composable
-fun FeatureSection(features: List<Feature>) {
+fun FeatureSection(navController: NavHostController, features: List<Feature>) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "Features",
@@ -230,7 +253,16 @@ fun FeatureSection(features: List<Feature>) {
             modifier = Modifier.fillMaxHeight()
         ) {
             items(features.size) {
-                FeatureItem(feature = features[it])
+                FeatureItem(feature = features[it]){
+                    when (it) {
+                        0 -> navController.navigate(ProfileInnerScreens.CgpaScreen.route)
+                        1 -> navController.navigate(ProfileInnerScreens.DueScreen.route)
+                        2 -> navController.navigate(ProfileInnerScreens.RegCourseScreen.route)
+                        3 -> navController.navigate(ProfileInnerScreens.LiveResultScreen.route)
+
+
+                    }
+                }
             }
         }
     }
@@ -238,7 +270,8 @@ fun FeatureSection(features: List<Feature>) {
 
 @Composable
 fun FeatureItem(
-    feature: Feature
+    feature: Feature,
+    onClick: (() -> Unit)
 ) {
     BoxWithConstraints(
         modifier = Modifier
@@ -246,9 +279,7 @@ fun FeatureItem(
             .aspectRatio(1f)
             .bounceClick()
             .clip(RoundedCornerShape(20.dp))
-            .clickable{
-
-                }
+            .clickable {onClick.invoke()}
             .background(feature.darkColor)
     ) {
         val width = constraints.maxWidth
@@ -332,6 +363,6 @@ fun FeatureItem(
 @Composable
 fun PreviewsProfile() {
     KnockMETheme {
-        ProfileScreen()
+        //ProfileScreen()
     }
 }

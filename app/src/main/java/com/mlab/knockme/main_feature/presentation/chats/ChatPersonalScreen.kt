@@ -203,7 +203,7 @@ fun LoadChatList(state: ChatListState,navController: NavHostController,myId: Str
     LazyColumn(
         modifier = Modifier
             .fillMaxHeight()
-    ) {
+    ){
         items(state.chatList) { proView ->
             ChatView(
                 proView,
@@ -211,18 +211,17 @@ fun LoadChatList(state: ChatListState,navController: NavHostController,myId: Str
                     .animateItemPlacement(),
                 state.searchText
             ){ id ->
-                if(state.searchText.length<2) {
+                if(state.searchText.length < 2) {
                     when (navController.currentDestination?.route) {
                         MainScreens.CtPersonalScreen.route -> {
-                            val path = "personalMsg/$myId/chats/$id"
+                            val path = "personalMsg/$myId/"
                             navController.navigate(ChatInnerScreens.MsgScreen.route+"path=$path&id=$id")
                         }
                         MainScreens.CtPlacewiseScreen.route ->
-                            navController.navigate(ChatInnerScreens.MsgScreen.route+"{placeMsg/$id/chats}/{$id}")
+                            navController.navigate(ChatInnerScreens.MsgScreen.route+"path=groupMsg/placeMsg&id=$id")
                         MainScreens.CtBusInfoScreen.route ->
-                            navController.navigate(ChatInnerScreens.MsgScreen.route+"{busMsg/$id/chats}/{$id}")
+                            navController.navigate(ChatInnerScreens.MsgScreen.route+"path=groupMsg/busMsg&id=$id")
                     }
-
                 }
                 else
                     navController.navigate(ChatInnerScreens.UserProfileScreen.route+id)

@@ -101,7 +101,7 @@ class MainRepoImpl @Inject constructor(
             ) {
                 Log.d("TAG", "onChildAdded:" + dataSnapshot.key!!)
                 val msg = dataSnapshot.getValue<Msg>()
-                msgList.add(msg!!)
+                msgList.add(0,msg!!)
                 Success.invoke(msgList)
             }
             override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {}
@@ -115,6 +115,13 @@ class MainRepoImpl @Inject constructor(
         val myRef: DatabaseReference = firebase.getReference(path)
         val key =myRef.push().key
         myRef.child(key!!).setValue(msg).addOnFailureListener {
+            it.localizedMessage?.let { ex -> Failed.invoke(ex) }
+        }
+    }
+
+    override fun refreshProfileInChats(path: String, msg: Msg,Failed: (msg:String) -> Unit) {
+        val myRef: DatabaseReference = firebase.getReference(path)
+        myRef.setValue(msg).addOnFailureListener {
             it.localizedMessage?.let { ex -> Failed.invoke(ex) }
         }
     }
@@ -149,12 +156,12 @@ class MainRepoImpl @Inject constructor(
 
             override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
                 val updatedData = snapshot.getValue<Msg>()!!
-                profileList.forEachIndexed { i, msg ->
-                    if (msg.id == updatedData.id) {
-                        profileList.removeAt(i)
-                        profileList.add(updatedData)
-                        return@forEachIndexed
-                    }
+                profileList.find { it.id == updatedData.id }?.apply {
+                    this.id=updatedData.id
+                    this.nm=updatedData.nm
+                    this.msg=updatedData.msg
+                    this.time=updatedData.time
+                    this.pic=updatedData.pic
                 }
                 profileList.sortByDescending { it.time }
                 Success.invoke(profileList)
@@ -176,24 +183,27 @@ class MainRepoImpl @Inject constructor(
         Success: (userBasicInfo: UserBasicInfo) -> Unit,
         Failed: (msg: String) -> Unit
     ) {
+        Log.d("getUserBasicInfo", "Data: call")
+
         val docRef = firestore.collection("userProfile").document(id)
         docRef.get()
             .addOnSuccessListener { document ->
                 if (document != null && document.exists()) {
-                    Log.d("getUserProfileInfo", "DocumentSnapshot data: ${document.data}")
 
                     val userBasicInfo = mapper
                         .fromJson(mapper.toJson(document.data), UserProfile::class.java)
                         .toUserBasicInfo()
+                    Log.d("getUserBasicInfo", "DocumentSnapshot data: ${userBasicInfo.publicInfo}")
+
                     Success.invoke(userBasicInfo)
                 } else {
-                    Log.d("getUserProfileInfo", "No Such User")
+                    Log.d("getUserBasicInfo", "No Such User")
                     Failed.invoke("No user found")
 
                 }
             }
             .addOnFailureListener { exception ->
-                Log.d("getUserProfileInfo", "get failed with ", exception)
+                Log.d("getUserBasicInfo", "get failed with ", exception)
                 Failed.invoke(exception.toString())
             }
     }

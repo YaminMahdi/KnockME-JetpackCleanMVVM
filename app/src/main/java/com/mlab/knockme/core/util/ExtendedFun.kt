@@ -13,9 +13,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import com.ibm.icu.text.RuleBasedNumberFormat
 import java.text.SimpleDateFormat
-import java.util.Locale
+import java.util.*
 import java.util.concurrent.TimeUnit
+
 
 enum class ButtonState { Pressed, Idle }
 fun Modifier.bounceClick() = composed {
@@ -67,6 +69,23 @@ fun String.toTeacherInitial(): String{
         initial+=nm[0]
     }
     return initial
+}
+
+fun Int.toWords(): String {
+    val formatter = RuleBasedNumberFormat(
+        Locale("en", "US"),
+        RuleBasedNumberFormat.SPELLOUT
+    )
+
+//    val formatter = MessageFormat(
+//        "{0,spellout,currency}",
+//        Locale("en", "US")
+//    )
+    return formatter.format(this).uppercase()
+}
+fun Double.toK(): String {
+    val tk = this/1000
+    return "%.1f".format(tk)+"K"
 }
 
 infix fun <T> List<T>.equalsIgnoreOrder(other: List<T>) = this.size == other.size && this.toSet() == other.toSet()

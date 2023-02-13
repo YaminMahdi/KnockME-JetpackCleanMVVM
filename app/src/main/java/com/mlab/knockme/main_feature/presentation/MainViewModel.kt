@@ -5,6 +5,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mlab.knockme.auth_feature.domain.model.CourseInfo
+import com.mlab.knockme.auth_feature.domain.model.LiveResultInfo
+import com.mlab.knockme.auth_feature.domain.model.PaymentInfo
+import com.mlab.knockme.auth_feature.domain.model.UserProfile
 import com.mlab.knockme.main_feature.domain.model.*
 import com.mlab.knockme.main_feature.domain.use_case.MainUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,11 +31,11 @@ class MainViewModel @Inject constructor(
     private val _msg= MutableStateFlow<List<Msg>>(emptyList())
     val msg = _msg.asStateFlow()
 
-    private val msgList = savedStateHandle.getStateFlow("msgList", emptyList<Msg>())
-    private val msgText = savedStateHandle.getStateFlow("msgText", "")
-    val msgState = combine(msgList,msgText){msgList,msgText->
-        MsgListState(msgList, msgText)
-    }.stateIn(viewModelScope, SharingStarted.Lazily, MsgListState())
+    val msgList = savedStateHandle.getStateFlow("msgList", emptyList<Msg>())
+//    private val msgText = savedStateHandle.getStateFlow("msgText", "")
+//    val msgState = combine(msgList,msgText){msgList,msgText->
+//        MsgListState(msgList, msgText)
+//    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(100), MsgListState())
 
     //val msgList = msgListState.value
 
@@ -58,9 +62,13 @@ class MainViewModel @Inject constructor(
         Failed: (msg: String) -> Unit
     ) {
         getMsgJob?.cancel()
+        //savedStateHandle["msgList"] = emptyList<Msg>()
         getMsgJob = viewModelScope.launch {
             mainUseCases.getMsg(path,{
-                savedStateHandle["msgList"] = it
+                val x = mutableListOf<Msg>()
+                x.addAll(it)
+                savedStateHandle["msgList"] = x
+                Log.d("TAG", "getMeg: hi from  savedStateHandle[\"msgList\"] = it")
             }, Failed)
         }
     }
@@ -71,7 +79,14 @@ class MainViewModel @Inject constructor(
         Failed: (msg:String) -> Unit
     ){
         viewModelScope.launch {
+            //savedStateHandle["msgText"] = msg.msg
             mainUseCases.sendMsg(path, msg, Failed)
+        }
+    }
+    fun refreshProfileInChats(path: String, msg: Msg, Failed: (msg: String) -> Unit) {
+        viewModelScope.launch {
+            //savedStateHandle["msgText"] = msg.msg
+            mainUseCases.refreshProfileInChats(path, msg, Failed)
         }
     }
 
@@ -165,25 +180,41 @@ class MainViewModel @Inject constructor(
 
 
     //profile view
-    private val isLoading = savedStateHandle.getStateFlow("isLoading", true)
+    val isLoading = savedStateHandle.getStateFlow("isLoading", true)
     //val isLoading = _isLoading
-    private val hasPrivateInfo = savedStateHandle.getStateFlow("hasPrivateInfo", false)
+    val hasPrivateInfo = savedStateHandle.getStateFlow("hasPrivateInfo", false)
     //val hasPrivateInfo = _hasPrivateInfo
     val userBasicInfo = savedStateHandle.getStateFlow("userBasicInfo", UserBasicInfo())
+    val tarBasicInfo = savedStateHandle.getStateFlow("tarBasicInfo", UserBasicInfo())
+
     //val userBasicInfo = _userBasicInfo
     //val stateProfile = ViewProfileState(isLoading.collectAsState(),hasPrivateInfo,userBasicInfo)
-    val stateProfile = combine(isLoading,hasPrivateInfo,userBasicInfo)
-    {x,y,z ->
-        ViewProfileState(x, y, z)
-    }.stateIn(viewModelScope, SharingStarted.Eagerly , ViewProfileState())
+    //var stateProfile :StateFlow<ViewProfileState>? = null
+
+//    fun clearUserBasicInfo(){
+//        stateProfile = combine(isLoading,hasPrivateInfo,userBasicInfo)
+//        {x,y,z -> ViewProfileState(x, y, z) }
+//            .stateIn(viewModelScope, SharingStarted.Eagerly, ViewProfileState())
+//    }
+    fun getTarBasicInfo(id: String){
+    viewModelScope.launch {
+        mainUseCases.getUserBasicInfo(id,
+            {
+                savedStateHandle["tarBasicInfo"] = it
+            },{ })
+        }
+    }
 
     fun getUserBasicInfo(id: String){
-        viewModelScope.launch {
+    savedStateHandle["hasPrivateInfo"] = false
+    savedStateHandle["isLoading"] = true
+
+    viewModelScope.launch {
             mainUseCases.getUserBasicInfo(id,
                 {
                     savedStateHandle["userBasicInfo"] = it
                     viewModelScope.launch {
-                        delay(500)
+                        delay(1600)
                         savedStateHandle["isLoading"] = false
                     }
                     if(!it.privateInfo.email.isNullOrEmpty())
@@ -204,5 +235,28 @@ class MainViewModel @Inject constructor(
             savedStateHandle["searchText"] = ""
         }
     }
+    val userFullProfileInfo = savedStateHandle.getStateFlow("userFullProfileInfo", UserProfile())
+    val userPaymentInfo = savedStateHandle.getStateFlow("userPaymentInfo", PaymentInfo())
+    val userLiveResultInfo = savedStateHandle.getStateFlow("userLiveResultInfo", emptyList<LiveResultInfo>())
+    val userRegCourseInfo = savedStateHandle.getStateFlow("userRegCourseInfo", emptyList<CourseInfo>())
+
+    fun getUserFullProfileInfo(id: String, Failed: (msg:String) -> Unit) {
+        mainUseCases.getUserFullProfile(id,{
+            savedStateHandle["userFullProfileInfo"]=it
+        },Failed)
+    }
+
+    suspend fun getOrUpdateUserPaymentInfo(
+        id: String,
+        accessToken: String,
+        paymentInfo: PaymentInfo,
+        Failed: (msg:String) -> Unit
+    ){
+        mainUseCases.updatePaymentInfo(id,accessToken,paymentInfo,{
+            savedStateHandle["userPaymentInfo"]=it
+            getUserFullProfileInfo(id, Failed)
+        },Failed)
+    }
+
 
 }

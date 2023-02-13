@@ -8,6 +8,7 @@ data class MainUseCases (
 
     val getMsg: GetMsg,
     val sendMsg: SendMsg,
+    val refreshProfileInChats: RefreshProfileInChats,
     val deleteMsg: DeleteMsg,
 
     val updatePaymentInfo: UpdatePaymentInfo,

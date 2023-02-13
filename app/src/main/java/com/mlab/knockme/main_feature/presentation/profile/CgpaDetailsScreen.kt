@@ -7,8 +7,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -30,7 +28,6 @@ import androidx.navigation.compose.rememberNavController
 import com.mlab.knockme.auth_feature.domain.model.ResultInfo
 import com.mlab.knockme.auth_feature.domain.model.SemesterInfo
 import com.mlab.knockme.core.util.bounceClick
-import com.mlab.knockme.core.util.toTeacherInitial
 import com.mlab.knockme.main_feature.presentation.main.BackBtn
 import com.mlab.knockme.profile_feature.presentation.components.standardQuadFromTo
 import com.mlab.knockme.ui.theme.*
@@ -38,7 +35,7 @@ import com.mlab.knockme.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CgpaDetailsScreen(navController: NavHostController) {
+fun CgpaDetailsScreen(id: String, navController: NavHostController) {
     val semInfo = SemesterInfo("","Summer",2022,3.65,18.0)
     val lst = listOf(
         ResultInfo(
@@ -331,6 +328,6 @@ fun TopBarOnlyBack(navController: NavHostController) {
 @Composable
 fun Previews5() {
     KnockMETheme {
-        CgpaDetailsScreen(rememberNavController())
+       // CgpaDetailsScreen(rememberNavController(), navController)
     }
 }

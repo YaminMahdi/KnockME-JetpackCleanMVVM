@@ -1,5 +1,6 @@
 package com.mlab.knockme.main_feature.presentation.profile
 
+import android.content.Context
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,20 +19,29 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.mlab.knockme.R
 import com.mlab.knockme.auth_feature.domain.model.CourseInfo
 import com.mlab.knockme.core.util.bounceClick
 import com.mlab.knockme.core.util.toTeacherInitial
+import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.main.TopBar
 import com.mlab.knockme.profile_feature.presentation.components.standardQuadFromTo
 import com.mlab.knockme.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegCourseViewScreen(navController: NavHostController) {
+fun RegCourseViewScreen(navController: NavHostController, viewModel: MainViewModel = hiltViewModel()) {
+    val context: Context = LocalContext.current
+    val sharedPreferences = context.getSharedPreferences(
+        context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
+    )
+    val myId = sharedPreferences.getString("studentId",null)!!
     val lst = listOf(
         CourseInfo(
             0,

@@ -1,5 +1,7 @@
 package com.mlab.knockme.main_feature.presentation.profile
 
+import android.content.Context
+import android.widget.Toast
 import com.mlab.knockme.R
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -12,6 +14,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -19,23 +24,40 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.mlab.knockme.core.util.bounceClick
 import com.mlab.knockme.core.util.toDayPassed
+import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.main.TopBar
 import com.mlab.knockme.profile_feature.presentation.components.standardQuadFromTo
 import com.mlab.knockme.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DueViewScreen(navController: NavHostController) {
+fun DueViewScreen(navController: NavHostController, viewModel: MainViewModel= hiltViewModel()) {
+    val context: Context = LocalContext.current
+    val sharedPreferences = context.getSharedPreferences(
+        context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
+    )
+    val myId = sharedPreferences.getString("studentId",null)!!
+    val myFullProfile by viewModel.userFullProfileInfo.collectAsState()
+
+    LaunchedEffect(key1 = ""){
+        viewModel.getUserFullProfileInfo(myId){
+            Toast.makeText(context, "Server Error.", Toast.LENGTH_SHORT).show()
+        }
+        viewModel.getOrUpdateUserPaymentInfo(myId,myFullProfile.token,myFullProfile.paymentInfo){
+            Toast.makeText(context, "Server Error.", Toast.LENGTH_SHORT).show()
+        }
+    }
     Scaffold(topBar = {TopBar(navController)}) {
         Column(modifier = Modifier
             .padding(it)
@@ -51,18 +73,18 @@ fun DueViewScreen(navController: NavHostController) {
                     .padding(vertical = 16.dp),
             )
             PaymentInfoItem(
-                "Total Payable", 100434.0,
+                "Total Payable", myFullProfile.paymentInfo.totalDebit!!,
                 BlueViolet1, BlueViolet2, BlueViolet3 )
             PaymentInfoItem(
-                "Total Paid", 100434.0,
+                "Total Paid", myFullProfile.paymentInfo.totalCredit!!,
                 LightGreen1, LightGreen2, LightGreen3 )
             PaymentInfoItem(
-                "Total Due", 100434.0,
+                "Total Due", myFullProfile.paymentInfo.totalDebit!!-myFullProfile.paymentInfo.totalCredit!!,
                 Beige1, Beige2, Beige3 )
             PaymentInfoItem(
-                "Total Other", 100434.0,
+                "Total Other", myFullProfile.paymentInfo.totalOther!!,
                 Limerick1, Limerick2, Limerick3 )
-            LastUpdated(63478563485)
+            LastUpdated(myFullProfile.lastUpdatedPaymentInfo)
 
         }
     }
@@ -194,6 +216,6 @@ fun PaymentInfoItem(
 @Composable
 fun Previews2() {
     KnockMETheme {
-        DueViewScreen(rememberNavController())
+        DueViewScreen(rememberNavController(), hiltViewModel())
     }
 }

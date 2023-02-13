@@ -105,6 +105,7 @@ object AppModule {
             GetOrCreateUserProfileInfo(repo),
             GetMsg(repo),
             SendMsg(repo),
+            RefreshProfileInChats(repo),
             DeleteMsg(repo),
             UpdatePaymentInfo(repo),
             UpdateRegCourseInfo(repo),

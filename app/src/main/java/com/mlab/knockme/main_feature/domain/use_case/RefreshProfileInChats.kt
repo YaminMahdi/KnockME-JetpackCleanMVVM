@@ -6,7 +6,7 @@ import com.mlab.knockme.main_feature.domain.repo.MainRepo
 import javax.inject.Inject
 import kotlin.jvm.Throws
 
-class SendMsg@Inject constructor(
+class RefreshProfileInChats@Inject constructor(
     private val repo: MainRepo
 ) {
     operator fun invoke(
@@ -14,6 +14,6 @@ class SendMsg@Inject constructor(
         msg: Msg,
         Failed: (msg:String) -> Unit
     ){
-        repo.sendMessages(path,msg,Failed)
+        repo.refreshProfileInChats(path,msg,Failed)
     }
 }

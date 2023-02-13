@@ -5,9 +5,9 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 data class Msg(
-    val id: String?="",
-    val nm: String?="",
-    val msg: String?="",
-    val pic: String?="",
-    val time: Long?=0L
+    var id: String?="",
+    var nm: String?="",
+    var msg: String?="",
+    var pic: String?="",
+    var time: Long?=0L
 ) : Parcelable
