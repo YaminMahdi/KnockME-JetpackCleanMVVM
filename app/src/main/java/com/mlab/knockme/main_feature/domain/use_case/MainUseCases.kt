@@ -5,6 +5,7 @@ data class MainUseCases (
     val getUserBasicInfo: GetUserBasicInfo,
     val getUserFullProfile: GetUserFullProfile,
     val getOrCreateUserProfileInfo: GetOrCreateUserProfileInfo,
+    val getRandomHadith: GetRandomHadith,
 
     val getMsg: GetMsg,
     val sendMsg: SendMsg,

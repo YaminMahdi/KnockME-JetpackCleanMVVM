@@ -1,5 +1,8 @@
 package com.mlab.knockme.main_feature.presentation.profile
 
+import android.content.Context
+import android.os.Looper
+import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -12,58 +15,131 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import com.mlab.knockme.auth_feature.domain.model.SemesterInfo
 import com.mlab.knockme.core.util.bounceClick
+import com.mlab.knockme.main_feature.presentation.MainViewModel
+import com.mlab.knockme.main_feature.presentation.ProfileInnerScreens
+import com.mlab.knockme.main_feature.presentation.chats.CustomToast
 import com.mlab.knockme.main_feature.presentation.main.TopBar
 import com.mlab.knockme.profile_feature.presentation.components.standardQuadFromTo
 import com.mlab.knockme.ui.theme.*
+import kotlinx.coroutines.DelicateCoroutinesApi
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, DelicateCoroutinesApi::class)
 @Composable
-fun CgpaViewScreen(id: String, navController: NavHostController) {
-    val lst = listOf(
-        SemesterInfo("","Summer",2023,3.45,15.0),
-        SemesterInfo("","Fall",2023,2.45,9.0),
-        SemesterInfo("","Spring",2022,3.55,22.0),
-        SemesterInfo("","Summer",2023,1.45,15.0),
-        SemesterInfo("","Fall",2019,3.45,15.0),
-        SemesterInfo("","Summer",2023,3.75,15.0),
-        SemesterInfo("","Summer",2023,3.45,15.0),
+fun CgpaViewScreen(id: String, navController: NavHostController, viewModel: MainViewModel = hiltViewModel()) {
+    val context: Context = LocalContext.current
+    val myFullProfile by viewModel.userFullProfileInfo.collectAsState()
+    val loading by viewModel.isResultLoading.collectAsState()
+    val loadingTxt by viewModel.resultLoadingTxt.collectAsState()
+    LaunchedEffect(key1 = ""){
+        viewModel.getUserFullProfileInfo(id,{
+            viewModel.updateUserFullResultInfo(
+                publicInfo = it.publicInfo,
+                fullResultInfoList = it.fullResultInfo)
+        },{
+            Looper.prepare()
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            Looper.loop()
+        })
+    }
 
-        )
-    Scaffold(topBar = {TopBar(navController)}) {
-        Column(modifier = Modifier
+//    val lst = listOf(
+//        SemesterInfo("","Summer",2023,3.45,15.0),
+//        SemesterInfo("","Fall",2023,2.45,9.0),
+//        SemesterInfo("","Spring",2022,3.55,22.0),
+//        SemesterInfo("","Summer",2023,1.45,15.0),
+//        SemesterInfo("","Fall",2019,3.45,15.0),
+//        SemesterInfo("","Summer",2023,3.75,15.0),
+//        SemesterInfo("","Summer",2023,3.45,15.0),
+//
+//        )
+    val lst= mutableListOf<SemesterInfo>()
+    myFullProfile.fullResultInfo.forEach{ lst.add(it.semesterInfo) }
+
+    Scaffold(
+        topBar = {
+        TopBar(navController){
+            viewModel.updateUserFullResultInfo(
+                publicInfo = myFullProfile.publicInfo,
+                fullResultInfoList = myFullProfile.fullResultInfo)
+        }
+        }) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
             .fillMaxSize()
             .background(DeepBlue)
             .padding(it)
             .padding(horizontal = 10.dp)
         ) {
             Text(
-                text = "Congratulation,",
+                text = "Result",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp),
+            )
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier =
+                Modifier
+                    .padding(10.dp)
+                    .bounceClick()
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = 7.dp,
+                            topEnd = 21.dp,
+                            bottomStart = 21.dp,
+                            bottomEnd = 7.dp
+                        )
+                    )
+                    .clickable {
+
+                    }
+                    .background(BlueViolet3)
+                    .padding(27.dp)
+                    .padding(horizontal = 5.dp)
+
+            ) {
+                Text(
+                    text = "CGPA: ${myFullProfile.publicInfo.cgpa}",
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontSize = 30.sp
+                )
+            }
+            Text(
+                text = if(lst.isNotEmpty()) "Congratulation," else "Oops!",
                 style = MaterialTheme.typography.headlineLarge,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 14.dp, vertical = 5.dp)
-                    .padding(top=10.dp),
+                    .padding(top = 10.dp),
                 //textAlign = TextAlign.End
             )
             Text(
                 text =
                 if(lst.size>1)
                     "You have completed ${lst.size} semesters\nand ${lst.sumOf {sem -> sem.creditTaken.toInt()}} credits."
+                else if(lst.size==1)
+                    "You have completed ${lst.size} semester\nand ${lst.sumOf { sem -> sem.creditTaken.toInt() }} credits."
                 else
-                    "You completed ${lst.size} semester.",
+                    "You haven't completed any semester.",
                 style = MaterialTheme.typography.bodyLarge,
                 color = TextWhite,
                 fontSize = 18.sp,
@@ -73,7 +149,7 @@ fun CgpaViewScreen(id: String, navController: NavHostController) {
                 //textAlign = TextAlign.End
             )
             Text(
-                text = "All SGPAs",
+                text = if(lst.isNotEmpty()) "All SGPAs" else "",
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -87,18 +163,28 @@ fun CgpaViewScreen(id: String, navController: NavHostController) {
             ) {
                 items(lst.size) {ind->
                     if(lst[ind].sgpa < 3.0)
-                        SemesterInfoItem(lst[ind], Beige1, Beige2, Beige3)
+                        SemesterInfoItem(lst[ind], Beige1, Beige2, Beige3){
+                            navController.navigate(ProfileInnerScreens.CgpaInnerScreen.route+id+"/"+ind)
+                        }
                     else if(lst[ind].sgpa >= 3.7)
-                        SemesterInfoItem(lst[ind], LightGreen1, LightGreen2, LightGreen3)
+                        SemesterInfoItem(lst[ind], LightGreen1, LightGreen2, LightGreen3){
+                            navController.navigate(ProfileInnerScreens.CgpaInnerScreen.route+id+"/"+ind)
+                        }
                     else if(lst[ind].sgpa >= 3.5)
-                        SemesterInfoItem(lst[ind], BlueViolet1, BlueViolet2, BlueViolet3)
+                        SemesterInfoItem(lst[ind], BlueViolet1, BlueViolet2, BlueViolet3){
+                            navController.navigate(ProfileInnerScreens.CgpaInnerScreen.route+id+"/"+ind)
+                        }
                     else
-                        SemesterInfoItem(lst[ind], Limerick1, Limerick2, Limerick3)
+                        SemesterInfoItem(lst[ind], Limerick1, Limerick2, Limerick3){
+                            navController.navigate(ProfileInnerScreens.CgpaInnerScreen.route+id+"/"+ind)
+                        }
                 }
             }
-            LastUpdated(63487325)
+            LastUpdated(myFullProfile.lastUpdatedResultInfo)
         }
     }
+    CustomToast(loading, loadingTxt)
+
 }
 
 @Composable
@@ -106,7 +192,8 @@ fun SemesterInfoItem(
     semesterInfo: SemesterInfo,
     lightColor: Color = Limerick1,
     mediumColor: Color = Limerick2,
-    darkColor: Color = Limerick3
+    darkColor: Color = Limerick3,
+    onClick: () -> Unit
 ) {
     BoxWithConstraints(
         modifier = Modifier
@@ -114,8 +201,8 @@ fun SemesterInfoItem(
             .aspectRatio(1f)
             .bounceClick()
             .clip(RoundedCornerShape(10.dp))
-            .clickable{
-
+            .clickable {
+                onClick.invoke()
             }
             .background(darkColor)
     ) {

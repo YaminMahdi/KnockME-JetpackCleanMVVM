@@ -11,7 +11,7 @@ class UpdateFullResultInfo @Inject constructor(
     suspend operator fun invoke(
         publicInfo: PublicInfo,
         fullResultInfoList: List<FullResultInfo>,
-        Success: (fullResultInfoList: List<FullResultInfo>) -> Unit,
+        Success: (fullResultInfoList: List<FullResultInfo>, cgpa: Double) -> Unit,
         Loading: (msg:String) -> Unit,
         Failed: (msg:String) -> Unit
     )= repo.updateFullResultInfo(publicInfo, fullResultInfoList, Success, Loading, Failed)

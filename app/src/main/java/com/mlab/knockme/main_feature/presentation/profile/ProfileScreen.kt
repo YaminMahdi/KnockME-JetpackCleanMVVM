@@ -1,6 +1,7 @@
 package com.mlab.knockme.main_feature.presentation.profile
 
 import android.content.Context
+import android.os.Looper
 import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -44,11 +45,14 @@ import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.core.util.bounceClick
 import com.mlab.knockme.core.util.toK
 import com.mlab.knockme.core.util.toWords
+import com.mlab.knockme.main_feature.presentation.ChatInnerScreens
 import com.mlab.knockme.main_feature.presentation.ProfileInnerScreens
 import com.mlab.knockme.main_feature.presentation.profile.components.Feature
 import com.mlab.knockme.profile_feature.presentation.components.standardQuadFromTo
 import com.mlab.knockme.ui.theme.*
+import kotlinx.coroutines.DelicateCoroutinesApi
 
+@OptIn(DelicateCoroutinesApi::class)
 @Composable
 fun ProfileScreen(
     navController: NavHostController,
@@ -63,9 +67,15 @@ fun ProfileScreen(
     val myId = sharedPreferences.getString("studentId",null)!!
     LaunchedEffect(key1 = "1")
     {
-        viewModel.getUserFullProfileInfo(myId) {
-            Toast.makeText(context, "Server Error", Toast.LENGTH_SHORT).show()
-        }
+        viewModel.getUserFullProfileInfo(myId,{
+            viewModel.updateUserFullResultInfo(
+                publicInfo = it.publicInfo,
+                fullResultInfoList = it.fullResultInfo)
+        },{
+            Looper.prepare()
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            Looper.loop()
+        })
     }
     val myFullProfile by viewModel.userFullProfileInfo.collectAsState()
     Column(
@@ -77,9 +87,11 @@ fun ProfileScreen(
             myFullProfile.publicInfo.nm!!,
             myFullProfile.privateInfo.pic!!,
             myFullProfile.publicInfo.progShortName!!,
-            myFullProfile.publicInfo.id!!
+            myFullProfile.publicInfo.id!!,
+            navController
             )
-        FeatureSection(navController,features = listOf(
+        FeatureSection(navController,myFullProfile.publicInfo.id!!,
+            features = listOf(
             Feature(
                 title = "CGPA",
                 info = myFullProfile.publicInfo.cgpa.toString() ,
@@ -148,12 +160,11 @@ fun Ic(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .padding(start = 12.dp)
-            .clickable {
-                if (onClick != null) {
-                    onClick()
-                }
-            }
+            .bounceClick()
             .clip(RoundedCornerShape(18.dp))
+            .clickable {
+                onClick?.invoke()
+            }
             .background(DarkerButtonBlue)
             .padding(8.dp)
 
@@ -174,11 +185,14 @@ fun PersonInfo(
     name: String,
     pic: String,
     program: String,
-    id: String
+    id: String,
+    navController: NavHostController
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .bounceClick()
+            .clickable {navController.navigate(ChatInnerScreens.UserProfileScreen.route+id)}
     ) {
         SubcomposeAsyncImage(
             model = pic,
@@ -240,10 +254,10 @@ fun PersonInfo(
 
 }
 @Composable
-fun FeatureSection(navController: NavHostController, features: List<Feature>) {
+fun FeatureSection(navController: NavHostController,id: String, features: List<Feature>) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
-            text = "Features",
+            text = "Dashboard",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(15.dp)
         )
@@ -255,7 +269,7 @@ fun FeatureSection(navController: NavHostController, features: List<Feature>) {
             items(features.size) {
                 FeatureItem(feature = features[it]){
                     when (it) {
-                        0 -> navController.navigate(ProfileInnerScreens.CgpaScreen.route)
+                        0 -> navController.navigate(ProfileInnerScreens.CgpaScreen.route+id)
                         1 -> navController.navigate(ProfileInnerScreens.DueScreen.route)
                         2 -> navController.navigate(ProfileInnerScreens.RegCourseScreen.route)
                         3 -> navController.navigate(ProfileInnerScreens.LiveResultScreen.route)

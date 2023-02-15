@@ -103,6 +103,7 @@ object AppModule {
             GetUserBasicInfo(repo),
             GetUserFullProfile(repo),
             GetOrCreateUserProfileInfo(repo),
+            GetRandomHadith(repo),
             GetMsg(repo),
             SendMsg(repo),
             RefreshProfileInChats(repo),

@@ -166,6 +166,7 @@ class LoginActivity : ComponentActivity() {
         super.onStart()
         if( Firebase.auth.currentUser != null)
             startActivity(Intent(this,MainActivity::class.java))
+        this.finish()
 //        val sharedPreferences = this.getSharedPreferences(
 //            getString(R.string.preference_file_key), Context.MODE_PRIVATE
 //        )

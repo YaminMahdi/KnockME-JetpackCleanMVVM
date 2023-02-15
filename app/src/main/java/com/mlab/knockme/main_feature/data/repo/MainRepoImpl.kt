@@ -12,6 +12,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.mlab.knockme.auth_feature.data.data_source.PortalApi
+import com.mlab.knockme.auth_feature.data.data_source.dto.DailyHadithDto
 import com.mlab.knockme.auth_feature.domain.model.*
 import com.mlab.knockme.core.util.notEqualsIgnoreOrder
 import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
@@ -35,6 +36,7 @@ import java.io.EOFException
 import java.io.IOException
 import java.util.Calendar
 import javax.inject.Inject
+import kotlin.math.log
 import kotlin.math.roundToInt
 
 class MainRepoImpl @Inject constructor(
@@ -274,6 +276,7 @@ class MainRepoImpl @Inject constructor(
                                 Loading.invoke("ID- $id Is Valid. Getting CGPA Info..")
                                 getCgpa(
                                     id = id,
+                                    semesterList = getSemesterList(studentInfo.firstSemId!!.toInt()),
                                     loading = {
                                     when (it) {
                                         -1 -> Failed.invoke("Oops, Something Went Wrong.")
@@ -293,7 +296,8 @@ class MainRepoImpl @Inject constructor(
                                             nm = studentInfo.studentName!!,
                                             progShortName = studentInfo.progShortName!!,
                                             batchNo = studentInfo.batchNo!!,
-                                            cgpa = cgpa
+                                            cgpa = cgpa,
+                                            firstSemId = studentInfo.firstSemId.toInt()
                                         )
                                         val shortProfile = Msg(
                                             id = id,
@@ -360,6 +364,7 @@ class MainRepoImpl @Inject constructor(
     ) {
         val docRef = firestore.collection("userProfile").document(id)
         try {
+            Log.d("token--", "updatePaymentInfo: $accessToken")
             val paymentInfoNew = api.getPaymentInfo(accessToken).toPaymentInfo()
             Log.d("getStudentInfo", "paymentInfo: $paymentInfoNew")
             if(paymentInfo != paymentInfoNew) {
@@ -390,11 +395,16 @@ class MainRepoImpl @Inject constructor(
     ) {
         val docRef = firestore.collection("userProfile").document(id)
         try {
-            val lastSemesterId = api.getAllSemesterInfo(accessToken)[0].semesterId
+            val semInfo =api.getAllSemesterInfo(accessToken)
+            var lastSemesterId = semInfo[0].semesterId
             Log.d("getStudentInfo", "lastSemesterId: $lastSemesterId")
-            val regCourseInfoNew = api.getRegisteredCourse(lastSemesterId, accessToken).map { it.toCourseInfo() }
+            var regCourseInfoNew = api.getRegisteredCourse(lastSemesterId, accessToken).map { it.toCourseInfo() }
+            if(regCourseInfoNew.isEmpty()){
+                lastSemesterId = semInfo[1].semesterId
+                regCourseInfoNew = api.getRegisteredCourse(lastSemesterId, accessToken).map { it.toCourseInfo() }
+            }
             Log.d("getStudentInfo", "registeredCourse: $regCourseInfoNew")
-            if (regCourseInfoList notEqualsIgnoreOrder regCourseInfoNew){
+            if (regCourseInfoList notEqualsIgnoreOrder regCourseInfoNew && regCourseInfoNew.isNotEmpty()){
                 Success.invoke(regCourseInfoNew)
                 docRef.update("regCourseInfo" , regCourseInfoNew)
                 docRef.update("lastUpdatedRegCourseInfo" , System.currentTimeMillis())
@@ -424,9 +434,14 @@ class MainRepoImpl @Inject constructor(
         val docRef = firestore.collection("userProfile").document(id)
         val liveResultInfoListNew = mutableListOf<LiveResultInfo>()
         try {
-            val lastSemesterId = api.getAllSemesterInfo(accessToken)[0].semesterId
+            val semInfo =api.getAllSemesterInfo(accessToken)
+            var lastSemesterId = semInfo[0].semesterId
             Log.d("getStudentInfo", "lastSemesterId: $lastSemesterId")
-            val registeredCourse = api.getRegisteredCourse(lastSemesterId, accessToken).map { it.toCourseInfo() }
+            var registeredCourse = api.getRegisteredCourse(lastSemesterId, accessToken).map { it.toCourseInfo() }
+            if(registeredCourse.isEmpty()) {
+                lastSemesterId = semInfo[1].semesterId
+                registeredCourse = api.getRegisteredCourse(lastSemesterId, accessToken).map { it.toCourseInfo() }
+            }
             Log.d("getStudentInfo", "registeredCourse: $registeredCourse")
             registeredCourse.forEach {
                 liveResultInfoListNew.add(api
@@ -434,7 +449,7 @@ class MainRepoImpl @Inject constructor(
                     .toLiveResultInfo(it.customCourseId!!, it.courseTitle!!, it.toShortSemName())
                 )
             }
-            if(liveResultInfoList notEqualsIgnoreOrder liveResultInfoListNew){
+            if(liveResultInfoList notEqualsIgnoreOrder liveResultInfoListNew && liveResultInfoListNew.isNotEmpty()){
                 Success.invoke(liveResultInfoListNew)
                 docRef.update("liveResultInfo" , liveResultInfoListNew)
                 docRef.update("lastUpdatedLiveResultInfo" , System.currentTimeMillis())
@@ -451,17 +466,18 @@ class MainRepoImpl @Inject constructor(
         } catch (e: IOException) {
             Failed.invoke("Couldn't reach server.")
             Log.d("TAG", "getStudentIdInfo: ${e.message} ${e.localizedMessage}")
-        }    }
+        }
+    }
 
     override suspend fun updateFullResultInfo(
         publicInfo: PublicInfo,
         fullResultInfoList: List<FullResultInfo>,
-        Success: (List<FullResultInfo>) -> Unit,
+        Success: (List<FullResultInfo>, Double) -> Unit,
         Loading: (msg: String) -> Unit,
         Failed: (msg: String) -> Unit
     ) {
         val docRef = firestore.collection("userProfile").document(publicInfo.id!!)
-        getCgpa(publicInfo.id!!,getSemesterList(publicInfo.id!!),{
+        getCgpa(publicInfo.id!!,getSemesterList(publicInfo.firstSemId),{
             when (it) {
                 -1 -> Failed.invoke("Oops, something went wrong.")
                 -2 -> Failed.invoke("Couldn't reach server.")
@@ -469,8 +485,8 @@ class MainRepoImpl @Inject constructor(
             }
         },{cgpa, fullResultInfoListNew ->
             publicInfo.cgpa=cgpa
-            if(fullResultInfoList notEqualsIgnoreOrder fullResultInfoListNew){
-                Success.invoke(fullResultInfoListNew)
+            if(fullResultInfoList notEqualsIgnoreOrder fullResultInfoListNew && fullResultInfoListNew.isNotEmpty()){
+                Success.invoke(fullResultInfoListNew,cgpa)
                 docRef.update("fullResultInfo" , fullResultInfoListNew)
                 docRef.update("publicInfo" , publicInfo)
                 docRef.update("lastUpdatedResultInfo" , System.currentTimeMillis())
@@ -480,14 +496,38 @@ class MainRepoImpl @Inject constructor(
         })
     }
 
+    override suspend fun getRandomHadith(
+        Success: (DailyHadithDto) -> Unit,
+        Failed: (msg: String) -> Unit
+    ) {
+        try {
+            val hadith = api.getDailyHadith().random()
+            Log.d("getRandomHadith", "hadith: $hadith")
+            Success.invoke(hadith)
+        }
+        catch (e: HttpException) {
+            Failed.invoke("Oops, something went wrong.")
+            Log.d("TAG", "getRandomHadith: ${e.message} ${e.localizedMessage}")
+        } catch (e: EOFException) {
+            Failed.invoke("Student Portal Server Error.")
+            Log.d("TAG", "getRandomHadith: ${e.message} ${e.localizedMessage}")
+        } catch (e: IOException) {
+            Failed.invoke("Couldn't reach server.")
+            Log.d("TAG", "getRandomHadith: ${e.message} ${e.localizedMessage}")
+        }     }
+
 
     @OptIn(DelicateCoroutinesApi::class)
     private suspend fun getCgpa(
         id: String,
-        semesterList: List<String> = getSemesterList(id),
+        semesterList: List<String>,
         loading: (index: Int) -> Unit,
         success: (cgpa: Double,fullResultInfo : List<FullResultInfo>) -> Unit
     ) {
+        Log.d("semesterList", "getCgpa: $semesterList")
+        if(semesterList.isEmpty()){
+            success.invoke(0.0, emptyList())
+        }
         var weightedCgpa = 0.0
         var totalCreditWeight = 0.0
         var resultFound = 0
@@ -496,7 +536,7 @@ class MainRepoImpl @Inject constructor(
             GlobalScope.launch(Dispatchers.IO) {
                 val semesterResultInfo = FullResultInfo()
                 try {
-                    delay(i*200.toLong())
+                    delay(i*250L)
                     val resultInfo = api.getResultInfo(semesterId, id)
                     Log.d("TAG", "getCgpa $semesterId resultInfo: $resultInfo")
                     if (resultInfo.isNotEmpty()) {
@@ -513,14 +553,16 @@ class MainRepoImpl @Inject constructor(
 
                         //add a semester result to list
                         semesterResultInfo.resultInfo = rInfo
-                        semesterResultInfo.semesterInfo = resultInfo[0].toSemesterInfo(creditTaken)
+                        if(resultInfo[0].cgpa!=0.0)
+                            semesterResultInfo.semesterInfo = resultInfo[0].toSemesterInfo(creditTaken)
+                        else
+                            semesterResultInfo.semesterInfo = resultInfo[1].toSemesterInfo(creditTaken)
                         fullResultInfo.add(semesterResultInfo)  //adding
                     }
                     resultFound++
                     if (resultFound == semesterList.size) {
                         var cgpa = weightedCgpa / totalCreditWeight
-                        if(!cgpa.isNaN())
-                            cgpa= (cgpa* 100.0).roundToInt() / 100.0
+                        cgpa = if(!cgpa.isNaN()) (cgpa* 100.0).roundToInt() / 100.0 else 0.0
                         success.invoke(cgpa,fullResultInfo)
                     }
                 } catch (e: HttpException) {
@@ -542,7 +584,7 @@ class MainRepoImpl @Inject constructor(
         }
     }
 
-    private fun getSemesterList(id: String): List<String> {
+    private fun getSemesterList(firstSemId: Int): List<String> {
         val year = Calendar.getInstance().get(Calendar.YEAR)
         val month = Calendar.getInstance().get(Calendar.MONTH)
         val endYearSemesterCount =
@@ -552,9 +594,9 @@ class MainRepoImpl @Inject constructor(
             else 3
 
         val yearEnd = year % 100
-        val initial = id.slice(0..2).toInt()  //.split('-')[0].toInt()
-        val yr: Int = initial / 10
-        var semester: Int = initial % 10
+        //val initial = id.slice(0..2).toInt()  //.split('-')[0].toInt()
+        val yr: Int = firstSemId / 10
+        var semester: Int = firstSemId % 10
         val list = mutableListOf<String>()
 
         for (y in yr..yearEnd) {

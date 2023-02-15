@@ -15,6 +15,7 @@ import com.mlab.knockme.auth_feature.domain.use_cases.AuthUseCases
 import com.mlab.knockme.auth_feature.util.SignResponse
 import com.mlab.knockme.core.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -57,7 +58,7 @@ class LoginViewModel @Inject constructor(
         pass: String,
         fbInfo: FBResponse
     ) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             savedStateHandle["isLoadingActive"] = true
             authUseCases.getStudentInfo(id, pass, fbInfo)
                 .collect {
@@ -106,14 +107,14 @@ class LoginViewModel @Inject constructor(
         savedStateHandle["isLoadingActive"] = true
     }
     fun deactivateLoading(delay: Long =700L) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             delay(delay)
             savedStateHandle["isLoadingActive"] = false
         }
     }
 
     fun signOut() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             authUseCases.firebaseSignOut().collect {
                 _signOutState.value = it
                 if (it == SignResponse.Success(true))
@@ -123,7 +124,7 @@ class LoginViewModel @Inject constructor(
     }
 
     fun getAuthState() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             authUseCases.firebaseAuthState().collect {
                 _authState.value = it
             }

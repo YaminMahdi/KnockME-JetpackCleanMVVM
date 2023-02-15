@@ -9,5 +9,7 @@ data class PublicInfo(
     var nm: String? ="",
     var progShortName: String? ="",
     var batchNo: Int=0,
-    var cgpa: Double=0.0
-) : Parcelable
+    var cgpa: Double=0.0,
+    var firstSemId: Int= 0,
+
+    ) : Parcelable

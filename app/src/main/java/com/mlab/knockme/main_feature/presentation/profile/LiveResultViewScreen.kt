@@ -1,6 +1,8 @@
 package com.mlab.knockme.main_feature.presentation.profile
 
 import android.content.Context
+import android.os.Looper
+import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -13,6 +15,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -34,8 +39,12 @@ import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.main.TopBar
 import com.mlab.knockme.profile_feature.presentation.components.standardQuadFromTo
 import com.mlab.knockme.ui.theme.*
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, DelicateCoroutinesApi::class)
 @Composable
 fun LiveResultViewScreen(navController: NavHostController, viewModel: MainViewModel = hiltViewModel()) {
     val context: Context = LocalContext.current
@@ -43,33 +52,64 @@ fun LiveResultViewScreen(navController: NavHostController, viewModel: MainViewMo
         context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
     )
     val myId = sharedPreferences.getString("studentId",null)!!
-    val lst = listOf(
-        LiveResultInfo(
-            mid1 = 10.0, mid2 = 15.0,
-            q1 = 7.0, q2 = 8.0, q3 = 12.0, quiz = 9.0,
-            customCourseId = "CSE325", courseTitle = "Social and Professional Issues",
-            shortSemName = "Summer'23"
-        ),
-        LiveResultInfo(
-            mid1 = 10.0, mid2 = 15.0,
-            q1 = 7.0, q2 = 8.0, q3 = 12.0, quiz = 9.0,
-            customCourseId = "CSE325", courseTitle = "Social and Professional Issues in Computing",
-            shortSemName = "Summer'23"
-        ),
-        LiveResultInfo(
-            mid1 = 10.0, mid2 = 15.0,
-            q1 = 7.0, q2 = 8.0, q3 = 12.0, quiz = 9.0,
-            customCourseId = "CSE325", courseTitle = "Social and Professional Issues",
-            shortSemName = "Summer'23"
-        ),
-        LiveResultInfo(
-            mid1 = 10.0, mid2 = 15.0,
-            q1 = 7.0, q2 = 8.0, q3 = 12.0, quiz = 9.0,
-            customCourseId = "CSE325", courseTitle = "Social and Professional Issues",
-            shortSemName = "Summer'23"
-        ),
-    )
-    Scaffold(topBar = {TopBar(navController)}) {
+    val myFullProfile by viewModel.userFullProfileInfo.collectAsState()
+
+    LaunchedEffect(key1 = ""){
+        viewModel.getUserFullProfileInfo(myId,{
+            viewModel.updateUserLiveResultInfo(
+                id = myId,
+                accessToken = it.token,
+                it.liveResultInfo
+            ){
+                Looper.prepare()
+                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                Looper.loop()
+            }
+        },{
+            Looper.prepare()
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            Looper.loop()
+        })
+    }
+//    val lst = listOf(
+//        LiveResultInfo(
+//            mid1 = 10.0, mid2 = 15.0,
+//            q1 = 7.0, q2 = 8.0, q3 = 12.0, quiz = 9.0,
+//            customCourseId = "CSE325", courseTitle = "Social and Professional Issues",
+//            shortSemName = "Summer'23"
+//        ),
+//        LiveResultInfo(
+//            mid1 = 10.0, mid2 = 15.0,
+//            q1 = 7.0, q2 = 8.0, q3 = 12.0, quiz = 9.0,
+//            customCourseId = "CSE325", courseTitle = "Social and Professional Issues in Computing",
+//            shortSemName = "Summer'23"
+//        ),
+//        LiveResultInfo(
+//            mid1 = 10.0, mid2 = 15.0,
+//            q1 = 7.0, q2 = 8.0, q3 = 12.0, quiz = 9.0,
+//            customCourseId = "CSE325", courseTitle = "Social and Professional Issues",
+//            shortSemName = "Summer'23"
+//        ),
+//        LiveResultInfo(
+//            mid1 = 10.0, mid2 = 15.0,
+//            q1 = 7.0, q2 = 8.0, q3 = 12.0, quiz = 9.0,
+//            customCourseId = "CSE325", courseTitle = "Social and Professional Issues",
+//            shortSemName = "Summer'23"
+//        ),
+//    )
+    Scaffold(topBar = {
+        TopBar(navController){
+            viewModel.updateUserLiveResultInfo(
+                id = myId,
+                accessToken = myFullProfile.token,
+                myFullProfile.liveResultInfo
+            ){
+                Looper.prepare()
+                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                Looper.loop()
+            }
+        }
+    }) {
         Column(modifier = Modifier
             .fillMaxSize()
             .background(DeepBlue)
@@ -83,7 +123,7 @@ fun LiveResultViewScreen(navController: NavHostController, viewModel: MainViewMo
                     .padding(vertical = 16.dp),
             )
             Text(
-                text = lst[0].shortSemName!!,
+                text = if(myFullProfile.liveResultInfo.size>0) myFullProfile.liveResultInfo[0].shortSemName!! else "",
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier
                     .padding(vertical = 10.dp)
@@ -92,14 +132,14 @@ fun LiveResultViewScreen(navController: NavHostController, viewModel: MainViewMo
                 modifier = Modifier
                     .weight(1f)
             ) {
-                itemsIndexed(lst) { ind, courseResult ->
+                itemsIndexed(myFullProfile.liveResultInfo) { ind, courseResult ->
                     if(ind%2==0)
                         LiveRegCourseItem(courseResult)
                     else
                         LiveRegCourseItem(courseResult, Limerick1, Limerick2, Limerick3)
                 }
             }
-            LastUpdated(63487325)
+            LastUpdated(myFullProfile.lastUpdatedLiveResultInfo)
 
         }
     }

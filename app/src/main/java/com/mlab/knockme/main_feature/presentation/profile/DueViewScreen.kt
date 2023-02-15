@@ -1,6 +1,7 @@
 package com.mlab.knockme.main_feature.presentation.profile
 
 import android.content.Context
+import android.os.Looper
 import android.widget.Toast
 import com.mlab.knockme.R
 import androidx.compose.foundation.Canvas
@@ -39,8 +40,9 @@ import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.main.TopBar
 import com.mlab.knockme.profile_feature.presentation.components.standardQuadFromTo
 import com.mlab.knockme.ui.theme.*
+import kotlinx.coroutines.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, DelicateCoroutinesApi::class)
 @Composable
 fun DueViewScreen(navController: NavHostController, viewModel: MainViewModel= hiltViewModel()) {
     val context: Context = LocalContext.current
@@ -51,14 +53,35 @@ fun DueViewScreen(navController: NavHostController, viewModel: MainViewModel= hi
     val myFullProfile by viewModel.userFullProfileInfo.collectAsState()
 
     LaunchedEffect(key1 = ""){
-        viewModel.getUserFullProfileInfo(myId){
-            Toast.makeText(context, "Server Error.", Toast.LENGTH_SHORT).show()
-        }
-        viewModel.getOrUpdateUserPaymentInfo(myId,myFullProfile.token,myFullProfile.paymentInfo){
-            Toast.makeText(context, "Server Error.", Toast.LENGTH_SHORT).show()
-        }
+        viewModel.getUserFullProfileInfo(myId,{
+            viewModel.updateUserPaymentInfo(
+                id = myId,
+                accessToken = it.token,
+                paymentInfo = it.paymentInfo
+            ){
+                Looper.prepare()
+                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                Looper.loop()
+            }
+        },{
+            Looper.prepare()
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            Looper.loop()
+        })
     }
-    Scaffold(topBar = {TopBar(navController)}) {
+    Scaffold(topBar = {
+        TopBar(navController){
+            viewModel.updateUserPaymentInfo(
+                id = myId,
+                accessToken = myFullProfile.token,
+                paymentInfo = myFullProfile.paymentInfo
+            ) {
+                Looper.prepare()
+                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                Looper.loop()
+            }
+        }
+    }) {
         Column(modifier = Modifier
             .padding(it)
             .background(DeepBlue)

@@ -62,9 +62,8 @@ fun MsgViewScreen(path: String, id: String,
         viewModel.getMeg(path+"chats/$id"){
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
         }
-        viewModel.getUserBasicInfo(myId!!)
         viewModel.getTarBasicInfo(id)
-
+        viewModel.myBasicInfo(myId!!)
     }
 
     Scaffold(
@@ -366,7 +365,7 @@ fun SendMsgBar(
     myId: String
 ) {
     var data by remember { mutableStateOf("") }
-    val myBasicInfo by viewModel.userBasicInfo.collectAsState()
+    val myBasicInfo by viewModel.myBasicInfo.collectAsState()
     val tarBasicInfo by viewModel.tarBasicInfo.collectAsState()
     val myPath = path+"chats/$id"
     val myProfilePath = path+"profiles/$id"
@@ -428,10 +427,12 @@ fun SendMsgBar(
                         viewModel.sendMsg(myPath, msg) {
                             Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
                         }
-                        viewModel.refreshProfileInChats(myProfilePath, tarProfile) {
-                            Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
-                        }
+
                         if (tarPath != null) {
+                            viewModel.refreshProfileInChats(myProfilePath, tarProfile) {
+                                Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
+                            }
+
                             viewModel.sendMsg(tarPath, msg) {
                                 Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
                             }

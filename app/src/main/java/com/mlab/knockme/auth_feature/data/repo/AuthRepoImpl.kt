@@ -28,6 +28,7 @@ import java.io.EOFException
 import java.io.IOException
 import java.util.*
 import javax.inject.Inject
+import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
 
 
@@ -182,6 +183,7 @@ class AuthRepoImpl @Inject constructor(
                     }
                     getCgpa(
                         id = id,
+                        semesterList = getSemesterList(publicInfo.firstSemId!!.toInt()),
                         loading = {
                             GlobalScope.launch(Dispatchers.IO) {
                                 when (it) {
@@ -205,10 +207,15 @@ class AuthRepoImpl @Inject constructor(
                                 val privateInfo = api.getPrivateInfo(authInfo.accessToken).toPrivateInfo()
                                 Log.d("getStudentInfo", "privateInfo: $privateInfo")
                                 send(Resource.Loading("Getting lastSemester Info.."))
-                                val lastSemesterId = api.getAllSemesterInfo(authInfo.accessToken)[0].semesterId
+                                val semInfo =api.getAllSemesterInfo(authInfo.accessToken)
+                                var lastSemesterId = semInfo[0].semesterId
                                 Log.d("getStudentInfo", "lastSemesterId: $lastSemesterId")
                                 send(Resource.Loading("Getting registeredCourse Info.."))
-                                val registeredCourse = api.getRegisteredCourse(lastSemesterId, authInfo.accessToken).map { it.toCourseInfo() }
+                                var registeredCourse = api.getRegisteredCourse(lastSemesterId, authInfo.accessToken).map { it.toCourseInfo() }
+                                if(registeredCourse.isEmpty()){
+                                    lastSemesterId = semInfo[1].semesterId
+                                    registeredCourse = api.getRegisteredCourse(lastSemesterId, authInfo.accessToken).map { it.toCourseInfo() }
+                                }
                                 Log.d("getStudentInfo", "registeredCourse: $registeredCourse")
                                 send(Resource.Loading("Getting Live Result Info.."))
                                 val liveResultInfoList = mutableListOf<LiveResultInfo>()
@@ -257,7 +264,8 @@ class AuthRepoImpl @Inject constructor(
                                                 nm = publicInfo.studentName!!,
                                                 progShortName = publicInfo.progShortName!!,
                                                 batchNo = publicInfo.batchNo!!,
-                                                cgpa = cgpa
+                                                cgpa = cgpa,
+                                                firstSemId = publicInfo.firstSemId!!.toInt()
                                             ),
                                             privateInfo = PrivateInfoExtended(
                                                 fbId = fbInfo.fbId,
@@ -272,7 +280,7 @@ class AuthRepoImpl @Inject constructor(
                                             paymentInfo = paymentInfo,
                                             regCourseInfo = ArrayList(registeredCourse),
                                             liveResultInfo = ArrayList(liveResultInfoList) ,
-                                            fullResultInfo = fullResultInfo
+                                            fullResultInfo = ArrayList(fullResultInfo)
                                         )
 
                                     Log.d("TAG", "getStudentInfoFinal: $userProfile")
@@ -390,10 +398,13 @@ class AuthRepoImpl @Inject constructor(
     @OptIn(DelicateCoroutinesApi::class)
     private suspend fun getCgpa(
         id: String,
-        semesterList: List<String> = getSemesterList(id),
+        semesterList: List<String>,
         loading: (index: Int) -> Unit,
-        success: (cgpa: Double, fullResultInfo: ArrayList<FullResultInfo>) -> Unit
+        success: (cgpa: Double, fullResultInfo: List<FullResultInfo>) -> Unit
     ) {
+        if(semesterList.isEmpty()){
+            success.invoke(0.0, emptyList())
+        }
         var weightedCgpa = 0.0
         var totalCreditWeight = 0.0
         var resultFound = 0
@@ -419,7 +430,10 @@ class AuthRepoImpl @Inject constructor(
 
                         //add a semester result to list
                         semesterResultInfo.resultInfo = rInfo
-                        semesterResultInfo.semesterInfo = resultInfo[0].toSemesterInfo(creditTaken)
+                        if(resultInfo[0].cgpa!=0.0)
+                            semesterResultInfo.semesterInfo = resultInfo[0].toSemesterInfo(creditTaken)
+                        else
+                            semesterResultInfo.semesterInfo = resultInfo[1].toSemesterInfo(creditTaken)
                         fullResultInfo.add(semesterResultInfo)  //adding
                     }
                     resultFound++
@@ -448,7 +462,7 @@ class AuthRepoImpl @Inject constructor(
         }
     }
 
-    private fun getSemesterList(id: String): List<String> {
+    private fun getSemesterList(firstSemId: Int): List<String> {
         val year = Calendar.getInstance().get(Calendar.YEAR)
         val month = Calendar.getInstance().get(Calendar.MONTH)
         val endYearSemesterCount =
@@ -458,7 +472,8 @@ class AuthRepoImpl @Inject constructor(
             else 3
 
         val yearEnd = year % 100
-        val initial = id.slice(0..2).toInt()  //.split('-')[0].toInt()
+        //val initial = id.slice(0..2).toInt()  //.split('-')[0].toInt()
+        val initial = firstSemId
         val yr: Int = initial / 10
         var semester: Int = initial % 10
         val list = mutableListOf<String>()

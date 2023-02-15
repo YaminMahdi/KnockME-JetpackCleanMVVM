@@ -1,5 +1,6 @@
 package com.mlab.knockme.main_feature.domain.repo
 
+import com.mlab.knockme.auth_feature.data.data_source.dto.DailyHadithDto
 import com.mlab.knockme.auth_feature.domain.model.*
 import com.mlab.knockme.main_feature.domain.model.Msg
 import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
@@ -68,8 +69,13 @@ interface MainRepo {
     suspend fun updateFullResultInfo(
         publicInfo: PublicInfo,
         fullResultInfoList: List<FullResultInfo>,
-        Success: (List<FullResultInfo>) -> Unit,
+        Success: (List<FullResultInfo>,Double) -> Unit,
         Loading: (msg: String) -> Unit,
+        Failed: (msg:String) -> Unit
+    )
+
+    suspend fun getRandomHadith(
+        Success: (DailyHadithDto) -> Unit,
         Failed: (msg:String) -> Unit
     )
 

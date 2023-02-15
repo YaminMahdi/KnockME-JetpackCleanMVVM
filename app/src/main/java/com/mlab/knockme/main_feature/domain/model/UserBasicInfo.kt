@@ -11,5 +11,5 @@ data class UserBasicInfo(
     val lastUpdatedResultInfo: Long=0,
     val publicInfo: PublicInfo = PublicInfo(),
     val privateInfo: PrivateInfoExtended = PrivateInfoExtended(),
-    val fullResultInfo: ArrayList<FullResultInfo> = arrayListOf()
+    var fullResultInfo: ArrayList<FullResultInfo> = arrayListOf()
 ) : Parcelable

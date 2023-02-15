@@ -1,5 +1,7 @@
 package com.mlab.knockme.main_feature.presentation.profile
 
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -13,6 +15,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -20,57 +25,72 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.mlab.knockme.auth_feature.domain.model.ResultInfo
 import com.mlab.knockme.auth_feature.domain.model.SemesterInfo
 import com.mlab.knockme.core.util.bounceClick
+import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.main.BackBtn
 import com.mlab.knockme.profile_feature.presentation.components.standardQuadFromTo
 import com.mlab.knockme.ui.theme.*
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(DelicateCoroutinesApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun CgpaDetailsScreen(id: String, navController: NavHostController) {
-    val semInfo = SemesterInfo("","Summer",2022,3.65,18.0)
-    val lst = listOf(
-        ResultInfo(
-            "", "Social and Professional Issues in Computing",
-            "CSE498","A+",2.65,3.0
-        ),
-        ResultInfo(
-            "", "Social and Professional",
-            "CSE498","A+",3.65,1.0
-        ),
-        ResultInfo(
-            "", "Social and Professional Issues",
-            "CSE498","D+",3.49,3.0
-        ),
-        ResultInfo(
-            "", "Social and Professional Issues in Computing",
-            "CSE498","A+",3.75,3.0
-        ),
-        ResultInfo(
-            "", "Social and Professional Issues in Computing",
-            "CSE498","A+",2.65,3.0
-        ),
-        ResultInfo(
-            "", "Social and Professional Issues in Computing",
-            "CSE498","A+",3.55,3.0
-        ),
-        ResultInfo(
-            "", "Social and Professional Issues in Computing",
-            "CSE498","A+",3.65,3.0
-        ),
-        ResultInfo(
-            "", "Social and Professional Issues in Computing",
-            "CSE498","A+",3.65,3.0
-        ),
-    )
+fun CgpaDetailsScreen(id: String,index: Int, navController: NavHostController, viewModel: MainViewModel = hiltViewModel()) {
+    val context: Context = LocalContext.current
+    val fullProfile by viewModel.userFullProfileInfo.collectAsState()
+    LaunchedEffect(key1 = ""){
+        viewModel.getUserFullProfileInfo(id){
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+        }
+    }
+    val semInfo =
+        if(fullProfile.fullResultInfo.size>0) fullProfile.fullResultInfo[index].semesterInfo else SemesterInfo()
+//    val lst = listOf(
+//        ResultInfo(
+//            "", "Social and Professional Issues in Computing",
+//            "CSE498","A+",2.65,3.0
+//        ),
+//        ResultInfo(
+//            "", "Social and Professional",
+//            "CSE498","A+",3.65,1.0
+//        ),
+//        ResultInfo(
+//            "", "Social and Professional Issues",
+//            "CSE498","D+",3.49,3.0
+//        ),
+//        ResultInfo(
+//            "", "Social and Professional Issues in Computing",
+//            "CSE498","A+",3.75,3.0
+//        ),
+//        ResultInfo(
+//            "", "Social and Professional Issues in Computing",
+//            "CSE498","A+",2.65,3.0
+//        ),
+//        ResultInfo(
+//            "", "Social and Professional Issues in Computing",
+//            "CSE498","A+",3.55,3.0
+//        ),
+//        ResultInfo(
+//            "", "Social and Professional Issues in Computing",
+//            "CSE498","A+",3.65,3.0
+//        ),
+//        ResultInfo(
+//            "", "Social and Professional Issues in Computing",
+//            "CSE498","A+",3.65,3.0
+//        ),
+//    )
+    val lst=if(fullProfile.fullResultInfo.size>0) fullProfile.fullResultInfo[index].resultInfo else emptyList()
     Scaffold(topBar = { TopBarOnlyBack(navController) }) {
         Column(
             modifier = Modifier

@@ -1,18 +1,22 @@
 package com.mlab.knockme.main_feature.presentation.profile
 
 import android.content.Context
+import android.os.Looper
+import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,8 +37,12 @@ import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.main.TopBar
 import com.mlab.knockme.profile_feature.presentation.components.standardQuadFromTo
 import com.mlab.knockme.ui.theme.*
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, DelicateCoroutinesApi::class)
 @Composable
 fun RegCourseViewScreen(navController: NavHostController, viewModel: MainViewModel = hiltViewModel()) {
     val context: Context = LocalContext.current
@@ -42,75 +50,105 @@ fun RegCourseViewScreen(navController: NavHostController, viewModel: MainViewMod
         context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
     )
     val myId = sharedPreferences.getString("studentId",null)!!
-    val lst = listOf(
-        CourseInfo(
-            0,
-            "Social and Professional Issues in Computing",
-            "CSE498",
-            "Ms. Zerin Nasrin Tumpa",
-            "54_PC-A",
-            totalCredit = 3.0,
-            semesterName = "Summer",
-            semesterYear = 2023
-    ),
-        CourseInfo(
-            0,
-            "Social and Professional",
-            "CSE498",
-            "Ms. Zerin Nasrin Tumpa",
-            "54_PC-A",
-            totalCredit = 3.0
-        ),
-        CourseInfo(
-            0,
-            "Social and Professional Issues in Computing",
-            "CSE498",
-            "Ms. Zerin Nasrin Tumpa",
-            "54_PC-A",
-            totalCredit = 3.0
-        ),
-        CourseInfo(
-            0,
-            "Social and Professional",
-            "CSE498",
-            "Ms. Zerin Nasrin Tumpa",
-            "54_PC-A",
-            totalCredit = 3.0
-        ),
-        CourseInfo(
-            0,
-            "Social and Professional Issues in Computing",
-            "CSE498",
-            "Ms. Zerin Nasrin Tumpa",
-            "54_PC-A",
-            totalCredit = 3.0
-        ),
-        CourseInfo(
-            0,
-            "Social and Professional",
-            "CSE498",
-            "Ms. Zerin Nasrin Tumpa",
-            "54_PC-A",
-            totalCredit = 3.0
-        ),
-        CourseInfo(
-            0,
-            "Social and Professional Issues in Computing",
-            "CSE498",
-            "Ms. Zerin Nasrin Tumpa",
-            "54_PC-A",
-            totalCredit = 3.0
-        ),
-        CourseInfo(
-            0,
-            "Social and Professional",
-            "CSE498",
-            "Ms. Zerin Nasrin Tumpa",
-            "54_PC-A",
-            totalCredit = 3.0
-        )
-    )
-    Scaffold(topBar = {TopBar(navController)}) {
+    val myFullProfile by viewModel.userFullProfileInfo.collectAsState()
+
+    LaunchedEffect(key1 = ""){
+        viewModel.getUserFullProfileInfo(myId,{
+            viewModel.updateUserRegCourseInfo(
+                id = myId,
+                accessToken = it.token,
+                it.regCourseInfo
+            ){
+                Looper.prepare()
+                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                Looper.loop()
+            }
+        },{
+            Looper.prepare()
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            Looper.loop()
+        })
+    }
+//    val lst = listOf(
+//        CourseInfo(
+//            0,
+//            "Social and Professional Issues in Computing",
+//            "CSE498",
+//            "Ms. Zerin Nasrin Tumpa",
+//            "54_PC-A",
+//            totalCredit = 3.0,
+//            semesterName = "Summer",
+//            semesterYear = 2023
+//    ),
+//        CourseInfo(
+//            0,
+//            "Social and Professional",
+//            "CSE498",
+//            "Ms. Zerin Nasrin Tumpa",
+//            "54_PC-A",
+//            totalCredit = 3.0
+//        ),
+//        CourseInfo(
+//            0,
+//            "Social and Professional Issues in Computing",
+//            "CSE498",
+//            "Ms. Zerin Nasrin Tumpa",
+//            "54_PC-A",
+//            totalCredit = 3.0
+//        ),
+//        CourseInfo(
+//            0,
+//            "Social and Professional",
+//            "CSE498",
+//            "Ms. Zerin Nasrin Tumpa",
+//            "54_PC-A",
+//            totalCredit = 3.0
+//        ),
+//        CourseInfo(
+//            0,
+//            "Social and Professional Issues in Computing",
+//            "CSE498",
+//            "Ms. Zerin Nasrin Tumpa",
+//            "54_PC-A",
+//            totalCredit = 3.0
+//        ),
+//        CourseInfo(
+//            0,
+//            "Social and Professional",
+//            "CSE498",
+//            "Ms. Zerin Nasrin Tumpa",
+//            "54_PC-A",
+//            totalCredit = 3.0
+//        ),
+//        CourseInfo(
+//            0,
+//            "Social and Professional Issues in Computing",
+//            "CSE498",
+//            "Ms. Zerin Nasrin Tumpa",
+//            "54_PC-A",
+//            totalCredit = 3.0
+//        ),
+//        CourseInfo(
+//            0,
+//            "Social and Professional",
+//            "CSE498",
+//            "Ms. Zerin Nasrin Tumpa",
+//            "54_PC-A",
+//            totalCredit = 3.0
+//        )
+//    )
+    Scaffold(topBar = {
+        TopBar(navController){
+            viewModel.updateUserRegCourseInfo(
+                id = myId,
+                accessToken = myFullProfile.token,
+                myFullProfile.regCourseInfo
+            ){
+                Looper.prepare()
+                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                Looper.loop()            }
+        }
+    }) {
         Column(modifier = Modifier
             .fillMaxSize()
             .background(DeepBlue)
@@ -130,11 +168,11 @@ fun RegCourseViewScreen(navController: NavHostController, viewModel: MainViewMod
                     .padding(vertical = 10.dp)
             ) {
                 Text(
-                    text = lst[0].toShortSemName(),
+                    text = if(myFullProfile.regCourseInfo.size>0) myFullProfile.regCourseInfo[0].toShortSemName() else "",
                     style = MaterialTheme.typography.headlineMedium
                 )
                 Text(
-                    text = "${lst.sumOf { item -> item.totalCredit!! }.toInt()} Credits",
+                    text = "${myFullProfile.regCourseInfo.sumOf { item -> item.totalCredit!! }.toInt()} Credits",
                     style = MaterialTheme.typography.headlineMedium
                 )
             }
@@ -142,14 +180,14 @@ fun RegCourseViewScreen(navController: NavHostController, viewModel: MainViewMod
                 modifier = Modifier
                     .weight(1f)
             ) {
-                items(lst.size) { ind->
+                items(myFullProfile.regCourseInfo.size) { ind->
                     if(ind%2==0)
-                        RegCourseItem(lst[ind])
+                        RegCourseItem(myFullProfile.regCourseInfo[ind])
                     else
-                        RegCourseItem(lst[ind],Limerick1, Limerick2, Limerick3)
+                        RegCourseItem(myFullProfile.regCourseInfo[ind],Limerick1, Limerick2, Limerick3)
                 }
             }
-            LastUpdated(63487325)
+            LastUpdated(myFullProfile.lastUpdatedRegCourseInfo)
         }
     }
 }
@@ -256,7 +294,11 @@ fun RegCourseItem(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "${courseInfo.employeeName.orEmpty()} (${courseInfo.employeeName?.toTeacherInitial()})",
+                    text =
+                    if(!courseInfo.employeeName.isNullOrEmpty())
+                        "${courseInfo.employeeName} (${courseInfo.employeeName.toTeacherInitial()})"
+                    else
+                        "Teacher: N/A",
                     color = TextWhite,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.fillMaxWidth(.5f)

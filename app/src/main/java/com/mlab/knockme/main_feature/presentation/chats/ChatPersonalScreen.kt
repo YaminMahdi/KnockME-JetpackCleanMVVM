@@ -1,7 +1,10 @@
 package com.mlab.knockme.main_feature.presentation.chats
 
+import android.app.Activity
 import android.content.Context
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -10,19 +13,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.ripple.rememberRipple
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -36,15 +35,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
@@ -72,22 +77,34 @@ fun ChatPersonalScreen(
     )
     //val preferencesEditor = sharedPreferences.edit()
     val myId = sharedPreferences.getString("studentId",null)
-    LaunchedEffect(key1 = "1"){
+    val showHadith by viewModel.showHadith.collectAsState()
+    LaunchedEffect(key1 = state.isSearchActive){
         //pop backstack
-        if(!state.isSearchActive&&state.searchText.length<2){
+        if(!state.isSearchActive){
             viewModel.getChatProfiles("personalMsg/$myId/profiles"){
                 Toast.makeText(context, "Chat couldn't be loaded- $it", Toast.LENGTH_SHORT).show()
             }
         }
-    }
+        if(showHadith){
+            viewModel.getRandomHadith {
+                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            }
+            viewModel.setShowHadith(false)
+        }
 
+    }
+//    BackHandler {
+//        val activity= context as Activity
+//        activity.finish()
+//    }
+    HadithDialog(viewModel)
     Column(
         modifier = Modifier
             .background(DeepBlue)
             .fillMaxSize()){
         TitleInfo(title = "Personal")
         SearchBox(state,viewModel)
-        if(state.isSearchActive)
+        if(state.isSearchLoading)
             ProgressBar()
         else {
             Spacer(modifier = Modifier.size(17.dp))
@@ -110,27 +127,29 @@ fun ChatPersonalScreen(
 //            UserChatInfo("Yamin Mahdi","", lastMsg = "hi, I'm mahdi")
 //        ))
     }
-    if(state.isSearchActive) {
-    Box(modifier = Modifier
-        .fillMaxSize()
+    CustomToast(state.isSearchLoading, state.loadingText)
+}
 
-    ) {
-        Text(
-            text = state.loadingText,
-            style = MaterialTheme.typography.headlineSmall,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(horizontal = 20.dp)
-                .padding(40.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(DarkerButtonBlue)
-                .padding(16.dp)
-        )
+@Composable
+fun CustomToast(isLoading: Boolean,loadingText: String) {
+    if(isLoading) {
+        Box(modifier = Modifier
+            .fillMaxSize()
+        ) {
+            Text(
+                text = loadingText,
+                style = MaterialTheme.typography.headlineSmall,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 20.dp)
+                    .padding(40.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(DarkerButtonBlue)
+                    .padding(16.dp)
+            )
+        }
     }
-
-    }
-
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -138,33 +157,51 @@ fun ChatPersonalScreen(
 fun SearchBox(state: ChatListState, viewModel: MainViewModel) {
     var data by remember { mutableStateOf(state.searchText) }
 
-    OutlinedTextField(
-        value = data,
-        placeholder = { Text("Type Student ID.") },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        leadingIcon = {
+    Row(){
+        OutlinedTextField(
+            value = data,
+            placeholder = { Text("Type Student ID.") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Rounded.Search,
+                    contentDescription = "search",
+                    modifier = Modifier.padding(start=15.dp)
+                )},
+            shape = RoundedCornerShape(30.dp),
+            colors= searchFieldColors(),
+            singleLine = true,
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 16.dp, end = if (state.isSearchActive) 0.dp else 16.dp),
+            onValueChange = {
+                data = it
+                viewModel.searchUser(data)
+            }
+        )
+        AnimatedVisibility(visible = state.isSearchActive) {
             Icon(
-                imageVector = Icons.Rounded.Search,
-                contentDescription = "search",
-                modifier = Modifier.padding(start=15.dp)
-            )},
-        shape = RoundedCornerShape(30.dp),
-        colors= searchFieldColors(),
-        singleLine = true,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        onValueChange = {
-            data = it
-            viewModel.searchUser(data,
-                {loadingMsg ->
-
-                },{errorMsg ->
-
-                }
+                Icons.Rounded.Close,
+                contentDescription = "",
+                tint = Color.White,
+                modifier = Modifier
+                    .size(55.dp)
+                    .padding(3.dp)
+                    .bounceClick()
+                    .clip(RoundedCornerShape(30.dp))
+                    .clickable(
+                        interactionSource = MutableInteractionSource(),
+                        indication = rememberRipple(color = Color.White),
+                        onClick = {
+                            viewModel.setSearchActive(false)
+                            data = ""
+                        }
+                    )
+                    .padding(horizontal = 13.dp)
             )
         }
-    )
+    }
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -209,9 +246,9 @@ fun LoadChatList(state: ChatListState,navController: NavHostController,myId: Str
                 proView,
                 modifier = Modifier
                     .animateItemPlacement(),
-                state.searchText
+                state.isSearchActive
             ){ id ->
-                if(state.searchText.length < 2) {
+                if(!state.isSearchActive) {
                     when (navController.currentDestination?.route) {
                         MainScreens.CtPersonalScreen.route -> {
                             val path = "personalMsg/$myId/"
@@ -234,7 +271,7 @@ fun LoadChatList(state: ChatListState,navController: NavHostController,myId: Str
 fun ChatView(
     proView: Msg,
     modifier: Modifier,
-    searchText: String = "",
+    isSearchActive: Boolean,
     onClick: (id: String) -> Unit,
 ) {
     Row(
@@ -308,7 +345,7 @@ fun ChatView(
             )
             Text(
                 text =
-                if (searchText.length<2) proView.time?.toDateTime()!!
+                if (!isSearchActive) proView.time?.toDateTime()!!
                 else proView.time?.toDayPassed()!!,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier
@@ -319,10 +356,146 @@ fun ChatView(
     }
 }
 
+@Composable
+fun HadithDialog(viewModel: MainViewModel) {
+    val dialogVisibility by viewModel.dialogVisibility.collectAsState()
+    val hadith by viewModel.hadith.collectAsState()
+    //val dialogVisibility by remember { mutableStateOf(true) }
+//    val hadithDto = DailyHadithDto(
+//        id = "0",
+//        b = "আবদুল্লাহ ইবনু ’আমর (রাঃ) থেকে বর্ণিত,",
+//        bn = "এক ব্যাক্তি রাসূল সাল্লাল্লাহু আলাইহি ওয়াসাল্লাম-কে জিজ্ঞাসা করল, ‘ইসলামের কোন্ কাজ সবচাইতে উত্তম?’ তিনি বললেনঃ তুমি লোকদের আহার করাবে এবং পরিচিত-অপরিচিত নির্বিশেষে সকলকে সালাম দিবে।",
+//        e = "Narrated 'Abdullah bin 'Amr:",
+//        en = "A person asked Allah's Messenger (sallallahu 'alaihi wa sallam). \"What (sort of) deeds in Islam are good?\" He replied, \"To feed (the poor) and greet those whom you know and those whom you don't know.\",",
+//        ref = "Sahih al-Bukhari, 28",
+//        src = "https://www.hadithbd.com/hadith/link/?id=30",
+//        t = "h"
+//    )
+    var lang by remember { mutableStateOf("EN") }
+    val uriHandler = LocalUriHandler.current
+
+    if (dialogVisibility) {
+        Dialog(
+            onDismissRequest = { viewModel.setDialogVisibility(false) },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Box(
+                modifier = Modifier
+                    .padding(30.dp)
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(BlueViolet0)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp)
+                ) {
+                    Text(
+                        text = if(hadith.t=="h") "Read A Hadith" else "Read An Ayah",
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = ButtonBlue,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 25.dp),
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        text = if(lang=="EN") hadith.b else hadith.e,
+                        fontFamily = if(lang=="EN") pappri else ubuntu,
+                        color = Limerick3,
+                        fontSize = 16.sp,
+                    )
+                    Text(
+                        text = if(lang=="EN") hadith.bn else hadith.en,
+                        fontFamily = if(lang=="EN") pappri else ubuntu,
+                        textAlign = TextAlign.Justify,
+                        color = Neutral30,
+                        fontSize = if(lang=="EN") 19.sp else 17.5.sp,
+                        lineHeight = if(lang=="EN") 26.sp else 24.sp,
+                        modifier = Modifier
+                            .padding(vertical = 5.dp)
+                    )
+                    Text(
+                        text = hadith.ref,
+                        color = Limerick3,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .padding(vertical = 5.dp)
+                    )
+                    Text(
+                        text = "(Open Source)",
+                        style = TextStyle(textDecoration = TextDecoration.Underline),
+                        color = Neutral50,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .offset(x = (-5).dp)
+                            .clip(RoundedCornerShape(5.dp))
+                            .clickable {
+                                var link = hadith.src
+                                if (link.contains("http")) {
+                                    if(hadith.t=="q" && lang=="BN")
+                                        link = link.replace("bn","en")
+                                    uriHandler.openUri(link)
+                                }
+                            }
+                            .padding(5.dp)
+                    )
+                    Box(contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ){
+                        Button(
+                            modifier = Modifier
+                                .padding(top = 10.dp)
+                                .bounceClick()
+                            ,
+                            onClick = {
+                                viewModel.setDialogVisibility(false)
+                            },
+                            shape= RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor= ButtonBlue)
+                        ) {
+                            Text(text = "DONE", color = TextWhite, fontWeight = FontWeight.Bold, fontFamily = ubuntu)
+                        }
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .padding(top = 7.dp, end = 7.dp)
+                        .padding(10.dp)
+                        .size(40.dp)
+                        .aspectRatio(1f)
+                        .align(Alignment.TopEnd)
+                        .bounceClick()
+                        .clip(CircleShape)
+                        .background(ButtonBlue)
+                        .clickable {
+                            lang = if (lang == "EN") "BN" else "EN"
+                        }
+                ) {
+                    Text(
+                        text = lang,
+                        color = TextWhite,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = ubuntu,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+            }
+
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun PreviewsProfile() {
     KnockMETheme {
-        ChatPersonalScreen(rememberNavController(),hiltViewModel())
+        //ChatPersonalScreen(rememberNavController(),hiltViewModel())
+        //HadithDialog()
     }
 }

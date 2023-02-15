@@ -23,13 +23,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,7 +45,6 @@ import com.himanshoe.charty.combined.model.CombinedBarData
 import com.himanshoe.charty.common.axis.AxisConfig
 import com.himanshoe.charty.common.dimens.ChartDimens
 import com.mlab.knockme.R
-import com.mlab.knockme.auth_feature.domain.model.PrivateInfoExtended
 import com.mlab.knockme.auth_feature.domain.model.PublicInfo
 import com.mlab.knockme.core.util.bounceClick
 import com.mlab.knockme.core.util.toDayPassed
@@ -53,6 +52,8 @@ import com.mlab.knockme.main_feature.domain.model.Msg
 import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
 import com.mlab.knockme.main_feature.presentation.ChatInnerScreens
 import com.mlab.knockme.main_feature.presentation.MainViewModel
+import com.mlab.knockme.main_feature.presentation.ProfileInnerScreens
+import com.mlab.knockme.main_feature.presentation.chats.CustomToast
 import com.mlab.knockme.main_feature.presentation.profile.Ic
 import com.mlab.knockme.ui.theme.*
 
@@ -68,6 +69,8 @@ fun ProfileViewScreen(
     val userBasicInfo by viewModel.userBasicInfo.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val hasPrivateInfo by viewModel.hasPrivateInfo.collectAsState()
+    val loading by viewModel.isResultLoading.collectAsState()
+    val loadingTxt by viewModel.resultLoadingTxt.collectAsState()
 
     val context: Context =LocalContext.current
     val sharedPreferences = context.getSharedPreferences(
@@ -81,10 +84,21 @@ fun ProfileViewScreen(
 
     LaunchedEffect(key1 = "1"){
         //if(isLoading)
-        viewModel.getUserBasicInfo(id)
+        viewModel.getUserBasicInfo(id){
+            viewModel.updateUserFullResultInfo(
+                publicInfo = it.publicInfo,
+                fullResultInfoList = it.fullResultInfo)
+        }
+
     }
 
-    Scaffold(topBar = {TopBar(navController)}) {
+    Scaffold(topBar = {
+        TopBar(navController){
+            viewModel.updateUserFullResultInfo(
+                publicInfo = userBasicInfo.publicInfo,
+                fullResultInfoList = userBasicInfo.fullResultInfo)
+        }
+    }) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -96,7 +110,8 @@ fun ProfileViewScreen(
             Profile(
                 pic = userBasicInfo.privateInfo.pic,
                 publicInfo = userBasicInfo.publicInfo,
-                isLoading = isLoading
+                isLoading = isLoading,
+                navController
             )
             SocialLink(viewModel,userBasicInfo, hasPrivateInfo, navController, id, myId!!)
             Column(
@@ -108,7 +123,8 @@ fun ProfileViewScreen(
                 if(!isLoading&&userBasicInfo.fullResultInfo.isNotEmpty())
                     BarChart(
                         userBasicInfo.fullResultInfo.map { data -> data.toCombinedBarData() },
-                        userBasicInfo.publicInfo
+                        userBasicInfo.publicInfo,
+                        navController
                     )
                 //                listOf(
 //                    CombinedBarData("F-19", 3.33F, 3.33F),
@@ -140,6 +156,8 @@ fun ProfileViewScreen(
             }
 
         }
+        CustomToast(loading, loadingTxt)
+
     }
 
 //    Box(modifier = Modifier
@@ -172,7 +190,7 @@ fun ProfileViewScreen(
 }
 
 @Composable
-fun TopBar(navController: NavHostController) {
+fun TopBar(navController: NavHostController,onClick: (() -> Unit)? = null) {
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
@@ -183,7 +201,7 @@ fun TopBar(navController: NavHostController) {
             .padding(top = 16.dp),
     ) {
         BackBtn(navController)
-        Ic(Icons.Rounded.Refresh)
+        Ic(Icons.Rounded.Refresh,onClick)
     }
 }
 
@@ -209,7 +227,12 @@ fun BackBtn(navController: NavHostController) {
 }
 
 @Composable
-fun Profile(pic: String?, publicInfo: PublicInfo?, isLoading: Boolean) {
+fun Profile(
+    pic: String?,
+    publicInfo: PublicInfo?,
+    isLoading: Boolean,
+    navController: NavHostController
+) {
     Box(
         modifier = Modifier
             .width(300.dp),
@@ -259,16 +282,18 @@ fun Profile(pic: String?, publicInfo: PublicInfo?, isLoading: Boolean) {
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(start = 185.dp, top = 25.dp),
-            pb = publicInfo,
-            isLoading = isLoading
-        )
+            pb = publicInfo!!,
+            isLoading = isLoading,
+        ){
+            navController.navigate(ProfileInnerScreens.CgpaScreen.route+publicInfo.id)
+        }
 
 
     }
 }
 
 @Composable
-fun CgpaToast(modifier: Modifier, pb: PublicInfo?, isLoading: Boolean) {
+fun CgpaToast(modifier: Modifier, pb: PublicInfo, isLoading: Boolean, onClick: (() -> Unit)) {
     //var isLoaded by remember { mutableStateOf(!isLoading) }
 
     val toastHeight by animateDpAsState(
@@ -281,8 +306,8 @@ fun CgpaToast(modifier: Modifier, pb: PublicInfo?, isLoading: Boolean) {
             dampingRatio = Spring.DampingRatioHighBouncy, stiffness = Spring.StiffnessMedium
         )
     )
-    val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
+//    val context = LocalContext.current
+//    val clipboardManager = LocalClipboardManager.current
 
     Box(
         modifier = modifier
@@ -292,32 +317,27 @@ fun CgpaToast(modifier: Modifier, pb: PublicInfo?, isLoading: Boolean) {
             .clip(RoundedCornerShape(20.dp))
             .background(LightGreen2)
             .clickable {
-                clipboardManager.setText(AnnotatedString(pb?.id.orEmpty()))
-                var intent =
-                    context.packageManager.getLaunchIntentForPackage("net.startbit.diucgpa")
-                if (intent != null) {
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(intent)
-                } else {
-                    intent = Intent(Intent.ACTION_VIEW)
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    //intent.data = Uri.parse("market://details?id=" + "net.startbit.diucgpa")
-                    intent.data =
-                        Uri.parse("https://play.google.com/store/apps/details?id=net.startbit.diucgpa")
-                    context.startActivity(intent)
-                }
-                Toast
-                    .makeText(
-                        context,
-                        "Student ID copied, paste it in DIU CGPA App.",
-                        Toast.LENGTH_LONG
-                    )
-                    .show()
+                onClick.invoke()
+//                clipboardManager.setText(AnnotatedString(pb.id.orEmpty()))
+//                var intent =
+//                    context.packageManager.getLaunchIntentForPackage("net.startbit.diucgpa")
+//                if (intent != null) {
+//                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+//                    context.startActivity(intent)
+//                } else {
+//                    intent = Intent(Intent.ACTION_VIEW)
+//                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+//                    //intent.data = Uri.parse("market://details?id=" + "net.startbit.diucgpa")
+//                    intent.data =
+//                        Uri.parse("https://play.google.com/store/apps/details?id=net.startbit.diucgpa")
+//                    context.startActivity(intent)
+//                }
+//                Toast.makeText(context, "Student ID copied, paste it in DIU CGPA App.", Toast.LENGTH_LONG).show()
 
             }
     ) {
         if (!isLoading) Text(
-            text = "CGPA: ${pb?.cgpa}",
+            text = if(!pb.cgpa.isNaN()) "CGPA: ${pb.cgpa}" else "CGPA: 0.0",
             fontSize = toastHeight.value.sp / 2,
             style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.align(Alignment.Center)
@@ -354,7 +374,7 @@ fun SocialLink(
                 .bounceClick()
             ,
             onClick = {
-                val path = "personalMsg/$myId/chats/$id"
+                val path = "personalMsg/$myId/"
                 val myPath = "personalMsg/$myId/profiles/$id"
                 val tarPath = "personalMsg/$id/profiles/$myId"
 
@@ -365,14 +385,15 @@ fun SocialLink(
                     pic = userBasicInfo.privateInfo.pic,
                     time = System.currentTimeMillis()
                 )
-                navController.navigate(ChatInnerScreens.MsgScreen.route+"path=$path&id=$id")
                 viewModel.refreshProfileInChats(myPath, msg) {
                     Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
                 }
-                msg.msg="Knocked you."
-                viewModel.refreshProfileInChats(tarPath, msg) {
+                val msg2 = msg.copy(msg="Knocked you.")
+                viewModel.refreshProfileInChats(tarPath, msg2) {
                     Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
                 }
+                navController.navigate(ChatInnerScreens.MsgScreen.route+"path=$path&id=$id")
+
             },
             shape = RoundedCornerShape(10.dp),
             colors = ButtonDefaults.buttonColors(containerColor = DeepBlueLess)
@@ -448,7 +469,10 @@ fun SocialLink(
                                     intent.data = Uri.parse("mailto:")
                                     intent.type = "text/plain"
                                     //intent.type = "vnd.android.cursor.item/email" // or "message/rfc822"
-                                    intent.putExtra(Intent.EXTRA_EMAIL, arrayOf(userBasicInfo.privateInfo.email))
+                                    intent.putExtra(
+                                        Intent.EXTRA_EMAIL,
+                                        arrayOf(userBasicInfo.privateInfo.email)
+                                    )
                                     //context.startActivity(intent)
                                     context.startActivity(
                                         Intent.createChooser(
@@ -490,7 +514,7 @@ fun SocialLink(
 }
 
 @Composable
-fun BarChart(barDataList: List<CombinedBarData>, pb: PublicInfo?) {
+fun BarChart(barDataList: List<CombinedBarData>, pb: PublicInfo, navController: NavHostController) {
     Column(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -549,8 +573,23 @@ fun BarChart(barDataList: List<CombinedBarData>, pb: PublicInfo?) {
                 )
             )
         }
-
-    }
+        Text(
+            text = "Details CGPA View >",
+            style = TextStyle(textDecoration = TextDecoration.Underline),
+            color = TextWhite,
+            fontSize = 14.sp,
+            fontFamily = ubuntu,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .offset(x = (-5).dp)
+                .clip(RoundedCornerShape(5.dp))
+                .bounceClick()
+                .clickable {
+                    navController.navigate(ProfileInnerScreens.CgpaScreen.route+pb.id)
+                }
+                .padding(5.dp),
+            textAlign = TextAlign.Center
+        )    }
 
 
 }
@@ -588,7 +627,7 @@ fun Address(userBasicInfo: UserBasicInfo) {
         FlowRow(
             modifier = Modifier.padding(5.dp),
         ) {
-            DetailsItems("Current: ${userBasicInfo.privateInfo!!.loc}", Beige3)
+            DetailsItems("Current: ${userBasicInfo.privateInfo.loc}", Beige3)
             DetailsItems("Home: ${userBasicInfo.privateInfo.permanentHouse}", DarkerButtonBlue)
         }
 

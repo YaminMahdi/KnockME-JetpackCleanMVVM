@@ -16,6 +16,11 @@ val ubuntu = FontFamily(
         Font(R.font.ubuntu_light, FontWeight.Light),
     )
 )
+val pappri = FontFamily(
+    listOf(
+        Font(R.font.paapri, FontWeight.Normal)
+    )
+)
 val bakbakBold = FontFamily(
     listOf(
         Font(R.font.bakbak_bold, FontWeight.Normal),
