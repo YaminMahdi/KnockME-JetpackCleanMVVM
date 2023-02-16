@@ -42,7 +42,7 @@ import com.mlab.knockme.profile_feature.presentation.components.standardQuadFrom
 import com.mlab.knockme.ui.theme.*
 import kotlinx.coroutines.*
 
-@OptIn(ExperimentalMaterial3Api::class, DelicateCoroutinesApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DueViewScreen(navController: NavHostController, viewModel: MainViewModel= hiltViewModel()) {
     val context: Context = LocalContext.current
@@ -58,9 +58,9 @@ fun DueViewScreen(navController: NavHostController, viewModel: MainViewModel= hi
                 id = myId,
                 accessToken = it.token,
                 paymentInfo = it.paymentInfo
-            ){
+            ){msg->
                 Looper.prepare()
-                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                 Looper.loop()
             }
         },{
@@ -96,16 +96,16 @@ fun DueViewScreen(navController: NavHostController, viewModel: MainViewModel= hi
                     .padding(vertical = 16.dp),
             )
             PaymentInfoItem(
-                "Total Payable", myFullProfile.paymentInfo.totalDebit!!,
+                "Total Payable", "%,.2f".format(myFullProfile.paymentInfo.totalDebit!!) ,
                 BlueViolet1, BlueViolet2, BlueViolet3 )
             PaymentInfoItem(
-                "Total Paid", myFullProfile.paymentInfo.totalCredit!!,
+                "Total Paid", "%,.2f".format(myFullProfile.paymentInfo.totalCredit!!),
                 LightGreen1, LightGreen2, LightGreen3 )
             PaymentInfoItem(
-                "Total Due", myFullProfile.paymentInfo.totalDebit!!-myFullProfile.paymentInfo.totalCredit!!,
+                "Total Due", "%,.2f".format(myFullProfile.paymentInfo.totalDebit!!-myFullProfile.paymentInfo.totalCredit!!),
                 Beige1, Beige2, Beige3 )
             PaymentInfoItem(
-                "Total Other", myFullProfile.paymentInfo.totalOther!!,
+                "Total Other", "%,.2f".format(myFullProfile.paymentInfo.totalOther!!),
                 Limerick1, Limerick2, Limerick3 )
             LastUpdated(myFullProfile.lastUpdatedPaymentInfo)
 
@@ -130,7 +130,7 @@ fun LastUpdated(lastUpdated: Long?) {
 @Composable
 fun PaymentInfoItem(
     type: String,
-    taha: Double,
+    taha: String,
     lightColor: Color,
     mediumColor: Color,
     darkColor: Color

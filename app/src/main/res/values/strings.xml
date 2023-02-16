@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">KnockME</string>
+    <string name="app_name">KnockME DIU Portal</string>
     <string name="title_activity_login">LoginActivity</string>
     <string name="facebook_app_id">660377585299971</string>
     <string name="fb_login_protocol_scheme">fb660377585299971</string>

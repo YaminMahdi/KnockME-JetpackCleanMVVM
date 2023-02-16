@@ -90,3 +90,8 @@ fun Double.toK(): String {
 
 infix fun <T> List<T>.equalsIgnoreOrder(other: List<T>) = this.size == other.size && this.toSet() == other.toSet()
 infix fun <T> List<T>.notEqualsIgnoreOrder(other: List<T>) = this.size != other.size || this.toSet() != other.toSet()
+
+fun String.hasAlphabet(): Boolean {
+    return this.matches("^[a-zA-Z]*$".toRegex())
+}
+

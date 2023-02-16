@@ -1,6 +1,5 @@
 package com.mlab.knockme.auth_feature.data.data_source.dto
 
-import androidx.core.text.isDigitsOnly
 import com.mlab.knockme.auth_feature.domain.model.StudentInfo
 
 data class StudentInfoDto(

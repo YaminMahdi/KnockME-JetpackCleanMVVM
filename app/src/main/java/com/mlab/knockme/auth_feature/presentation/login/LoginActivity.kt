@@ -4,12 +4,14 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
@@ -18,7 +20,6 @@ import androidx.navigation.compose.rememberNavController
 import com.facebook.AccessToken
 import com.facebook.CallbackManager
 import com.facebook.login.widget.LoginButton
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.mlab.knockme.R
@@ -31,7 +32,6 @@ import com.mlab.knockme.main_feature.presentation.MainActivity
 import com.mlab.knockme.ui.theme.KnockMETheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import org.checkerframework.checker.units.qual.Current
 
 
 @AndroidEntryPoint
@@ -89,9 +89,7 @@ class LoginActivity : ComponentActivity() {
                                         navController.navigate(AuthScreens.LogPortalScreen.route)
                                     },{})
 
-                                },{
-
-                                })
+                                },{})
                         }
                         if(loadingState._isLoadingActive)
                             LoadingScreen(data = loadingState._loadingText)
@@ -105,6 +103,7 @@ class LoginActivity : ComponentActivity() {
 //                            navArgument("pic"){ type= NavType.StringType }
 //                        )
                     ){
+                        val context = LocalContext.current
                         val fbInfo= FBResponse(
                             AccessToken.getCurrentAccessToken()!!,
                             sharedPreferences.getString("fbId",null)!!,
@@ -112,6 +111,7 @@ class LoginActivity : ComponentActivity() {
                             sharedPreferences.getString("pic",null)!!
                         )
                         LoginPortalScreen{ id, pass ->
+                            var once = true
                             loginViewModel.getStudentInfo(id, pass, fbInfo)
                             lifecycleScope.launch {
                                 loginViewModel.infoState.collect {
@@ -133,9 +133,11 @@ class LoginActivity : ComponentActivity() {
 
                                         is Resource.Error -> {
                                             Log.d("TAG", "onCreate Error: ${it.message}")
-
+                                            if(once){
+                                                once = false
+                                                Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show()
+                                            }
                                         }
-
                                     }
                                 }
                             }
@@ -159,19 +161,15 @@ class LoginActivity : ComponentActivity() {
 
         }
     }
-
-    private fun msg(msg: String) = msg
-    @Override
     override fun onStart() {
         super.onStart()
-        if( Firebase.auth.currentUser != null)
-            startActivity(Intent(this,MainActivity::class.java))
-        this.finish()
-//        val sharedPreferences = this.getSharedPreferences(
-//            getString(R.string.preference_file_key), Context.MODE_PRIVATE
-//        )
-//        if(sharedPreferences.getString("studentId",null) != null)
-//            startActivity(Intent(this,MainActivity::class.java))
+        val sharedPreferences = this.getSharedPreferences(
+            getString(R.string.preference_file_key), Context.MODE_PRIVATE
+        )
+        if(sharedPreferences.getString("studentId",null) != null && Firebase.auth.currentUser != null) {
+            startActivity(Intent(this, MainActivity::class.java))
+            this.finish()
+        }
     }
 
 }

@@ -16,6 +16,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.mlab.knockme.R
 import com.mlab.knockme.main_feature.presentation.MainViewModel
+import com.mlab.knockme.main_feature.presentation.profile.InfoDialog
 import com.mlab.knockme.main_feature.presentation.profile.TitleInfo
 import com.mlab.knockme.ui.theme.DeepBlue
 import com.mlab.knockme.ui.theme.KnockMETheme
@@ -31,19 +32,23 @@ fun ChatBusInfoScreen(
         context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
     )
     //val preferencesEditor = sharedPreferences.edit()
-    val myId = sharedPreferences.getString("studentId",null)
+    val myId = sharedPreferences.getString("studentId","0")!!
     LaunchedEffect(key1 = "3"){
         //pop backstack
-        viewModel.getChatProfiles("groupMsg/busMsg/profiles"){
+        viewModel.getChatProfiles("groupMsg/busInfo/profiles"){
             Toast.makeText(context, "Chat couldn't be loaded- $it", Toast.LENGTH_SHORT).show()
         }
     }
+    InfoDialog(viewModel, context, myId, navController)
     Column(
         modifier = Modifier
             .background(DeepBlue)
             .fillMaxSize()){
-        TitleInfo(title = "Bus Info")
-        LoadChatList(state,navController,myId!!)
+        TitleInfo(title = "Bus Info"){
+            viewModel.setInfoDialogVisibility(true)
+        }
+        Separator()
+        LoadChatList(state,navController,myId)
     }
 }
 

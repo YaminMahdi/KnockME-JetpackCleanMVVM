@@ -37,12 +37,8 @@ import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.main.TopBar
 import com.mlab.knockme.profile_feature.presentation.components.standardQuadFromTo
 import com.mlab.knockme.ui.theme.*
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, DelicateCoroutinesApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegCourseViewScreen(navController: NavHostController, viewModel: MainViewModel = hiltViewModel()) {
     val context: Context = LocalContext.current
@@ -58,9 +54,9 @@ fun RegCourseViewScreen(navController: NavHostController, viewModel: MainViewMod
                 id = myId,
                 accessToken = it.token,
                 it.regCourseInfo
-            ){
+            ){msg->
                 Looper.prepare()
-                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                 Looper.loop()
             }
         },{

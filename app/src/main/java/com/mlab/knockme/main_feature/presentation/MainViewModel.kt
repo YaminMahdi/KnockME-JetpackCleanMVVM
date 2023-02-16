@@ -23,9 +23,7 @@ class MainViewModel @Inject constructor(
 ) : ViewModel() {
 
 
-    private val _loadingText = savedStateHandle.getStateFlow("loadingText", "Loading..")
-    val loadingText = _loadingText
-
+    private val loadingText = savedStateHandle.getStateFlow("loadingText", "Loading..")
     private val _msg= MutableStateFlow<List<Msg>>(emptyList())
     val msg = _msg.asStateFlow()
 
@@ -52,7 +50,6 @@ class MainViewModel @Inject constructor(
 
     private var getMsgJob: Job? =null
     private var getChatsProfileJob: Job? =null
-    private var getChatsJob: Job? =null
     private var searchJob: Job? =null
 
 
@@ -101,7 +98,8 @@ class MainViewModel @Inject constructor(
         getChatsProfileJob= viewModelScope.launch(Dispatchers.IO){
             mainUseCases.getChatProfiles(
                 path, {
-                    savedStateHandle["chatList"] = it
+                    val x =it.toList()
+                    savedStateHandle["chatList"] = x
                 }, Failed)
         }
     }
@@ -246,15 +244,7 @@ class MainViewModel @Inject constructor(
     }
 
 
-    fun onSearchTextChange (text: String) {
-        savedStateHandle["searchText"] = text
-    }
-    fun onToggleSearch() {
-        savedStateHandle["isSearchActive"] = !isSearchActive.value
-        if (!isSearchActive.value) {
-            savedStateHandle["searchText"] = ""
-        }
-    }
+
     val userFullProfileInfo = savedStateHandle.getStateFlow("userFullProfileInfo", UserProfile())
 //    val userFullResultInfo = savedStateHandle.getStateFlow("userFullResultInfo", emptyList<FullResultInfo>())
 //    val userPaymentInfo = savedStateHandle.getStateFlow("userPaymentInfo", PaymentInfo())
@@ -358,6 +348,7 @@ class MainViewModel @Inject constructor(
     val hadith = savedStateHandle.getStateFlow("hadith", DailyHadithDto())
     val showHadith = savedStateHandle.getStateFlow("showHadith", true)
     val dialogVisibility = savedStateHandle.getStateFlow("dialogVisibility", false)
+    val infoDialogVisibility = savedStateHandle.getStateFlow("infoDialogVisibility", false)
     fun getRandomHadith(Failed: (msg:String) -> Unit){
         viewModelScope.launch(Dispatchers.IO) {
             mainUseCases.getRandomHadith({
@@ -371,6 +362,9 @@ class MainViewModel @Inject constructor(
     }
     fun setDialogVisibility(visibility: Boolean){
         savedStateHandle["dialogVisibility"] = visibility
+    }
+    fun setInfoDialogVisibility(visibility: Boolean){
+        savedStateHandle["infoDialogVisibility"] = visibility
     }
 
 

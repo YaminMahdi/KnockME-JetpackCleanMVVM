@@ -20,15 +20,11 @@ import com.mlab.knockme.core.util.Resource
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
-import retrofit2.Call
-import retrofit2.Callback
 import retrofit2.HttpException
-import retrofit2.Response
 import java.io.EOFException
 import java.io.IOException
 import java.util.*
 import javax.inject.Inject
-import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
 
 
@@ -151,14 +147,7 @@ class AuthRepoImpl @Inject constructor(
             ) {
                 Log.d("OnSuccessListener", "Login Success for: ${document.data}")
                 GlobalScope.launch(Dispatchers.IO) {
-                    send(
-                        Resource.Success(
-                            mapper.fromJson(
-                                mapper.toJson(document.data),
-                                UserProfile::class.java
-                            )
-                        )
-                    )
+                    send(Resource.Success(mapper.fromJson(mapper.toJson(document.data), UserProfile::class.java)))
                     this.cancel()
                 }
             } else if (!document.exists()) {
@@ -167,9 +156,8 @@ class AuthRepoImpl @Inject constructor(
                     try {
                         publicInfo = api.getStudentIdInfo(id).toStudentInfo()
                         Log.d("getStudentInfo", "publicInfo: $publicInfo")
-                        send(Resource.Loading("Getting CGPA Info.."))
                     } catch (e: HttpException) {
-                        send(Resource.Error("Oops, something went wrong."))
+                        send(Resource.Error("Invalid Student ID or Password"))
                         Log.d("TAG", "getStudentIdInfo: ${e.message} ${e.localizedMessage}}")
                         this.cancel()
                     } catch (e: EOFException) {
@@ -181,143 +169,149 @@ class AuthRepoImpl @Inject constructor(
                         Log.d("TAG", "getStudentIdInfo: ${e.message} ${e.localizedMessage}")
                         this.cancel()
                     }
-                    getCgpa(
-                        id = id,
-                        semesterList = getSemesterList(publicInfo.firstSemId!!.toInt()),
-                        loading = {
+                    if(!publicInfo.firstSemId.isNullOrEmpty()){
+                        send(Resource.Loading("Getting CGPA Info.."))
+                        getCgpa(
+                            id = id,
+                            semesterList = getSemesterList(publicInfo.firstSemId!!.toInt()),
+                            loading = {
+                                GlobalScope.launch(Dispatchers.IO) {
+                                    when (it) {
+                                        -1 -> send(Resource.Error("Oops, something went wrong."))
+                                        -2 -> send(Resource.Error("Couldn't reach server."))
+                                        else -> send(Resource.Loading("Semester $it result loaded."))
+                                    }
+                                }
+                            }) { cgpa, fullResultInfo ->
                             GlobalScope.launch(Dispatchers.IO) {
-                                when (it) {
-                                    -1 -> send(Resource.Error("Oops, something went wrong."))
-                                    -2 -> send(Resource.Error("Couldn't reach server."))
-                                    else -> send(Resource.Loading("Semester $it result loaded."))
-                                }
-                            }
-                        }) { cgpa, fullResultInfo ->
-                        GlobalScope.launch(Dispatchers.IO) {
-                            if (cgpa == 0.0)
-                                send(Resource.Loading("Server Error, CGPA can't be calculated"))
-                            else
-                                send(Resource.Loading("ID: $id, CGPA: $cgpa"))
-                            try {
-                                send(Resource.Loading("Getting Auth Info.."))
-                                Log.d("getStudentInfo", "id pass: $id $pass")
-                                val authInfo = api.getAuthInfo(LoginInformation(id, pass))
-                                Log.d("getStudentInfo", "authInfo: $authInfo")
-                                send(Resource.Loading("Getting Private Info.."))
-                                val privateInfo = api.getPrivateInfo(authInfo.accessToken).toPrivateInfo()
-                                Log.d("getStudentInfo", "privateInfo: $privateInfo")
-                                send(Resource.Loading("Getting lastSemester Info.."))
-                                val semInfo =api.getAllSemesterInfo(authInfo.accessToken)
-                                var lastSemesterId = semInfo[0].semesterId
-                                Log.d("getStudentInfo", "lastSemesterId: $lastSemesterId")
-                                send(Resource.Loading("Getting registeredCourse Info.."))
-                                var registeredCourse = api.getRegisteredCourse(lastSemesterId, authInfo.accessToken).map { it.toCourseInfo() }
-                                if(registeredCourse.isEmpty()){
-                                    lastSemesterId = semInfo[1].semesterId
-                                    registeredCourse = api.getRegisteredCourse(lastSemesterId, authInfo.accessToken).map { it.toCourseInfo() }
-                                }
-                                Log.d("getStudentInfo", "registeredCourse: $registeredCourse")
-                                send(Resource.Loading("Getting Live Result Info.."))
-                                val liveResultInfoList = mutableListOf<LiveResultInfo>()
-                                registeredCourse.forEach {
-                                    liveResultInfoList.add(api
-                                        .getLiveResult(it.courseSectionId!!, authInfo.accessToken)
-                                        .toLiveResultInfo(it.customCourseId!!, it.courseTitle!!, it.toShortSemName())
-                                    )
-                                }
-                                Log.d("getStudentInfo", "liveResultInfoList: $liveResultInfoList")
-                                send(Resource.Loading("Getting payment Info.."))
-                                val paymentInfo = api.getPaymentInfo(authInfo.accessToken).toPaymentInfo()
-                                Log.d("getStudentInfo", "paymentInfo: $paymentInfo")
-                                send(Resource.Loading("Getting location Info.."))
-                                val locationInfo = api.getLocationInfo().toLocationInfo()
-                                Log.d("getStudentInfo", "locationInfo: $locationInfo")
-
-
-                                val ref = cloudStore.reference.child("users/${id}/dp.jpg")
-                                val uploadTask = ref
-                                    .putStream(
-                                        api.getImgByteStream(fbInfo.pic)
-                                        .byteStream()
-                                    )
-                                uploadTask.continueWithTask { task ->
-                                    if (!task.isSuccessful) {
-                                        task.exception?.let { throw it }
+                                if (cgpa == 0.0)
+                                    send(Resource.Loading("Server Error, CGPA can't be calculated"))
+                                else
+                                    send(Resource.Loading("ID: $id, CGPA: $cgpa"))
+                                try {
+                                    send(Resource.Loading("Getting Auth Info.."))
+                                    Log.d("getStudentInfo", "id pass: $id $pass")
+                                    val authInfo = api.getAuthInfo(LoginInformation(id, pass))
+                                    Log.d("getStudentInfo", "authInfo: $authInfo")
+                                    send(Resource.Loading("Getting Private Info.."))
+                                    val privateInfo = api.getPrivateInfo(authInfo.accessToken).toPrivateInfo()
+                                    Log.d("getStudentInfo", "privateInfo: $privateInfo")
+                                    send(Resource.Loading("Getting lastSemester Info.."))
+                                    val semInfo =api.getAllSemesterInfo(authInfo.accessToken)
+                                    var lastSemesterId = semInfo[0].semesterId
+                                    Log.d("getStudentInfo", "lastSemesterId: $lastSemesterId")
+                                    send(Resource.Loading("Getting registeredCourse Info.."))
+                                    var registeredCourse = api.getRegisteredCourse(lastSemesterId, authInfo.accessToken).map { it.toCourseInfo() }
+                                    if(registeredCourse.isEmpty()){
+                                        lastSemesterId = semInfo[1].semesterId
+                                        registeredCourse = api.getRegisteredCourse(lastSemesterId, authInfo.accessToken).map { it.toCourseInfo() }
                                     }
-                                    ref.downloadUrl
-                                }.addOnCompleteListener { task ->
-                                    val fbPic : String =
-                                        if (task.isSuccessful)
-                                            task.result.toString()
-                                        else
-                                            fbInfo.pic
-
-                                    val userProfile =
-                                        UserProfile(
-                                            token = authInfo.accessToken,
-                                            lastUpdatedPaymentInfo = System.currentTimeMillis(),
-                                            lastUpdatedRegCourseInfo = System.currentTimeMillis(),
-                                            lastUpdatedLiveResultInfo = System.currentTimeMillis(),
-                                            lastUpdatedResultInfo = System.currentTimeMillis(),
-                                            publicInfo = PublicInfo(
-                                                id = id,
-                                                nm = publicInfo.studentName!!,
-                                                progShortName = publicInfo.progShortName!!,
-                                                batchNo = publicInfo.batchNo!!,
-                                                cgpa = cgpa,
-                                                firstSemId = publicInfo.firstSemId!!.toInt()
-                                            ),
-                                            privateInfo = PrivateInfoExtended(
-                                                fbId = fbInfo.fbId,
-                                                fbLink = fbInfo.fbLink,
-                                                pic = fbPic,
-                                                bloodGroup = privateInfo.bloodGroup,
-                                                email = privateInfo.email,
-                                                permanentHouse = privateInfo.permanentHouse,
-                                                ip = locationInfo.ip!!,
-                                                loc = locationInfo.loc!!
-                                            ),
-                                            paymentInfo = paymentInfo,
-                                            regCourseInfo = ArrayList(registeredCourse),
-                                            liveResultInfo = ArrayList(liveResultInfoList) ,
-                                            fullResultInfo = ArrayList(fullResultInfo)
+                                    Log.d("getStudentInfo", "registeredCourse: $registeredCourse")
+                                    send(Resource.Loading("Getting Live Result Info.."))
+                                    val liveResultInfoList = mutableListOf<LiveResultInfo>()
+                                    registeredCourse.forEach {
+                                        liveResultInfoList.add(api
+                                            .getLiveResult(it.courseSectionId!!, authInfo.accessToken)
+                                            .toLiveResultInfo(it.customCourseId!!, it.courseTitle!!, it.toShortSemName())
                                         )
-
-                                    Log.d("TAG", "getStudentInfoFinal: $userProfile")
-                                    //val userProfileMap=mapper.fromJson(mapper.toJson(userProfile), Map::class.java)
-                                    //Log.d("TAG", "getStudentInfoFinal: $userProfileMap")
-                                    myRef.set(userProfile).addOnCompleteListener {
-                                        GlobalScope.launch(Dispatchers.IO) {
-                                            if (it.isSuccessful) {
-                                                firestore
-                                                    .collection("public")
-                                                    .document("info")
-                                                    .update("profileCount", FieldValue.increment(1))
-                                                send(Resource.Success(userProfile))
-                                            } else
-                                                send(
-                                                    Resource.Error("Firebase Server Error.", userProfile)
-                                                )
-                                        }
                                     }
+                                    Log.d("getStudentInfo", "liveResultInfoList: $liveResultInfoList")
+                                    send(Resource.Loading("Getting payment Info.."))
+                                    val paymentInfo = api.getPaymentInfo(authInfo.accessToken).toPaymentInfo()
+                                    Log.d("getStudentInfo", "paymentInfo: $paymentInfo")
+                                    send(Resource.Loading("Getting location Info.."))
+                                    val locationInfo = api.getLocationInfo().toLocationInfo()
+                                    Log.d("getStudentInfo", "locationInfo: $locationInfo")
 
 
+                                    val ref = cloudStore.reference.child("users/${id}/dp.jpg")
+                                    val uploadTask = ref
+                                        .putStream(
+                                            api.getImgByteStream(fbInfo.pic)
+                                                .byteStream()
+                                        )
+                                    uploadTask.continueWithTask { task ->
+                                        if (!task.isSuccessful) {
+                                            task.exception?.let { throw it }
+                                        }
+                                        ref.downloadUrl
+                                    }.addOnCompleteListener { task ->
+                                        val fbPic : String =
+                                            if (task.isSuccessful)
+                                                task.result.toString()
+                                            else
+                                                fbInfo.pic
+
+                                        val userProfile =
+                                            UserProfile(
+                                                token = authInfo.accessToken,
+                                                lastUpdatedPaymentInfo = System.currentTimeMillis(),
+                                                lastUpdatedRegCourseInfo = System.currentTimeMillis(),
+                                                lastUpdatedLiveResultInfo = System.currentTimeMillis(),
+                                                lastUpdatedResultInfo = System.currentTimeMillis(),
+                                                publicInfo = PublicInfo(
+                                                    id = id,
+                                                    nm = publicInfo.studentName!!,
+                                                    progShortName = publicInfo.progShortName!!,
+                                                    batchNo = publicInfo.batchNo!!,
+                                                    cgpa = cgpa,
+                                                    firstSemId = publicInfo.firstSemId!!.toInt()
+                                                ),
+                                                privateInfo = PrivateInfoExtended(
+                                                    fbId = fbInfo.fbId,
+                                                    fbLink = fbInfo.fbLink,
+                                                    pic = fbPic,
+                                                    bloodGroup = privateInfo.bloodGroup,
+                                                    email = privateInfo.email,
+                                                    permanentHouse = privateInfo.permanentHouse,
+                                                    ip = locationInfo.ip!!,
+                                                    loc = locationInfo.loc!!
+                                                ),
+                                                paymentInfo = paymentInfo,
+                                                regCourseInfo = ArrayList(registeredCourse),
+                                                liveResultInfo = ArrayList(liveResultInfoList) ,
+                                                fullResultInfo = ArrayList(fullResultInfo)
+                                            )
+
+                                        Log.d("TAG", "getStudentInfoFinal: $userProfile")
+                                        //val userProfileMap=mapper.fromJson(mapper.toJson(userProfile), Map::class.java)
+                                        //Log.d("TAG", "getStudentInfoFinal: $userProfileMap")
+                                        myRef.set(userProfile).addOnCompleteListener {
+                                            GlobalScope.launch(Dispatchers.IO) {
+                                                if (it.isSuccessful) {
+                                                    firestore
+                                                        .collection("public")
+                                                        .document("info")
+                                                        .update("profileCount", FieldValue.increment(1))
+                                                    send(Resource.Success(userProfile))
+                                                } else
+                                                    send(
+                                                        Resource.Error("Firebase Server Error.", userProfile)
+                                                    )
+                                            }
+                                        }
+
+
+                                    }
+                                } catch (e: HttpException) {
+                                    send(Resource.Error("Invalid Portal Password"))
+                                    Log.d("TAG", "getStudentIdInfo: ${e.message} ${e.localizedMessage}")
+                                    this.cancel()
+                                } catch (e: EOFException) {
+                                    send(Resource.Error("Student Portal Server Error."))
+                                    Log.d("TAG", "getStudentIdInfo: ${e.message} ${e.localizedMessage}")
+                                    this.cancel()
+                                } catch (e: IOException) {
+                                    send(Resource.Error("Couldn't reach server."))
+                                    Log.d("TAG", "getStudentIdInfo: ${e.message} ${e.localizedMessage}")
+                                    this.cancel()
                                 }
-                            } catch (e: HttpException) {
-                                send(Resource.Error("Oops, something went wrong."))
-                                Log.d("TAG", "getStudentIdInfo: ${e.message} ${e.localizedMessage}")
-                                this.cancel()
-                            } catch (e: EOFException) {
-                                send(Resource.Error("Student Portal Server Error."))
-                                Log.d("TAG", "getStudentIdInfo: ${e.message} ${e.localizedMessage}")
-                                this.cancel()
-                            } catch (e: IOException) {
-                                send(Resource.Error("Couldn't reach server."))
-                                Log.d("TAG", "getStudentIdInfo: ${e.message} ${e.localizedMessage}")
-                                this.cancel()
                             }
                         }
                     }
+                    else
+                        send(Resource.Error("Invalid Student ID."))
+
                     Log.d("TAG", "getStudentIdInfo: $publicInfo")
                 }
 
@@ -372,7 +366,7 @@ class AuthRepoImpl @Inject constructor(
                         send(Resource.Success(UserProfile(token=authInfo.accessToken)))
 
                     } catch (e: HttpException) {
-                        send(Resource.Error("Oops, something went wrong."))
+                        send(Resource.Error("Invalid Portal Password"))
                         Log.d("TAG", "getStudentIdInfo: ${e.message} ${e.localizedMessage}}")
                         this.cancel()
                     } catch (e: EOFException) {
@@ -439,8 +433,9 @@ class AuthRepoImpl @Inject constructor(
                     resultFound++
                     if (resultFound == semesterList.size) {
                         var cgpa = weightedCgpa / totalCreditWeight
-                        if (!cgpa.isNaN())
-                            cgpa = (cgpa * 100.0).roundToInt() / 100.0
+                        cgpa = if(!cgpa.isNaN()) (cgpa* 100.0).roundToInt() / 100.0 else 0.0
+
+                        fullResultInfo.sortBy { it.semesterInfo.semesterId }
                         success.invoke(cgpa, fullResultInfo)
                     }
                 } catch (e: HttpException) {
@@ -473,9 +468,8 @@ class AuthRepoImpl @Inject constructor(
 
         val yearEnd = year % 100
         //val initial = id.slice(0..2).toInt()  //.split('-')[0].toInt()
-        val initial = firstSemId
-        val yr: Int = initial / 10
-        var semester: Int = initial % 10
+        val yr: Int = firstSemId / 10
+        var semester: Int = firstSemId % 10
         val list = mutableListOf<String>()
 
         for (y in yr..yearEnd) {

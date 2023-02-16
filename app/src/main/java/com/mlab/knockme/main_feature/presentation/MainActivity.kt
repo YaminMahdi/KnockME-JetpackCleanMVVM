@@ -1,5 +1,7 @@
 package com.mlab.knockme.main_feature.presentation
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -17,17 +19,21 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
-import com.google.accompanist.navigation.animation.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.google.accompanist.navigation.animation.AnimatedNavHost
+import com.google.accompanist.navigation.animation.composable
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
+import com.mlab.knockme.R
+import com.mlab.knockme.auth_feature.presentation.login.LoginActivity
 import com.mlab.knockme.main_feature.presentation.chats.ChatBusInfoScreen
 import com.mlab.knockme.main_feature.presentation.chats.ChatPersonalScreen
 import com.mlab.knockme.main_feature.presentation.chats.ChatPlacewiseScreen
+import com.mlab.knockme.main_feature.presentation.main.ProfileViewScreen
 import com.mlab.knockme.main_feature.presentation.main.components.BottomMenuItem
 import com.mlab.knockme.main_feature.presentation.main.components.BottomNav
-import com.mlab.knockme.main_feature.presentation.main.ProfileViewScreen
 import com.mlab.knockme.main_feature.presentation.messages.MsgViewScreen
 import com.mlab.knockme.main_feature.presentation.profile.*
 import com.mlab.knockme.ui.theme.KnockMETheme
@@ -45,6 +51,17 @@ class MainActivity : ComponentActivity() {
                 // A surface container using the 'background' color from the theme
                 Main(viewModel)
             }
+        }
+    }
+    override fun onStart() {
+        super.onStart()
+        val sharedPreferences = this.getSharedPreferences(
+            getString(R.string.preference_file_key), Context.MODE_PRIVATE
+        )
+        if(Firebase.auth.currentUser == null) {
+            sharedPreferences.edit().remove("StudentId").apply()
+            startActivity(Intent(this, LoginActivity::class.java))
+            this.finish()
         }
     }
 }
@@ -119,7 +136,14 @@ fun Main(viewModel: MainViewModel) {
             composable(MainScreens.ProScreen.route) {
                 ProfileScreen(navController)
             }
-            composable(ChatInnerScreens.UserProfileScreen.route+"{id}"){
+            composable(
+                ChatInnerScreens.UserProfileScreen.route+"{id}",
+                enterTransition = {
+                    fadeIn() + slideInVertically(animationSpec = tween(1000))
+                },
+                exitTransition = {
+                    fadeOut() + slideOutVertically(animationSpec = tween(1000))
+                }){
                 // ProfileViewScreen(navController, it.arguments?.getString("id"))
                 ProfileViewScreen(it.arguments?.getString("id")!!,navController,viewModel)
             }
@@ -138,7 +162,15 @@ fun Main(viewModel: MainViewModel) {
                     navController,viewModel
                 )
             }
-            composable(ProfileInnerScreens.CgpaScreen.route+"{id}"){
+            composable(
+                ProfileInnerScreens.CgpaScreen.route+"{id}",
+                enterTransition = {
+                    fadeIn() + slideInVertically(animationSpec = tween(1000))
+                },
+                exitTransition = {
+                    fadeOut() + slideOutVertically(animationSpec = tween(1000))
+                }
+            ){
                 CgpaViewScreen(it.arguments?.getString("id")!!,navController)
             }
             composable(
@@ -161,10 +193,24 @@ fun Main(viewModel: MainViewModel) {
             ){
                 DueViewScreen(navController)
             }
-            composable(ProfileInnerScreens.RegCourseScreen.route){
+            composable(
+                ProfileInnerScreens.RegCourseScreen.route,
+                enterTransition = {
+                    fadeIn() + slideInVertically(animationSpec = tween(1000))
+                },
+                exitTransition = {
+                    fadeOut() + slideOutVertically(animationSpec = tween(1000))
+                }){
                 RegCourseViewScreen(navController)
             }
-            composable(ProfileInnerScreens.LiveResultScreen.route){
+            composable(
+                ProfileInnerScreens.LiveResultScreen.route,
+                enterTransition = {
+                    fadeIn() + slideInVertically(animationSpec = tween(1000))
+                },
+                exitTransition = {
+                    fadeOut() + slideOutVertically(animationSpec = tween(1000))
+                }){
                 LiveResultViewScreen(navController)
             }
         }

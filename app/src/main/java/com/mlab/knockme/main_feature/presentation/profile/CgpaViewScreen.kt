@@ -38,9 +38,8 @@ import com.mlab.knockme.main_feature.presentation.chats.CustomToast
 import com.mlab.knockme.main_feature.presentation.main.TopBar
 import com.mlab.knockme.profile_feature.presentation.components.standardQuadFromTo
 import com.mlab.knockme.ui.theme.*
-import kotlinx.coroutines.DelicateCoroutinesApi
 
-@OptIn(ExperimentalMaterial3Api::class, DelicateCoroutinesApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CgpaViewScreen(id: String, navController: NavHostController, viewModel: MainViewModel = hiltViewModel()) {
     val context: Context = LocalContext.current

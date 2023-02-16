@@ -31,7 +31,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import com.mlab.knockme.auth_feature.domain.model.ResultInfo
 import com.mlab.knockme.auth_feature.domain.model.SemesterInfo
 import com.mlab.knockme.core.util.bounceClick
@@ -39,12 +38,9 @@ import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.main.BackBtn
 import com.mlab.knockme.profile_feature.presentation.components.standardQuadFromTo
 import com.mlab.knockme.ui.theme.*
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 
 
-@OptIn(DelicateCoroutinesApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CgpaDetailsScreen(id: String,index: Int, navController: NavHostController, viewModel: MainViewModel = hiltViewModel()) {
     val context: Context = LocalContext.current
@@ -214,7 +210,7 @@ fun ResultItemRGB(
                 .fillMaxWidth()
                 .padding(16.dp)
         ){
-            Column() {
+            Column{
                 Text(
                     text = resultInfo.customCourseId!!,
                     style = MaterialTheme.typography.headlineLarge
@@ -280,7 +276,7 @@ fun ResultItem(resultInfo: ResultInfo) {
             )
             .padding(16.dp)
     ){
-        Column() {
+        Column{
             Text(
                 text = resultInfo.customCourseId!!,
                 style = MaterialTheme.typography.headlineLarge

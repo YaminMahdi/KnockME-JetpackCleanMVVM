@@ -47,6 +47,7 @@ import com.himanshoe.charty.common.dimens.ChartDimens
 import com.mlab.knockme.R
 import com.mlab.knockme.auth_feature.domain.model.PublicInfo
 import com.mlab.knockme.core.util.bounceClick
+import com.mlab.knockme.core.util.hasAlphabet
 import com.mlab.knockme.core.util.toDayPassed
 import com.mlab.knockme.main_feature.domain.model.Msg
 import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
@@ -77,7 +78,7 @@ fun ProfileViewScreen(
         context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
     )
     //val preferencesEditor = sharedPreferences.edit()
-    val myId = sharedPreferences.getString("studentId",null)
+    val myId = sharedPreferences.getString("studentId","0")
 //    val isLoading by viewModel.isLoading.collectAsState()
 //    val hasPrivateInfo  by viewModel.hasPrivateInfo.collectAsState()
 //    val userBasicInfo  by viewModel.userBasicInfo.collectAsState()
@@ -85,18 +86,21 @@ fun ProfileViewScreen(
     LaunchedEffect(key1 = "1"){
         //if(isLoading)
         viewModel.getUserBasicInfo(id){
-            viewModel.updateUserFullResultInfo(
-                publicInfo = it.publicInfo,
-                fullResultInfoList = it.fullResultInfo)
+            if(!id.hasAlphabet()){
+                viewModel.updateUserFullResultInfo(
+                    publicInfo = it.publicInfo,
+                    fullResultInfoList = it.fullResultInfo)
+            }
         }
 
     }
 
     Scaffold(topBar = {
         TopBar(navController){
-            viewModel.updateUserFullResultInfo(
-                publicInfo = userBasicInfo.publicInfo,
-                fullResultInfoList = userBasicInfo.fullResultInfo)
+            if(!id.hasAlphabet())
+                viewModel.updateUserFullResultInfo(
+                    publicInfo = userBasicInfo.publicInfo,
+                    fullResultInfoList = userBasicInfo.fullResultInfo)
         }
     }) {
         Column(
@@ -114,19 +118,20 @@ fun ProfileViewScreen(
                 navController
             )
             SocialLink(viewModel,userBasicInfo, hasPrivateInfo, navController, id, myId!!)
-            Column(
-                modifier = Modifier
-                    .verticalScroll(rememberScrollState())
-                    .weight(weight = 1f, fill = false)
+            if(!id.hasAlphabet()){
+                Column(
+                    modifier = Modifier
+                        .verticalScroll(rememberScrollState())
+                        .weight(weight = 1f, fill = false)
 
-            ) {
-                if(!isLoading&&userBasicInfo.fullResultInfo.isNotEmpty())
-                    BarChart(
-                        userBasicInfo.fullResultInfo.map { data -> data.toCombinedBarData() },
-                        userBasicInfo.publicInfo,
-                        navController
-                    )
-                //                listOf(
+                ) {
+                    if(!isLoading&&userBasicInfo.fullResultInfo.isNotEmpty())
+                        BarChart(
+                            userBasicInfo.fullResultInfo.map { data -> data.toCombinedBarData() },
+                            userBasicInfo.publicInfo,
+                            navController
+                        )
+                    //                listOf(
 //                    CombinedBarData("F-19", 3.33F, 3.33F),
 //                    CombinedBarData("S-20", 3.63F, 3.63F),
 //                    CombinedBarData("S-20", 3.73F, 3.73F),
@@ -140,20 +145,22 @@ fun ProfileViewScreen(
 //            CombinedBarData("S-21", 3.23F,3.23F),
 //            CombinedBarData("S-21", 3.93F,3.93F)
 //                )
-                Text(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .alpha(.7f)
-                        .padding(5.dp),
-                    text = "Last Updated: ${userBasicInfo.lastUpdatedResultInfo.toDayPassed()}",
-                    fontSize = 8.sp,
-                    style = MaterialTheme.typography.headlineSmall,
-                    textAlign = TextAlign.End
-                )
-                Details(userBasicInfo, hasPrivateInfo)
-                if(hasPrivateInfo)
-                    Address(userBasicInfo)
+                    Text(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .alpha(.7f)
+                            .padding(5.dp),
+                        text = "Last Updated: ${userBasicInfo.lastUpdatedResultInfo.toDayPassed()}",
+                        fontSize = 8.sp,
+                        style = MaterialTheme.typography.headlineSmall,
+                        textAlign = TextAlign.End
+                    )
+                    Details(userBasicInfo, hasPrivateInfo)
+                    if(hasPrivateInfo)
+                        Address(userBasicInfo)
+                }
             }
+
 
         }
         CustomToast(loading, loadingTxt)
@@ -188,7 +195,6 @@ fun ProfileViewScreen(
 //    }
 
 }
-
 @Composable
 fun TopBar(navController: NavHostController,onClick: (() -> Unit)? = null) {
     Row(
@@ -278,11 +284,12 @@ fun Profile(
                 style = MaterialTheme.typography.headlineLarge,
             )
         }
+        if(!publicInfo?.id?.hasAlphabet()!!)
         CgpaToast(
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(start = 185.dp, top = 25.dp),
-            pb = publicInfo!!,
+            pb = publicInfo,
             isLoading = isLoading,
         ){
             navController.navigate(ProfileInnerScreens.CgpaScreen.route+publicInfo.id)
@@ -374,25 +381,30 @@ fun SocialLink(
                 .bounceClick()
             ,
             onClick = {
-                val path = "personalMsg/$myId/"
-                val myPath = "personalMsg/$myId/profiles/$id"
-                val tarPath = "personalMsg/$id/profiles/$myId"
+                if(!id.hasAlphabet()){
+                    val path = "personalMsg/$myId/"
+                    val myPath = "personalMsg/$myId/profiles/$id"
+                    val tarPath = "personalMsg/$id/profiles/$myId"
 
-                val msg = Msg(
-                    id = userBasicInfo.publicInfo.id,
-                    nm = userBasicInfo.publicInfo.nm,
-                    msg = "You Knocked.",
-                    pic = userBasicInfo.privateInfo.pic,
-                    time = System.currentTimeMillis()
-                )
-                viewModel.refreshProfileInChats(myPath, msg) {
-                    Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
+                    val msg = Msg(
+                        id = userBasicInfo.publicInfo.id,
+                        nm = userBasicInfo.publicInfo.nm,
+                        msg = "You Knocked.",
+                        pic = userBasicInfo.privateInfo.pic,
+                        time = System.currentTimeMillis()
+                    )
+                    viewModel.refreshProfileInChats(myPath, msg) {
+                        Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
+                    }
+                    val msg2 = msg.copy(msg="Knocked you.")
+                    viewModel.refreshProfileInChats(tarPath, msg2) {
+                        Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
+                    }
+                    navController.navigate(ChatInnerScreens.MsgScreen.route+"path=$path&id=$id")
                 }
-                val msg2 = msg.copy(msg="Knocked you.")
-                viewModel.refreshProfileInChats(tarPath, msg2) {
-                    Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
+                else{
+                    navController.popBackStack()
                 }
-                navController.navigate(ChatInnerScreens.MsgScreen.route+"path=$path&id=$id")
 
             },
             shape = RoundedCornerShape(10.dp),
@@ -465,35 +477,18 @@ fun SocialLink(
                         onClick = {
                             if (!userBasicInfo.privateInfo.email.isNullOrEmpty()) {
                                 try {
-                                    val intent = Intent(Intent.ACTION_SEND)
-                                    intent.data = Uri.parse("mailto:")
-                                    intent.type = "text/plain"
-                                    //intent.type = "vnd.android.cursor.item/email" // or "message/rfc822"
-                                    intent.putExtra(
-                                        Intent.EXTRA_EMAIL,
-                                        arrayOf(userBasicInfo.privateInfo.email)
-                                    )
-                                    //context.startActivity(intent)
-                                    context.startActivity(
-                                        Intent.createChooser(
-                                            intent,
-                                            "Choose Email Client..."
-                                        )
-                                    )
+                                    val intent = Intent(Intent.ACTION_VIEW)
+                                    val body = "Hey, I found your email in KnockME.\n"
+                                    val data =
+                                        Uri.parse("mailto:${userBasicInfo.privateInfo.email}?subject=Wanna be friend!&body=$body")
+                                    intent.data = data
+                                    context.startActivity(intent)
 
                                 } catch (e: Exception) {
-                                    Toast
-                                        .makeText(
-                                            context,
-                                            "No Mailing App Found",
-                                            Toast.LENGTH_SHORT
-                                        )
-                                        .show()
+                                    Toast.makeText(context, "No Mailing App Found", Toast.LENGTH_SHORT).show()
                                 }
                             } else
-                                Toast
-                                    .makeText(context, "No Email Found", Toast.LENGTH_SHORT)
-                                    .show()
+                                Toast.makeText(context, "No Email Found", Toast.LENGTH_SHORT).show()
                         }
                     )
                     .background(DeepBlueLess)
@@ -585,7 +580,7 @@ fun BarChart(barDataList: List<CombinedBarData>, pb: PublicInfo, navController: 
                 .clip(RoundedCornerShape(5.dp))
                 .bounceClick()
                 .clickable {
-                    navController.navigate(ProfileInnerScreens.CgpaScreen.route+pb.id)
+                    navController.navigate(ProfileInnerScreens.CgpaScreen.route + pb.id)
                 }
                 .padding(5.dp),
             textAlign = TextAlign.Center

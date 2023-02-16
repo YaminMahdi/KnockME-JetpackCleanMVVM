@@ -2,7 +2,6 @@ package com.mlab.knockme.auth_feature.data.data_source
 
 import com.mlab.knockme.auth_feature.data.data_source.dto.*
 import okhttp3.ResponseBody
-import retrofit2.Call
 import retrofit2.http.*
 
 
@@ -78,8 +77,8 @@ interface PortalApi {
         @Query("fields") fields : String="status,country,countryCode,regionName,city,district,query"
     ): LocationInfoDto
 
-    @GET
-    fun getRedirectUrl(@Url url: String): Call<String>
+//    @GET
+//    fun getRedirectUrl(@Url url: String): Call<String>
 
     @GET
     suspend fun getImgByteStream(@Url url: String): ResponseBody

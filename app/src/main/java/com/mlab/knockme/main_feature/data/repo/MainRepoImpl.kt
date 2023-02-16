@@ -1,11 +1,7 @@
 package com.mlab.knockme.main_feature.data.repo
 
 import android.util.Log
-import com.google.firebase.database.ChildEventListener
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.*
 import com.google.firebase.database.ktx.getValue
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -15,28 +11,15 @@ import com.mlab.knockme.auth_feature.data.data_source.PortalApi
 import com.mlab.knockme.auth_feature.data.data_source.dto.DailyHadithDto
 import com.mlab.knockme.auth_feature.domain.model.*
 import com.mlab.knockme.core.util.notEqualsIgnoreOrder
-import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
 import com.mlab.knockme.main_feature.domain.model.Msg
+import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
 import com.mlab.knockme.main_feature.domain.repo.MainRepo
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import retrofit2.HttpException
 import java.io.EOFException
 import java.io.IOException
-import java.util.Calendar
+import java.util.*
 import javax.inject.Inject
-import kotlin.math.log
 import kotlin.math.roundToInt
 
 class MainRepoImpl @Inject constructor(
@@ -48,45 +31,6 @@ class MainRepoImpl @Inject constructor(
     private val mapper: Gson by lazy { GsonBuilder().serializeNulls().create() }
 //    private var searchJob: Job? =null
 //    private val searchData= mutableListOf<Msg>()
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun getMessages(path: String): StateFlow<List<Msg>> {
-        val msgList = mutableListOf<Msg>()
-        val myRef: DatabaseReference = firebase.getReference(path)
-        val mutableStateFlow: Deferred<MutableStateFlow<List<Msg>>> =
-            CompletableDeferred(MutableStateFlow(msgList))
-        coroutineScope {
-            try {
-//                    mutableStateFlow.emit(SignInResponse.Loading)
-                myRef.addChildEventListener(object : ChildEventListener {
-                    override fun onChildAdded(
-                        dataSnapshot: DataSnapshot,
-                        previousChildName: String?
-                    ) {
-                        Log.d("TAG", "onChildAdded:" + dataSnapshot.key!!)
-                        val msg = dataSnapshot.getValue<Msg>()
-                        msgList.add(msg!!)
-                    }
-
-                    override fun onChildChanged(
-                        snapshot: DataSnapshot,
-                        previousChildName: String?
-                    ) {
-                        mutableStateFlow.getCompleted().update { msgList }
-                    }
-
-                    override fun onChildRemoved(snapshot: DataSnapshot) {}
-                    override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
-                    override fun onCancelled(error: DatabaseError) {}
-                })
-
-            } catch (e: Exception) {
-                mutableStateFlow.getCompletionExceptionOrNull()
-            }
-        }
-        return mutableStateFlow.await()
-    }
-
     override fun getMessages(
         path: String,
         Success: (msgList: List<Msg>) -> Unit,
@@ -484,11 +428,11 @@ class MainRepoImpl @Inject constructor(
                 else -> Loading.invoke("Semester $it result loaded.")
             }
         },{cgpa, fullResultInfoListNew ->
-            publicInfo.cgpa=cgpa
+
             if(fullResultInfoList notEqualsIgnoreOrder fullResultInfoListNew && fullResultInfoListNew.isNotEmpty()){
                 Success.invoke(fullResultInfoListNew,cgpa)
                 docRef.update("fullResultInfo" , fullResultInfoListNew)
-                docRef.update("publicInfo" , publicInfo)
+                docRef.update("publicInfo" , publicInfo.copy(cgpa = cgpa))
                 docRef.update("lastUpdatedResultInfo" , System.currentTimeMillis())
             }
             else Failed.invoke("No new data found.")
@@ -552,6 +496,7 @@ class MainRepoImpl @Inject constructor(
                         totalCreditWeight += creditTaken
 
                         //add a semester result to list
+
                         semesterResultInfo.resultInfo = rInfo
                         if(resultInfo[0].cgpa!=0.0)
                             semesterResultInfo.semesterInfo = resultInfo[0].toSemesterInfo(creditTaken)
@@ -563,6 +508,8 @@ class MainRepoImpl @Inject constructor(
                     if (resultFound == semesterList.size) {
                         var cgpa = weightedCgpa / totalCreditWeight
                         cgpa = if(!cgpa.isNaN()) (cgpa* 100.0).roundToInt() / 100.0 else 0.0
+
+                        fullResultInfo.sortBy { it.semesterInfo.semesterId }
                         success.invoke(cgpa,fullResultInfo)
                     }
                 } catch (e: HttpException) {

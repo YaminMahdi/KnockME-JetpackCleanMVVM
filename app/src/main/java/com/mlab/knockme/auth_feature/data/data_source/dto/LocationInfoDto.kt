@@ -14,6 +14,6 @@ data class LocationInfoDto(
     fun toLocationInfo()=
         LocationInfo(
             ip = query,
-            loc = "$district, $city, $country"
+            loc = "$city, $country"
         )
 }

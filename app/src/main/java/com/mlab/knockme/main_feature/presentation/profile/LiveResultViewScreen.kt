@@ -39,12 +39,8 @@ import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.main.TopBar
 import com.mlab.knockme.profile_feature.presentation.components.standardQuadFromTo
 import com.mlab.knockme.ui.theme.*
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, DelicateCoroutinesApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LiveResultViewScreen(navController: NavHostController, viewModel: MainViewModel = hiltViewModel()) {
     val context: Context = LocalContext.current
@@ -60,9 +56,9 @@ fun LiveResultViewScreen(navController: NavHostController, viewModel: MainViewMo
                 id = myId,
                 accessToken = it.token,
                 it.liveResultInfo
-            ){
+            ){msg->
                 Looper.prepare()
-                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                 Looper.loop()
             }
         },{
@@ -241,7 +237,7 @@ fun LiveRegCourseItem(
             )
             Spacer(modifier = Modifier.size(10.dp))
             Text(
-                text = "Quiz Average:  ${courseResultInfo.quiz}",
+                text = if(courseResultInfo.quiz != 0.0) "Quiz Average:  ${courseResultInfo.quiz}" else "Quiz Average:  N/A",
                 style = MaterialTheme.typography.headlineMedium,
             )
             Spacer(modifier = Modifier.size(3.dp))
@@ -252,30 +248,30 @@ fun LiveRegCourseItem(
                     .alpha(.8f)
             ) {
                 Text(
-                    text = "Quiz 1:  ${courseResultInfo.q1}",
+                    text = if(courseResultInfo.q1!=0.0) "Quiz 1:  ${courseResultInfo.q1}" else "Quiz 1:  N/A",
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.padding(vertical= 3.dp)
                 )
                 Text(
-                    text = "Quiz 2:  ${courseResultInfo.q2}",
+                    text = if(courseResultInfo.q2!=0.0) "Quiz 2:  ${courseResultInfo.q2}" else "Quiz 2:  N/A",
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.padding(vertical = 3.dp)
                 )
                 Text(
-                    text = "Quiz 3:  ${courseResultInfo.q3}",
+                    text = if(courseResultInfo.q3!=0.0) "Quiz 3:  ${courseResultInfo.q3}" else "Quiz 3:  N/A",
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.padding(vertical = 3.dp)
                 )
             }
             Spacer(modifier = Modifier.size(10.dp))
             Text(
-                text = "Midterm:  ${courseResultInfo.mid1}",
+                text = if(courseResultInfo.mid1 != 0.0) "Midterm:  ${courseResultInfo.mid1}" else "Midterm:  N/A",
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.fillMaxWidth(.5f)
             )
             Spacer(modifier = Modifier.size(3.dp))
             Text(
-                text = "Midterm Improvement:  ${courseResultInfo.mid2}",
+                text = if(courseResultInfo.mid2 != 0.0) "Midterm Improvement:  ${courseResultInfo.mid2}" else "Midterm Improvement:  N/A",
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.alpha(.8f)
             )

@@ -1,7 +1,6 @@
 package com.mlab.knockme.auth_feature.presentation.login
 
 import android.util.Log
-import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -33,22 +32,16 @@ class LoginViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _loadingText = savedStateHandle.getStateFlow("loadingText", "Loading..")
-    val loadingText = _loadingText
     private val _isLoadingActive = savedStateHandle.getStateFlow("isLoadingActive", false)
-    val isLoadingActive = _isLoadingActive
 
     val loadingState = combine(_loadingText,_isLoadingActive){_loadingText,_isLoadingActive ->
         LoadingState(_loadingText, _isLoadingActive) //1 searchNotes.execute(notes, searchText) ,
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(10) , LoadingState())
-    val isUserAuthenticated get() = authUseCases.isUserAuthenticated()
 
     private val _signInState = MutableStateFlow<SignResponse<Boolean>>(SignResponse.Success(false))
-    val signInState = _signInState.asStateFlow()
     private val _signOutState = MutableStateFlow<SignResponse<Boolean>>(SignResponse.Success(false))
-    val signOutState = _signOutState.asStateFlow()
 
-    private val _authState = mutableStateOf<Boolean>(false)
-    val authState: State<Boolean> = _authState
+    private val _authState = mutableStateOf(false)
 
     private val _infoState = MutableStateFlow<Resource<UserProfile>>(Resource.Loading("Loading.."))
     val infoState = _infoState.asStateFlow()

@@ -1,9 +1,7 @@
 package com.mlab.knockme.main_feature.presentation.chats
 
-import android.app.Activity
 import android.content.Context
 import android.widget.Toast
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -17,7 +15,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.ripple.rememberRipple
@@ -62,6 +59,7 @@ import com.mlab.knockme.core.util.toDateTime
 import com.mlab.knockme.core.util.toDayPassed
 import com.mlab.knockme.main_feature.presentation.ChatInnerScreens
 import com.mlab.knockme.main_feature.presentation.MainScreens
+import com.mlab.knockme.main_feature.presentation.profile.InfoDialog
 import com.mlab.knockme.main_feature.presentation.profile.TitleInfo
 import com.mlab.knockme.ui.theme.*
 
@@ -76,7 +74,7 @@ fun ChatPersonalScreen(
         context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
     )
     //val preferencesEditor = sharedPreferences.edit()
-    val myId = sharedPreferences.getString("studentId",null)
+    val myId = sharedPreferences.getString("studentId","")!!
     val showHadith by viewModel.showHadith.collectAsState()
     LaunchedEffect(key1 = state.isSearchActive){
         //pop backstack
@@ -98,18 +96,21 @@ fun ChatPersonalScreen(
 //        activity.finish()
 //    }
     HadithDialog(viewModel)
+    InfoDialog(viewModel, context, myId, navController)
     Column(
         modifier = Modifier
             .background(DeepBlue)
             .fillMaxSize()){
-        TitleInfo(title = "Personal")
+        TitleInfo(title = "Personal"){
+            viewModel.setInfoDialogVisibility(true)
+        }
         SearchBox(state,viewModel)
         if(state.isSearchLoading)
             ProgressBar()
         else {
             Spacer(modifier = Modifier.size(17.dp))
         }
-        LoadChatList(state,navController,myId!!)
+        LoadChatList(state,navController,myId)
 
 //        LoadChatList(chatList =
 //        listOf(
@@ -157,7 +158,7 @@ fun CustomToast(isLoading: Boolean,loadingText: String) {
 fun SearchBox(state: ChatListState, viewModel: MainViewModel) {
     var data by remember { mutableStateOf(state.searchText) }
 
-    Row(){
+    Row{
         OutlinedTextField(
             value = data,
             placeholder = { Text("Type Student ID.") },
@@ -255,9 +256,9 @@ fun LoadChatList(state: ChatListState,navController: NavHostController,myId: Str
                             navController.navigate(ChatInnerScreens.MsgScreen.route+"path=$path&id=$id")
                         }
                         MainScreens.CtPlacewiseScreen.route ->
-                            navController.navigate(ChatInnerScreens.MsgScreen.route+"path=groupMsg/placeMsg&id=$id")
+                            navController.navigate(ChatInnerScreens.MsgScreen.route+"path=groupMsg/placewise/&id=$id")
                         MainScreens.CtBusInfoScreen.route ->
-                            navController.navigate(ChatInnerScreens.MsgScreen.route+"path=groupMsg/busMsg&id=$id")
+                            navController.navigate(ChatInnerScreens.MsgScreen.route+"path=groupMsg/busInfo/&id=$id")
                     }
                 }
                 else
@@ -393,7 +394,7 @@ fun HadithDialog(viewModel: MainViewModel) {
                         .padding(24.dp)
                 ) {
                     Text(
-                        text = if(hadith.t=="h") "Read A Hadith" else "Read An Ayah",
+                        text = if(hadith.t=="h") "Read A Hadith" else "Read From Quran",
                         style = MaterialTheme.typography.headlineLarge,
                         color = ButtonBlue,
                         modifier = Modifier

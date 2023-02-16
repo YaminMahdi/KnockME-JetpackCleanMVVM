@@ -427,12 +427,10 @@ fun SendMsgBar(
                         viewModel.sendMsg(myPath, msg) {
                             Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
                         }
-
-                        if (tarPath != null) {
-                            viewModel.refreshProfileInChats(myProfilePath, tarProfile) {
-                                Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
-                            }
-
+                        viewModel.refreshProfileInChats(myProfilePath, tarProfile) {
+                            Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
+                        }
+                        if (tarPath != null && id!=myId) {
                             viewModel.sendMsg(tarPath, msg) {
                                 Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
                             }

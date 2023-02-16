@@ -39,8 +39,6 @@ fun LoginPortalScreen(onClick:(id:String,pass:String)->Unit) {
 
     var hidden by remember{ mutableStateOf(true) }
 
-    val data by remember{ mutableStateOf("Loading..") }
-
     Box(modifier = Modifier
         .fillMaxSize()
         .background(DeepBlue)
@@ -49,7 +47,7 @@ fun LoginPortalScreen(onClick:(id:String,pass:String)->Unit) {
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
                 ){
-            titlePortal()
+            TitlePortal()
             var id by rememberSaveable { mutableStateOf("") }
             var password by rememberSaveable { mutableStateOf("") }
             //var passwordHidden by rememberSaveable { mutableStateOf(true) }
@@ -90,11 +88,16 @@ fun LoginPortalScreen(onClick:(id:String,pass:String)->Unit) {
                     shape= RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor= ButtonBlue)
                 ) {
-                    Text(text = "VERIFY", color = TextWhite)
+                    Text(
+                        text = "VERIFY",
+                        color = TextWhite,
+                        fontFamily = ubuntu
+                    )
                 }
             }
         }
         NbNote(modifier= Modifier.align(Alignment.BottomCenter))
+        Spacer(modifier = Modifier.padding(20.dp))
 //        if(!hidden){
 //
 //            LoadingScreen(msg)
@@ -103,7 +106,7 @@ fun LoginPortalScreen(onClick:(id:String,pass:String)->Unit) {
 }
 
 @Composable
-fun titlePortal() {
+fun TitlePortal() {
     Spacer(modifier = Modifier.padding(20.dp))
     Text(
         text = "STUDENT PORTAL",
@@ -129,15 +132,12 @@ fun textFieldColors() =
     placeholderColor = DeepBlueLess
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun InputFields(onClick:(id:String,pass:String)->Unit) {
-
-
-}
 
 @Composable
-fun NbNote(modifier: Modifier) {
+fun NbNote(
+    modifier: Modifier = Modifier,
+    text: String= "The application is secure because it's open source."
+) {
     Column(
         modifier = modifier
             .padding(70.dp),
@@ -150,14 +150,11 @@ fun NbNote(modifier: Modifier) {
         )
         Spacer(modifier = Modifier.padding(5.dp))
         Text(
-            text = "Without Portal Verification You Can't See Messages",
+            text = text,
             style = MaterialTheme.typography.headlineSmall,
             textAlign = TextAlign.Center
         )
     }
-
-    Spacer(modifier = Modifier.padding(20.dp))
-
 }
 
 @Preview

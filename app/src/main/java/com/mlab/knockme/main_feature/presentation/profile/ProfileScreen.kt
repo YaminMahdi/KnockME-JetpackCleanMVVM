@@ -1,6 +1,8 @@
 package com.mlab.knockme.main_feature.presentation.profile
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Looper
 import android.widget.Toast
 import androidx.compose.foundation.Canvas
@@ -13,7 +15,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.twotone.Info
-import androidx.compose.material.icons.twotone.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,30 +30,32 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import com.mlab.knockme.R
-import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.core.util.bounceClick
 import com.mlab.knockme.core.util.toK
 import com.mlab.knockme.core.util.toWords
 import com.mlab.knockme.main_feature.presentation.ChatInnerScreens
+import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.ProfileInnerScreens
 import com.mlab.knockme.main_feature.presentation.profile.components.Feature
 import com.mlab.knockme.profile_feature.presentation.components.standardQuadFromTo
 import com.mlab.knockme.ui.theme.*
-import kotlinx.coroutines.DelicateCoroutinesApi
 
-@OptIn(DelicateCoroutinesApi::class)
 @Composable
 fun ProfileScreen(
     navController: NavHostController,
@@ -64,7 +67,7 @@ fun ProfileScreen(
         context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
     )
     //val preferencesEditor = sharedPreferences.edit()
-    val myId = sharedPreferences.getString("studentId",null)!!
+    val myId = sharedPreferences.getString("studentId","0")!!
     LaunchedEffect(key1 = "1")
     {
         viewModel.getUserFullProfileInfo(myId,{
@@ -78,23 +81,27 @@ fun ProfileScreen(
         })
     }
     val myFullProfile by viewModel.userFullProfileInfo.collectAsState()
+
+    InfoDialog(viewModel,context,myId,navController)
     Column(
         modifier = Modifier
             .background(DeepBlue)
             .fillMaxSize()){
-        TitleInfo()
+        TitleInfo("Profile"){
+            viewModel.setInfoDialogVisibility(true)
+        }
         PersonInfo(
             myFullProfile.publicInfo.nm!!,
             myFullProfile.privateInfo.pic!!,
             myFullProfile.publicInfo.progShortName!!,
-            myFullProfile.publicInfo.id!!,
+            myId,
             navController
             )
-        FeatureSection(navController,myFullProfile.publicInfo.id!!,
+        FeatureSection(navController,myId,
             features = listOf(
             Feature(
                 title = "CGPA",
-                info = myFullProfile.publicInfo.cgpa.toString() ,
+                info = "%.2f".format(myFullProfile.publicInfo.cgpa),
                 BlueViolet1,
                 BlueViolet2,
                 BlueViolet3
@@ -128,7 +135,8 @@ fun ProfileScreen(
 
 @Composable
 fun TitleInfo(
-    title: String = "Profile"
+    title: String,
+    onClick: (() -> Unit)
 ) {
     Row(
         modifier = Modifier
@@ -145,8 +153,7 @@ fun TitleInfo(
             fontSize = 26.sp
         )
         Row{
-            Ic(Icons.TwoTone.Info)
-            Ic(Icons.TwoTone.Settings)
+            Ic(Icons.TwoTone.Info){ onClick.invoke() }
         }
     }
 }
@@ -179,7 +186,121 @@ fun Ic(
     }
 
 }
+@Composable
+fun InfoDialog(
+    viewModel: MainViewModel,
+    context: Context,
+    myId: String,
+    navController: NavHostController
+) {
+    val dialogVisibility by viewModel.infoDialogVisibility.collectAsState()
+    val uriHandler = LocalUriHandler.current
 
+    if (dialogVisibility) {
+        Dialog(
+            onDismissRequest = { viewModel.setInfoDialogVisibility(false) }
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(BlueViolet0)
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp)
+                        .padding(vertical = 20.dp)
+                ) {
+                    Text(
+                        text = "Made With Love \uD83D\uDC95",
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = LightRed,
+                        modifier = Modifier
+                            .padding(bottom = 10.dp)
+                    )
+                    Text(
+                        text = "By",
+                        fontFamily = ubuntu,
+                        color = LightRed,
+                        fontSize = 16.sp,
+                        modifier = Modifier
+                            .padding(bottom = 20.dp)
+                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable {
+                                viewModel.setInfoDialogVisibility(false)
+                                navController.navigate(ChatInnerScreens.UserProfileScreen.route + "193-15-1071")
+                            }
+                            .padding(15.dp)
+
+                    ) {
+                        Text(
+                            text = "Ahmad Umar Mahdi",
+                            fontFamily = ubuntu,
+                            fontWeight = FontWeight.Bold,
+                            color = Neutral30,
+                            fontSize = 20.sp,
+                            modifier = Modifier
+                                .padding(vertical = 5.dp)
+                        )
+                        Text(
+                            text = "193-15-1071",
+                            fontFamily = ubuntu,
+                            color = Limerick3,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                    Spacer(modifier = Modifier.size(35.dp))
+                    Text(
+                        text = "knock-me.github.io",
+                        fontFamily = ubuntu,
+                        color = BlueViolet3,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(5.dp))
+                            .clickable {
+                                uriHandler.openUri("https://knock-me.github.io")
+                            }
+                            .padding(5.dp)
+                    )
+                    Spacer(modifier = Modifier.size(15.dp))
+                    Text(
+                        text = "Report a problem",
+                        style = TextStyle(textDecoration = TextDecoration.Underline),
+                        fontFamily = ubuntu,
+                        color = Neutral50,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(5.dp))
+                            .clickable {
+                                try {
+                                    val intent = Intent(Intent.ACTION_VIEW)
+                                    val body = "My Student ID is $myId. The issue is.."
+                                    val data =
+                                        Uri.parse("mailto:yamin_khan@asia.com?subject=Having Issue&body=$body")
+                                    intent.data = data
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "No Mailing App Found", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                            .padding(5.dp)
+                    )
+                }
+            }
+
+        }
+    }
+}
 @Composable
 fun PersonInfo(
     name: String,
@@ -192,7 +313,7 @@ fun PersonInfo(
         modifier = Modifier
             .fillMaxWidth()
             .bounceClick()
-            .clickable {navController.navigate(ChatInnerScreens.UserProfileScreen.route+id)}
+            .clickable { navController.navigate(ChatInnerScreens.UserProfileScreen.route + id) }
     ) {
         SubcomposeAsyncImage(
             model = pic,
@@ -246,7 +367,7 @@ fun PersonInfo(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "$id",
+                text = id,
                 style = MaterialTheme.typography.headlineMedium
             )
         }
@@ -293,7 +414,7 @@ fun FeatureItem(
             .aspectRatio(1f)
             .bounceClick()
             .clip(RoundedCornerShape(20.dp))
-            .clickable {onClick.invoke()}
+            .clickable { onClick.invoke() }
             .background(feature.darkColor)
     ) {
         val width = constraints.maxWidth
