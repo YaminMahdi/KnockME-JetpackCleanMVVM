@@ -3,6 +3,7 @@ package com.mlab.knockme.auth_feature.presentation.login
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -135,7 +136,9 @@ class LoginActivity : ComponentActivity() {
                                             Log.d("TAG", "onCreate Error: ${it.message}")
                                             if(once){
                                                 once = false
+                                                Looper.prepare()
                                                 Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show()
+                                                Looper.loop()
                                             }
                                         }
                                     }

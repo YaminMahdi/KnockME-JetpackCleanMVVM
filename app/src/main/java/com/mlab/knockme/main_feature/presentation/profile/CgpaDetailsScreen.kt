@@ -1,6 +1,7 @@
 package com.mlab.knockme.main_feature.presentation.profile
 
 import android.content.Context
+import android.os.Looper
 import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -47,7 +48,9 @@ fun CgpaDetailsScreen(id: String,index: Int, navController: NavHostController, v
     val fullProfile by viewModel.userFullProfileInfo.collectAsState()
     LaunchedEffect(key1 = ""){
         viewModel.getUserFullProfileInfo(id){
+            Looper.prepare()
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            Looper.loop()
         }
     }
     val semInfo =

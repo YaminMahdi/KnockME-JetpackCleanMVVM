@@ -1,6 +1,8 @@
 package com.mlab.knockme.main_feature.presentation.chats
 
 import android.content.Context
+import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -80,13 +82,17 @@ fun ChatPersonalScreen(
         //pop backstack
         if(!state.isSearchActive){
             viewModel.getChatProfiles("personalMsg/$myId/profiles"){
-                Toast.makeText(context, "Chat couldn't be loaded- $it", Toast.LENGTH_SHORT).show()
+                Log.d("TAG", "ChatPersonalScreen: $it")
+                Looper.prepare()
+                Toast.makeText(context, "Chat couldn't be loaded", Toast.LENGTH_SHORT).show()
+                Looper.loop()
             }
         }
         if(showHadith){
             viewModel.getRandomHadith {
+                Looper.prepare()
                 Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            }
+                Looper.loop()            }
             viewModel.setShowHadith(false)
         }
 
@@ -438,8 +444,8 @@ fun HadithDialog(viewModel: MainViewModel) {
                             .clickable {
                                 var link = hadith.src
                                 if (link.contains("http")) {
-                                    if(hadith.t=="q" && lang=="BN")
-                                        link = link.replace("bn","en")
+                                    if (hadith.t == "q" && lang == "BN")
+                                        link = link.replace("bn", "en")
                                     uriHandler.openUri(link)
                                 }
                             }

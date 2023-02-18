@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -92,6 +94,7 @@ fun ProfileViewScreen(
                     fullResultInfoList = it.fullResultInfo)
             }
         }
+        viewModel.getMyBasicInfo(id)
 
     }
 
@@ -366,6 +369,7 @@ fun SocialLink(
     id: String,
     myId: String
 ) {
+    val myBasicInfo by viewModel.myBasicInfo.collectAsState()
     Row(
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
@@ -385,27 +389,38 @@ fun SocialLink(
                     val path = "personalMsg/$myId/"
                     val myPath = "personalMsg/$myId/profiles/$id"
                     val tarPath = "personalMsg/$id/profiles/$myId"
-
-                    val msg = Msg(
+                    val time = System.currentTimeMillis()
+                    val tarProfile = Msg(
                         id = userBasicInfo.publicInfo.id,
                         nm = userBasicInfo.publicInfo.nm,
                         msg = "You Knocked.",
                         pic = userBasicInfo.privateInfo.pic,
-                        time = System.currentTimeMillis()
+                        time = time
                     )
-                    viewModel.refreshProfileInChats(myPath, msg) {
-                        Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
+                    viewModel.refreshProfileInChats(myPath, tarProfile) {
+                        Log.d("TAG", "ChatPersonalScreen: $it")
+                        Looper.prepare()
+                        Toast.makeText(context, "Couldn't send message", Toast.LENGTH_SHORT).show()
+                        Looper.loop()
                     }
-                    val msg2 = msg.copy(msg="Knocked you.")
-                    viewModel.refreshProfileInChats(tarPath, msg2) {
-                        Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
+                    val myProfile = Msg(
+                        id = userBasicInfo.publicInfo.id,
+                        nm = userBasicInfo.publicInfo.nm,
+                        msg = "Knocked You.",
+                        pic = userBasicInfo.privateInfo.pic,
+                        time = time
+                    )
+                    viewModel.refreshProfileInChats(tarPath, myProfile) {
+                        Log.d("TAG", "ChatPersonalScreen: $it")
+                        Looper.prepare()
+                        Toast.makeText(context, "Couldn't send message", Toast.LENGTH_SHORT).show()
+                        Looper.loop()
                     }
                     navController.navigate(ChatInnerScreens.MsgScreen.route+"path=$path&id=$id")
                 }
                 else{
                     navController.popBackStack()
                 }
-
             },
             shape = RoundedCornerShape(10.dp),
             colors = ButtonDefaults.buttonColors(containerColor = DeepBlueLess)
@@ -485,10 +500,18 @@ fun SocialLink(
                                     context.startActivity(intent)
 
                                 } catch (e: Exception) {
-                                    Toast.makeText(context, "No Mailing App Found", Toast.LENGTH_SHORT).show()
+                                    Toast
+                                        .makeText(
+                                            context,
+                                            "No Mailing App Found",
+                                            Toast.LENGTH_SHORT
+                                        )
+                                        .show()
                                 }
                             } else
-                                Toast.makeText(context, "No Email Found", Toast.LENGTH_SHORT).show()
+                                Toast
+                                    .makeText(context, "No Email Found", Toast.LENGTH_SHORT)
+                                    .show()
                         }
                     )
                     .background(DeepBlueLess)

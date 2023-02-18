@@ -326,10 +326,15 @@ class AuthRepoImpl @Inject constructor(
                         val privateInfo = api.getPrivateInfo(authInfo.accessToken).toPrivateInfo()
                         Log.d("getStudentInfo", "privateInfo: $privateInfo")
                         send(Resource.Loading("Getting lastSemester Info.."))
-                        val lastSemesterId = api.getAllSemesterInfo(authInfo.accessToken)[0].semesterId
+                        val semInfo = api.getAllSemesterInfo(authInfo.accessToken)
+                        var lastSemesterId = semInfo[0].semesterId
                         Log.d("getStudentInfo", "lastSemesterId: $lastSemesterId")
                         send(Resource.Loading("Getting registeredCourse Info.."))
-                        val registeredCourse = api.getRegisteredCourse(lastSemesterId, authInfo.accessToken).map { it.toCourseInfo() }
+                        var registeredCourse = api.getRegisteredCourse(lastSemesterId, authInfo.accessToken).map { it.toCourseInfo() }
+                        if(registeredCourse.isEmpty()){
+                            lastSemesterId = semInfo[1].semesterId
+                            registeredCourse = api.getRegisteredCourse(lastSemesterId, authInfo.accessToken).map { it.toCourseInfo() }
+                        }
                         Log.d("getStudentInfo", "registeredCourse: $registeredCourse")
                         send(Resource.Loading("Getting Live Result Info.."))
                         val liveResultInfoList = mutableListOf<LiveResultInfo>()

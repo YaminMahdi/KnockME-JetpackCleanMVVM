@@ -57,8 +57,10 @@ class MainViewModel @Inject constructor(
         path: String,
         Failed: (msg: String) -> Unit
     ) {
-        getMsgJob?.cancel()
-        //savedStateHandle["msgList"] = emptyList<Msg>()
+        getMsgJob?.apply {
+            this.cancel()
+            savedStateHandle["msgList"] = emptyList<Msg>()
+        }
         getMsgJob = viewModelScope.launch(Dispatchers.IO) {
             mainUseCases.getMsg(path,{
                 val x = mutableListOf<Msg>()
@@ -82,8 +84,7 @@ class MainViewModel @Inject constructor(
     fun refreshProfileInChats(path: String, msg: Msg, Failed: (msg: String) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             //savedStateHandle["msgText"] = msg.msg
-            if(!isSearchActive.value)
-                mainUseCases.refreshProfileInChats(path, msg, Failed)
+            mainUseCases.refreshProfileInChats(path, msg, Failed)
         }
     }
 
@@ -92,6 +93,7 @@ class MainViewModel @Inject constructor(
         Failed: (msg:String) -> Unit
     ){
         getChatsProfileJob?.cancel()
+        searchJob?.cancel()
         savedStateHandle["chatList"] = emptyList<Msg>()
         savedStateHandle["searchText"] = ""
 
@@ -105,6 +107,11 @@ class MainViewModel @Inject constructor(
     }
     fun setSearchActive(visibility: Boolean){
         savedStateHandle["isSearchActive"] = visibility
+        if(!visibility) {
+            searchJob?.cancel()
+            savedStateHandle["isSearchLoading"] = false
+        }
+
     }
 
     fun searchUser(
@@ -125,6 +132,7 @@ class MainViewModel @Inject constructor(
             var userCount=10
             var done=0
             savedStateHandle["isSearchLoading"] = true
+            getChatsProfileJob?.cancel()
             searchJob?.apply {
                 cancel()
                 searchList = mutableListOf()
@@ -213,7 +221,7 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun myBasicInfo(id: String){
+    fun getMyBasicInfo(id: String){
         viewModelScope.launch(Dispatchers.IO) {
             mainUseCases.getUserBasicInfo(id,
                 {

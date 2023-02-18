@@ -1,6 +1,8 @@
 package com.mlab.knockme.main_feature.presentation.messages
 
 import android.content.Context
+import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -60,10 +62,12 @@ fun MsgViewScreen(path: String, id: String,
 //    val paddingValue = WindowInsets.ime.getBottom(LocalDensity.current)
     LaunchedEffect(key1 = "1") {
         viewModel.getMeg(path+"chats/$id"){
+            Looper.prepare()
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            Looper.loop()
         }
         viewModel.getTarBasicInfo(id)
-        viewModel.myBasicInfo(myId!!)
+        viewModel.getMyBasicInfo(myId!!)
     }
 
     Scaffold(
@@ -425,18 +429,26 @@ fun SendMsgBar(
                             time = time
                         )
                         viewModel.sendMsg(myPath, msg) {
-                            Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
-                        }
+                            Log.d("TAG", "ChatPersonalScreen: $it")
+                            Looper.prepare()
+                            Toast.makeText(context, "Couldn't send message", Toast.LENGTH_SHORT).show()
+                            Looper.loop()                        }
                         viewModel.refreshProfileInChats(myProfilePath, tarProfile) {
-                            Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
-                        }
+                            Log.d("TAG", "ChatPersonalScreen: $it")
+                            Looper.prepare()
+                            Toast.makeText(context, "Couldn't send message", Toast.LENGTH_SHORT).show()
+                            Looper.loop()                        }
                         if (tarPath != null && id!=myId) {
                             viewModel.sendMsg(tarPath, msg) {
-                                Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
-                            }
+                                Log.d("TAG", "ChatPersonalScreen: $it")
+                                Looper.prepare()
+                                Toast.makeText(context, "Couldn't send message", Toast.LENGTH_SHORT).show()
+                                Looper.loop()                            }
                             viewModel.refreshProfileInChats(tarProfilePath!!, msg) {
-                                Toast.makeText(context, "Couldn't send message- $it", Toast.LENGTH_SHORT).show()
-                            }
+                                Log.d("TAG", "ChatPersonalScreen: $it")
+                                Looper.prepare()
+                                Toast.makeText(context, "Couldn't send message", Toast.LENGTH_SHORT).show()
+                                Looper.loop()                            }
                         }
                         data = ""
                     }

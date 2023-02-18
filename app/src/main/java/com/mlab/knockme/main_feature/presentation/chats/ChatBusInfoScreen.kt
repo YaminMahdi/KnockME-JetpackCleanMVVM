@@ -1,6 +1,8 @@
 package com.mlab.knockme.main_feature.presentation.chats
 
 import android.content.Context
+import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -36,8 +38,10 @@ fun ChatBusInfoScreen(
     LaunchedEffect(key1 = "3"){
         //pop backstack
         viewModel.getChatProfiles("groupMsg/busInfo/profiles"){
-            Toast.makeText(context, "Chat couldn't be loaded- $it", Toast.LENGTH_SHORT).show()
-        }
+            Log.d("TAG", "ChatPersonalScreen: $it")
+            Looper.prepare()
+            Toast.makeText(context, "Chat couldn't be loaded", Toast.LENGTH_SHORT).show()
+            Looper.loop()        }
     }
     InfoDialog(viewModel, context, myId, navController)
     Column(
