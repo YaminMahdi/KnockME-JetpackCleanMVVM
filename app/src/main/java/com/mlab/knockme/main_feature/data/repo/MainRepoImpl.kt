@@ -10,6 +10,8 @@ import com.google.gson.GsonBuilder
 import com.mlab.knockme.auth_feature.data.data_source.PortalApi
 import com.mlab.knockme.auth_feature.data.data_source.dto.DailyHadithDto
 import com.mlab.knockme.auth_feature.domain.model.*
+import com.mlab.knockme.core.util.getCgpa
+import com.mlab.knockme.core.util.getSemesterList
 import com.mlab.knockme.core.util.notEqualsIgnoreOrder
 import com.mlab.knockme.main_feature.domain.model.Msg
 import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
@@ -20,7 +22,6 @@ import java.io.EOFException
 import java.io.IOException
 import java.util.*
 import javax.inject.Inject
-import kotlin.math.roundToInt
 
 class MainRepoImpl @Inject constructor(
     private val firebase: FirebaseDatabase,
@@ -220,6 +221,7 @@ class MainRepoImpl @Inject constructor(
                                 Loading.invoke("ID- $id Is Valid. Getting CGPA Info..")
                                 getCgpa(
                                     id = id,
+                                    api,
                                     semesterList = getSemesterList(studentInfo.firstSemId!!.toInt()),
                                     loading = {
                                     when (it) {
@@ -227,7 +229,7 @@ class MainRepoImpl @Inject constructor(
                                         -2 -> Failed.invoke("Couldn't Reach Server.")
                                         else -> Loading.invoke("Getting SGPA For $id. Loading Done For Semester $it .")
                                     } },
-                                    success = { cgpa, fullResultInfo ->
+                                    success = { cgpa,totalCompletedCredit, fullResultInfo ->
                                         val msgDis: String
                                         if(cgpa!=0.0) {
                                             msgDis = "ID: ${studentInfo.studentId}      CGPA: $cgpa"
@@ -241,6 +243,7 @@ class MainRepoImpl @Inject constructor(
                                             progShortName = studentInfo.progShortName!!,
                                             batchNo = studentInfo.batchNo!!,
                                             cgpa = cgpa,
+                                            totalCompletedCredit =totalCompletedCredit,
                                             firstSemId = studentInfo.firstSemId.toInt()
                                         )
                                         val shortProfile = Msg(
@@ -421,18 +424,19 @@ class MainRepoImpl @Inject constructor(
         Failed: (msg: String) -> Unit
     ) {
         val docRef = firestore.collection("userProfile").document(publicInfo.id!!)
-        getCgpa(publicInfo.id!!,getSemesterList(publicInfo.firstSemId),{
+        getCgpa(publicInfo.id!!,api,getSemesterList(publicInfo.firstSemId),{
             when (it) {
                 -1 -> Failed.invoke("Oops, something went wrong.")
                 -2 -> Failed.invoke("Couldn't reach server.")
                 else -> Loading.invoke("Semester $it result loaded.")
             }
-        },{cgpa, fullResultInfoListNew ->
+        },{cgpa,totalCompletedCredit, fullResultInfoListNew ->
+            Log.d("TAG", "updateFullResultInfo: $cgpa")
 
-            if(fullResultInfoList notEqualsIgnoreOrder fullResultInfoListNew && fullResultInfoListNew.isNotEmpty()){
+            if((fullResultInfoList notEqualsIgnoreOrder fullResultInfoListNew && fullResultInfoListNew.isNotEmpty()) || (publicInfo.cgpa!=cgpa && cgpa!=0.0)){
                 Success.invoke(fullResultInfoListNew,cgpa)
                 docRef.update("fullResultInfo" , fullResultInfoListNew)
-                docRef.update("publicInfo" , publicInfo.copy(cgpa = cgpa))
+                docRef.update("publicInfo" , publicInfo.copy(cgpa = cgpa, totalCompletedCredit = totalCompletedCredit))
                 docRef.update("lastUpdatedResultInfo" , System.currentTimeMillis())
             }
             else Failed.invoke("No new data found.")
@@ -458,102 +462,6 @@ class MainRepoImpl @Inject constructor(
         } catch (e: IOException) {
             Failed.invoke("Couldn't reach server.")
             Log.d("TAG", "getRandomHadith: ${e.message} ${e.localizedMessage}")
-        }     }
-
-
-    @OptIn(DelicateCoroutinesApi::class)
-    private suspend fun getCgpa(
-        id: String,
-        semesterList: List<String>,
-        loading: (index: Int) -> Unit,
-        success: (cgpa: Double,fullResultInfo : List<FullResultInfo>) -> Unit
-    ) {
-        Log.d("semesterList", "getCgpa: $semesterList")
-        if(semesterList.isEmpty()){
-            success.invoke(0.0, emptyList())
         }
-        var weightedCgpa = 0.0
-        var totalCreditWeight = 0.0
-        var resultFound = 0
-        val fullResultInfo = mutableListOf<FullResultInfo>()
-        semesterList.forEachIndexed { i, semesterId ->
-            GlobalScope.launch(Dispatchers.IO) {
-                val semesterResultInfo = FullResultInfo()
-                try {
-                    delay(i*250L)
-                    val resultInfo = api.getResultInfo(semesterId, id)
-                    Log.d("TAG", "getCgpa $semesterId resultInfo: $resultInfo")
-                    if (resultInfo.isNotEmpty()) {
-
-                        loading.invoke(semesterList.size-i)
-                        var creditTaken = 0.0
-                        val rInfo = arrayListOf<ResultInfo>()
-                        resultInfo.forEach { courseInfo ->
-                            weightedCgpa += courseInfo.pointEquivalent * courseInfo.totalCredit
-                            creditTaken += courseInfo.totalCredit
-                            rInfo.add(courseInfo.toResultInfo())
-                        }
-                        totalCreditWeight += creditTaken
-
-                        //add a semester result to list
-
-                        semesterResultInfo.resultInfo = rInfo
-                        if(resultInfo[0].cgpa!=0.0)
-                            semesterResultInfo.semesterInfo = resultInfo[0].toSemesterInfo(creditTaken)
-                        else
-                            semesterResultInfo.semesterInfo = resultInfo[1].toSemesterInfo(creditTaken)
-                        fullResultInfo.add(semesterResultInfo)  //adding
-                    }
-                    resultFound++
-                    if (resultFound == semesterList.size) {
-                        var cgpa = weightedCgpa / totalCreditWeight
-                        cgpa = if(!cgpa.isNaN()) (cgpa* 100.0).roundToInt() / 100.0 else 0.0
-
-                        fullResultInfo.sortBy { it.semesterInfo.semesterId }
-                        success.invoke(cgpa,fullResultInfo)
-                    }
-                } catch (e: HttpException) {
-                    loading.invoke(-1)
-                    Log.d("TAG", "getCgpa: ${e.message} ${e.localizedMessage} $semesterId")
-                    this.cancel()
-
-                }  catch (e: EOFException) {
-                    success.invoke(0.0, emptyList())
-                    Log.d("TAG", "getCgpa: ${e.message} ${e.localizedMessage} $semesterId")
-                    this.cancel()
-                }catch (e: IOException) {
-                    loading.invoke(-2)
-                    Log.d("TAG", "getCgpa: ${e.message} ${e.localizedMessage} $semesterId")
-                    this.cancel()
-                }
-                //this.cancel()
-            }
-        }
-    }
-
-    private fun getSemesterList(firstSemId: Int): List<String> {
-        val year = Calendar.getInstance().get(Calendar.YEAR)
-        val month = Calendar.getInstance().get(Calendar.MONTH)
-        val endYearSemesterCount =
-            if (month < 3) 0
-            else if (month < 7) 1
-            else if (month < 11) 2
-            else 3
-
-        val yearEnd = year % 100
-        //val initial = id.slice(0..2).toInt()  //.split('-')[0].toInt()
-        val yr: Int = firstSemId / 10
-        var semester: Int = firstSemId % 10
-        val list = mutableListOf<String>()
-
-        for (y in yr..yearEnd) {
-            for (s in semester..3) {
-                if (y == yearEnd && s > endYearSemesterCount)
-                    break
-                list.add(y.toString() + s.toString())
-            }
-            semester = 1
-        }
-        return list
     }
 }

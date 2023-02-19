@@ -69,8 +69,12 @@ fun CgpaViewScreen(id: String, navController: NavHostController, viewModel: Main
 //
 //        )
     val lst= mutableListOf<SemesterInfo>()
-    myFullProfile.fullResultInfo.forEach{ lst.add(it.semesterInfo) }
-
+    var semesterCount = 0
+    myFullProfile.fullResultInfo.forEach{
+        lst.add(it.semesterInfo)
+        if(it.semesterInfo.sgpa!=0.0)
+            semesterCount++
+    }
     Scaffold(
         topBar = {
         TopBar(navController){
@@ -134,9 +138,9 @@ fun CgpaViewScreen(id: String, navController: NavHostController, viewModel: Main
             Text(
                 text =
                 if(lst.size>1)
-                    "You have completed ${lst.size} semesters\nand ${lst.sumOf {sem -> sem.creditTaken.toInt()}} credits."
+                    "You have completed $semesterCount semesters\nand ${myFullProfile.publicInfo.totalCompletedCredit.toInt()} credits."
                 else if(lst.size==1)
-                    "You have completed ${lst.size} semester\nand ${lst.sumOf { sem -> sem.creditTaken.toInt() }} credits."
+                    "You have completed $semesterCount semester\nand ${myFullProfile.publicInfo.totalCompletedCredit.toInt()} credits."
                 else
                     "You haven't completed any semester.",
                 style = MaterialTheme.typography.bodyLarge,

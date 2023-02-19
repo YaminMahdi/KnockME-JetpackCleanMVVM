@@ -286,7 +286,7 @@ fun InfoDialog(
                                     val intent = Intent(Intent.ACTION_VIEW)
                                     val body = "My Student ID is $myId. The issue is.."
                                     val data =
-                                        Uri.parse("mailto:yamin_khan@asia.com?subject=Having Issue&body=$body")
+                                        Uri.parse("mailto:ahmad15-1071@diu.edu.bd?subject=Having Issue&body=$body")
                                     intent.data = data
                                     context.startActivity(intent)
                                 } catch (e: Exception) {

@@ -28,6 +28,7 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.mlab.knockme.R
 import com.mlab.knockme.auth_feature.presentation.login.LoginActivity
+import com.mlab.knockme.core.components.InAppUpdate
 import com.mlab.knockme.main_feature.presentation.chats.ChatBusInfoScreen
 import com.mlab.knockme.main_feature.presentation.chats.ChatPersonalScreen
 import com.mlab.knockme.main_feature.presentation.chats.ChatPlacewiseScreen
@@ -123,6 +124,7 @@ fun Main(viewModel: MainViewModel) {
         AnimatedNavHost(navController, startDestination = MainScreens.CtPersonalScreen.route, Modifier.padding(bottomPadding)) {
             composable(MainScreens.CtPersonalScreen.route) {
                 //ChatMainMsgNav(1, navController)
+                InAppUpdate()
                 ChatPersonalScreen(navController,viewModel)
             }
             composable(MainScreens.CtPlacewiseScreen.route) {

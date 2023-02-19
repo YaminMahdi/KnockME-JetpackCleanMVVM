@@ -10,6 +10,7 @@ data class PublicInfo(
     var progShortName: String? ="",
     var batchNo: Int=0,
     var cgpa: Double=0.0,
+    var totalCompletedCredit: Double=0.0,
     var firstSemId: Int= 0,
 
     ) : Parcelable

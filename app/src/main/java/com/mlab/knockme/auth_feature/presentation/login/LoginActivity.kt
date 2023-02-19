@@ -28,6 +28,7 @@ import com.mlab.knockme.auth_feature.domain.model.FBResponse
 import com.mlab.knockme.auth_feature.presentation.login.components.LoadingScreen
 import com.mlab.knockme.auth_feature.presentation.login.components.LoginPortalScreen
 import com.mlab.knockme.auth_feature.presentation.login.components.LoginScreen
+import com.mlab.knockme.core.components.InAppUpdate
 import com.mlab.knockme.core.util.Resource
 import com.mlab.knockme.main_feature.presentation.MainActivity
 import com.mlab.knockme.ui.theme.KnockMETheme
@@ -74,6 +75,7 @@ class LoginActivity : ComponentActivity() {
                     else { AuthScreens.LogFacebookScreen.route}
                     ){
                     composable(route = AuthScreens.LogFacebookScreen.route){
+                        InAppUpdate()
                         LoginScreen{ view ->
                             val buttonFacebookLogin = view.findViewById<LoginButton>(R.id.login_button)
                             loginViewModel.signInFB(

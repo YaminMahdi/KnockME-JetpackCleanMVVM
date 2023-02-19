@@ -17,6 +17,8 @@ import com.mlab.knockme.auth_feature.domain.model.*
 import com.mlab.knockme.auth_feature.domain.repo.AuthRepo
 import com.mlab.knockme.auth_feature.util.SignResponse
 import com.mlab.knockme.core.util.Resource
+import com.mlab.knockme.core.util.getCgpa
+import com.mlab.knockme.core.util.getSemesterList
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
@@ -173,6 +175,7 @@ class AuthRepoImpl @Inject constructor(
                         send(Resource.Loading("Getting CGPA Info.."))
                         getCgpa(
                             id = id,
+                            api,
                             semesterList = getSemesterList(publicInfo.firstSemId!!.toInt()),
                             loading = {
                                 GlobalScope.launch(Dispatchers.IO) {
@@ -182,7 +185,7 @@ class AuthRepoImpl @Inject constructor(
                                         else -> send(Resource.Loading("Semester $it result loaded."))
                                     }
                                 }
-                            }) { cgpa, fullResultInfo ->
+                            }) { cgpa,totalCompletedCredit, fullResultInfo ->
                             GlobalScope.launch(Dispatchers.IO) {
                                 if (cgpa == 0.0)
                                     send(Resource.Loading("Server Error, CGPA can't be calculated"))
@@ -255,6 +258,7 @@ class AuthRepoImpl @Inject constructor(
                                                     progShortName = publicInfo.progShortName!!,
                                                     batchNo = publicInfo.batchNo!!,
                                                     cgpa = cgpa,
+                                                    totalCompletedCredit = totalCompletedCredit,
                                                     firstSemId = publicInfo.firstSemId!!.toInt()
                                                 ),
                                                 privateInfo = PrivateInfoExtended(
@@ -395,7 +399,7 @@ class AuthRepoImpl @Inject constructor(
     }
 
     @OptIn(DelicateCoroutinesApi::class)
-    private suspend fun getCgpa(
+    private suspend fun getCgpaX(
         id: String,
         semesterList: List<String>,
         loading: (index: Int) -> Unit,
@@ -462,7 +466,7 @@ class AuthRepoImpl @Inject constructor(
         }
     }
 
-    private fun getSemesterList(firstSemId: Int): List<String> {
+    private fun getSemesterListX(firstSemId: Int): List<String> {
         val year = Calendar.getInstance().get(Calendar.YEAR)
         val month = Calendar.getInstance().get(Calendar.MONTH)
         val endYearSemesterCount =

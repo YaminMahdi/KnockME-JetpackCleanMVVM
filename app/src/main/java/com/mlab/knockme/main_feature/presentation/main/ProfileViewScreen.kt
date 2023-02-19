@@ -404,10 +404,10 @@ fun SocialLink(
                         Looper.loop()
                     }
                     val myProfile = Msg(
-                        id = userBasicInfo.publicInfo.id,
-                        nm = userBasicInfo.publicInfo.nm,
+                        id = myBasicInfo.publicInfo.id,
+                        nm = myBasicInfo.publicInfo.nm,
                         msg = "Knocked You.",
-                        pic = userBasicInfo.privateInfo.pic,
+                        pic = myBasicInfo.privateInfo.pic,
                         time = time
                     )
                     viewModel.refreshProfileInChats(tarPath, myProfile) {

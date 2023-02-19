@@ -61,6 +61,7 @@ import com.mlab.knockme.core.util.toDateTime
 import com.mlab.knockme.core.util.toDayPassed
 import com.mlab.knockme.main_feature.presentation.ChatInnerScreens
 import com.mlab.knockme.main_feature.presentation.MainScreens
+import com.mlab.knockme.main_feature.presentation.ProfileInnerScreens
 import com.mlab.knockme.main_feature.presentation.profile.InfoDialog
 import com.mlab.knockme.main_feature.presentation.profile.TitleInfo
 import com.mlab.knockme.ui.theme.*
@@ -78,6 +79,8 @@ fun ChatPersonalScreen(
     //val preferencesEditor = sharedPreferences.edit()
     val myId = sharedPreferences.getString("studentId","")!!
     val showHadith by viewModel.showHadith.collectAsState()
+    var toMain by remember { mutableStateOf(false) }
+
     LaunchedEffect(key1 = state.isSearchActive){
         //pop backstack
         if(!state.isSearchActive){
@@ -90,13 +93,16 @@ fun ChatPersonalScreen(
         }
         if(showHadith){
             viewModel.getRandomHadith {
+                toMain = true
                 Looper.prepare()
                 Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-                Looper.loop()            }
+                Looper.loop()
+            }
             viewModel.setShowHadith(false)
         }
-
     }
+    if(toMain)
+        navController.navigate(MainScreens.ProScreen.route)
 //    BackHandler {
 //        val activity= context as Activity
 //        activity.finish()
