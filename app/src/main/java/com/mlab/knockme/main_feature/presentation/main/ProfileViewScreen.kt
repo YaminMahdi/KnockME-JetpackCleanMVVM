@@ -25,9 +25,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -287,15 +291,16 @@ fun Profile(
                 style = MaterialTheme.typography.headlineLarge,
             )
         }
-        if(!publicInfo?.id?.hasAlphabet()!!)
-        CgpaToast(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(start = 185.dp, top = 25.dp),
-            pb = publicInfo,
-            isLoading = isLoading,
-        ){
-            navController.navigate(ProfileInnerScreens.CgpaScreen.route+publicInfo.id)
+        if(!publicInfo?.id?.hasAlphabet()!!) {
+            CgpaToast(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(start = 185.dp, top = 25.dp),
+                pb = publicInfo,
+                isLoading = isLoading,
+            ) {
+                navController.navigate(ProfileInnerScreens.CgpaScreen.route + publicInfo.id)
+            }
         }
 
 
@@ -615,6 +620,7 @@ fun BarChart(barDataList: List<CombinedBarData>, pb: PublicInfo, navController: 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun Details(userBasicInfo: UserBasicInfo, hasPrivateInfo: Boolean) {
+    val clipboardManager = LocalClipboardManager.current
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "Details:",
@@ -652,14 +658,26 @@ fun Address(userBasicInfo: UserBasicInfo) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DetailsItems(data: String, color: Color) {
+    val clipboardManager = LocalClipboardManager.current
+    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
     Box(
         modifier = Modifier
             .padding(top = 10.dp, end = 10.dp)
             .bounceClick()
             .clip(RoundedCornerShape(10.dp))
-            .clickable { }
+            .combinedClickable(
+                onClick = {},
+                onLongClick = {
+                    clipboardManager.setText(AnnotatedString(data.split(": ")[1]))
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    Toast.makeText(context, "Data Copied", Toast.LENGTH_SHORT).show()
+                },
+                onDoubleClick = {}
+            )
             .background(color)
             .padding(10.dp)
     ) {

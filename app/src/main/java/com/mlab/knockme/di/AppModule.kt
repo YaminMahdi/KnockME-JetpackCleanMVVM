@@ -1,6 +1,13 @@
 package com.mlab.knockme.di
 
+import android.app.Activity
 import android.app.Application
+import android.content.Context
+import android.content.res.Resources
+import com.google.android.gms.auth.api.identity.BeginSignInRequest
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.FirebaseDatabase
@@ -10,6 +17,7 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.ktx.storage
+import com.mlab.knockme.R
 import com.mlab.knockme.auth_feature.data.data_source.PortalApi
 import com.mlab.knockme.auth_feature.data.repo.AuthRepoImpl
 import com.mlab.knockme.auth_feature.domain.repo.AuthRepo
@@ -36,6 +44,33 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
+//    @Provides
+//    @Singleton
+//    fun provideGoogleSignInRequest() =
+//        BeginSignInRequest.builder()
+//            .setGoogleIdTokenRequestOptions(
+//                BeginSignInRequest.GoogleIdTokenRequestOptions.builder()
+//                .setSupported(true)
+//                // Your server's client ID, not your Android client ID.
+//                .setServerClientId(Resources.getSystem().getString(R.string.knock_me_web_client_id))
+//                // Only show accounts previously used to sign in.
+//                .setFilterByAuthorizedAccounts(true)
+//                .build()
+//            )
+//            .build()
+
+//    @Provides
+//    @Singleton
+//    fun provideGoogleLoginAuth(context: Context): GoogleSignInClient {
+//        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+//            .requestEmail()
+//            .requestIdToken(context.getString(R.string.knock_me_web_client_id))
+//            .requestId()
+//            .requestProfile()
+//            .build()
+//        return GoogleSignIn.getClient(context, gso)
+//    }
+
     @Provides
     @Singleton
     fun provideFirebaseAuth(app: Application) =
@@ -60,7 +95,8 @@ object AppModule {
     @Provides
     @Singleton
     fun provideAuthRepo(
-        auth: FirebaseAuth, api: PortalApi,
+        auth: FirebaseAuth,
+        api: PortalApi,
         firestore: FirebaseFirestore,
         cloudStore: FirebaseStorage
     ) : AuthRepo{

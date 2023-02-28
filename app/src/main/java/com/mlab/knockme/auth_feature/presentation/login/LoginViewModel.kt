@@ -76,7 +76,7 @@ class LoginViewModel @Inject constructor(
         }
     }
     fun signInFirebase(
-        token: AccessToken,
+        token: Any,
         success: () -> Unit,
         failed: () -> Unit
     ) {

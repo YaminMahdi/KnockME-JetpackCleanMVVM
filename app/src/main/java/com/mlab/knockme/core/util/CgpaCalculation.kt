@@ -76,6 +76,7 @@ suspend fun getCgpa(
                     weightedCgpa += courseScoreMap.values.sum()
                     var cgpa = weightedCgpa / totalCompletedCredit
                     cgpa = if(!cgpa.isNaN()) (cgpa* 100.0).roundToInt() / 100.0 else 0.0
+                    delay(300)
                     fullResultInfo.sortBy { it.semesterInfo.semesterId }
                     success.invoke(cgpa, totalCompletedCredit, fullResultInfo)
                 }
@@ -87,17 +88,16 @@ suspend fun getCgpa(
 //                    fullResultInfo.sortBy { it.semesterInfo.semesterId }
 //                    success.invoke(cgpa, fullResultInfo)
 //                }
-            } catch (e: HttpException) {
-                loading.invoke(-1)
-                Log.d("TAG", "getCgpa: ${e.message} ${e.localizedMessage} $semesterId")
-                this.cancel()
-
             } catch (e: EOFException) {
                 success.invoke(0.0,0.0, arrayListOf())
                 Log.d("TAG", "getCgpa: ${e.message} ${e.localizedMessage} $semesterId")
                 this.cancel()
             } catch (e: IOException) {
                 loading.invoke(-2)
+                Log.d("TAG", "getCgpa: ${e.message} ${e.localizedMessage} $semesterId")
+                this.cancel()
+            } catch (e: Exception) {
+                loading.invoke(-1)
                 Log.d("TAG", "getCgpa: ${e.message} ${e.localizedMessage} $semesterId")
                 this.cancel()
             }

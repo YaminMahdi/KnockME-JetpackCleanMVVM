@@ -8,7 +8,7 @@ class FirebaseSignIn @Inject constructor(
     private val repo: AuthRepo
 ) {
     operator fun invoke(
-        token: AccessToken,
+        token: Any,
         success:()->Unit,
         failed:()->Unit
     ) = repo.firebaseSignIn(token,success,failed)

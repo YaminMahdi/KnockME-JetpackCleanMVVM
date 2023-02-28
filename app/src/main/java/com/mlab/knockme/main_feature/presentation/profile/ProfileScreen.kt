@@ -1,9 +1,11 @@
 package com.mlab.knockme.main_feature.presentation.profile
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -27,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -45,6 +48,7 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
+import com.google.android.play.core.review.ReviewManagerFactory
 import com.mlab.knockme.R
 import com.mlab.knockme.core.util.bounceClick
 import com.mlab.knockme.core.util.toK
@@ -74,6 +78,11 @@ fun ProfileScreen(
             viewModel.updateUserFullResultInfo(
                 publicInfo = it.publicInfo,
                 fullResultInfoList = it.fullResultInfo)
+            viewModel.updateUserPaymentInfo(
+                id = myId,
+                accessToken = it.token,
+                paymentInfo = it.paymentInfo
+            ){ }
         },{
             Looper.prepare()
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
@@ -195,8 +204,23 @@ fun InfoDialog(
 ) {
     val dialogVisibility by viewModel.infoDialogVisibility.collectAsState()
     val uriHandler = LocalUriHandler.current
+    val manager = ReviewManagerFactory.create(context)
 
     if (dialogVisibility) {
+        val request = manager.requestReviewFlow()
+        request.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                // We got the ReviewInfo object
+                val reviewInfo = task.result
+                val flow = manager.launchReviewFlow(context as Activity, reviewInfo)
+                flow.addOnCompleteListener {
+                    Log.d("TAG", "ReviewManagerFactory: ${it.result}")
+                }
+            } else {
+                // There was some problem, log or handle the error code.
+                Log.d("TAG", "ReviewManagerFactory: ${task.exception}")
+            }
+        }
         Dialog(
             onDismissRequest = { viewModel.setInfoDialogVisibility(false) }
         ) {
@@ -272,35 +296,43 @@ fun InfoDialog(
                             .padding(5.dp)
                     )
                     Spacer(modifier = Modifier.size(15.dp))
-                    Text(
-                        text = "Report a problem",
-                        style = TextStyle(textDecoration = TextDecoration.Underline),
-                        fontFamily = ubuntu,
-                        color = Neutral50,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(5.dp))
-                            .clickable {
-                                try {
-                                    val intent = Intent(Intent.ACTION_VIEW)
-                                    val body = "My Student ID is $myId. The issue is.."
-                                    val data =
-                                        Uri.parse("mailto:ahmad15-1071@diu.edu.bd?subject=Having Issue&body=$body")
-                                    intent.data = data
-                                    context.startActivity(intent)
-                                } catch (e: Exception) {
-                                    Toast.makeText(context, "No Mailing App Found", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                            .padding(5.dp)
-                    )
+                    ReportProblem(context, myId)
                 }
             }
 
         }
     }
 }
+
+@Composable
+fun ReportProblem(context: Context, myId: String, modifier: Modifier = Modifier, color: Color = Neutral50) {
+    Text(
+        text = "Report a problem",
+        style = TextStyle(textDecoration = TextDecoration.Underline),
+        fontFamily = ubuntu,
+        color = color,
+        fontSize = 12.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = modifier
+            .clip(RoundedCornerShape(5.dp))
+            .clickable {
+                try {
+                    val intent = Intent(Intent.ACTION_VIEW)
+                    val body = "My Student ID is $myId. The issue is.."
+                    val data =
+                        Uri.parse("mailto:ahmad15-1071@diu.edu.bd?subject=Having Issue&body=$body")
+                    intent.data = data
+                    context.startActivity(intent)
+                } catch (e: Exception) {
+                    Toast
+                        .makeText(context, "No Mailing App Found", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+            .padding(5.dp)
+    )
+}
+
 @Composable
 fun PersonInfo(
     name: String,
@@ -380,7 +412,7 @@ fun FeatureSection(navController: NavHostController,id: String, features: List<F
         Text(
             text = "Dashboard",
             style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(15.dp)
+            modifier = Modifier.padding(top=15.dp, start = 15.dp, bottom = 5.dp)
         )
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
@@ -476,17 +508,17 @@ fun FeatureItem(
             Text(
                 text = feature.info,
                 color = TextWhite,
-                fontSize = 38.sp,
+                fontSize = 34.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier
                     .align(Alignment.Center)
                     .clip(RoundedCornerShape(10.dp))
-                    .padding(vertical = 6.dp, horizontal = 15.dp)
             )
         }
         Text(
             text = feature.title,
             style = MaterialTheme.typography.headlineMedium,
+            fontSize = 16.sp,
             lineHeight = 26.sp,
             modifier = Modifier
                 .align(Alignment.TopEnd)

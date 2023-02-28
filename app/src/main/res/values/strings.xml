@@ -5,5 +5,6 @@
     <string name="fb_login_protocol_scheme">fb660377585299971</string>
     <string name="facebook_client_token">87f984dc5e7955c044299324404a303a</string>
     <string name="preference_file_key">knockme_localdata</string>
+    <string name="knock_me_web_client_id">378856926888-j6bosjoih7flhr0mp189r89m7kqu9m7u.apps.googleusercontent.com</string>
 
 </resources>

@@ -21,9 +21,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -31,6 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mlab.knockme.core.util.bounceClick
+import com.mlab.knockme.main_feature.presentation.profile.ReportProblem
 import com.mlab.knockme.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,15 +44,14 @@ fun LoginPortalScreen(onClick:(id:String,pass:String)->Unit) {
         .fillMaxSize()
         .background(DeepBlue)
     ){
+        val context = LocalContext.current
+        var id by remember { mutableStateOf("") }
+        var password by remember { mutableStateOf("") }
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
                 ){
             TitlePortal()
-            var id by rememberSaveable { mutableStateOf("") }
-            var password by rememberSaveable { mutableStateOf("") }
-            //var passwordHidden by rememberSaveable { mutableStateOf(true) }
-
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
@@ -97,7 +97,13 @@ fun LoginPortalScreen(onClick:(id:String,pass:String)->Unit) {
             }
         }
         NbNote(modifier= Modifier.align(Alignment.BottomCenter))
-        Spacer(modifier = Modifier.padding(20.dp))
+        ReportProblem(
+            context = context,
+            myId = id.ifEmpty { "xxx-xx-xxxx" },
+            modifier= Modifier.align(Alignment.BottomCenter).padding(20.dp),
+            color = TextBlue.copy(.7f)
+
+        )
 //        if(!hidden){
 //
 //            LoadingScreen(msg)
@@ -140,7 +146,7 @@ fun NbNote(
 ) {
     Column(
         modifier = modifier
-            .padding(70.dp),
+            .padding(vertical = 80.dp, horizontal = 70.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
@@ -161,6 +167,6 @@ fun NbNote(
 @Composable
 fun LoginPortalView() {
     KnockMETheme {
-        //LoginPortalScreen(onClick = { s: String, s1: String -> })
+        LoginPortalScreen(onClick = { s: String, s1: String -> })
     }
 }

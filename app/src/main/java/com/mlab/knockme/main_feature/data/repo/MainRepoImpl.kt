@@ -419,7 +419,7 @@ class MainRepoImpl @Inject constructor(
     override suspend fun updateFullResultInfo(
         publicInfo: PublicInfo,
         fullResultInfoList: List<FullResultInfo>,
-        Success: (List<FullResultInfo>, Double) -> Unit,
+        Success: (List<FullResultInfo>,Double, Double) -> Unit,
         Loading: (msg: String) -> Unit,
         Failed: (msg: String) -> Unit
     ) {
@@ -433,11 +433,14 @@ class MainRepoImpl @Inject constructor(
         },{cgpa,totalCompletedCredit, fullResultInfoListNew ->
             Log.d("TAG", "updateFullResultInfo: $cgpa")
 
-            if((fullResultInfoList notEqualsIgnoreOrder fullResultInfoListNew && fullResultInfoListNew.isNotEmpty()) || (publicInfo.cgpa!=cgpa && cgpa!=0.0)){
-                Success.invoke(fullResultInfoListNew,cgpa)
-                docRef.update("fullResultInfo" , fullResultInfoListNew)
-                docRef.update("publicInfo" , publicInfo.copy(cgpa = cgpa, totalCompletedCredit = totalCompletedCredit))
-                docRef.update("lastUpdatedResultInfo" , System.currentTimeMillis())
+            if(fullResultInfoListNew.size >= fullResultInfoList.size){
+                if((fullResultInfoList notEqualsIgnoreOrder fullResultInfoListNew && fullResultInfoListNew.isNotEmpty()) || (publicInfo.cgpa!=cgpa && cgpa!=0.0)){
+                    Success.invoke(fullResultInfoListNew, cgpa, totalCompletedCredit)
+                    docRef.update("fullResultInfo" , fullResultInfoListNew)
+                    docRef.update("publicInfo" , publicInfo.copy(cgpa = cgpa, totalCompletedCredit = totalCompletedCredit))
+                    docRef.update("lastUpdatedResultInfo" , System.currentTimeMillis())
+                }
+                else Failed.invoke("No new data found.")
             }
             else Failed.invoke("No new data found.")
 

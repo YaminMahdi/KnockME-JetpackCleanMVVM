@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalFoundationApi::class)
+
 package com.mlab.knockme.main_feature.presentation.messages
 
 import android.content.Context
@@ -8,6 +10,7 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,8 +27,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -221,6 +228,9 @@ fun LoadMsgList(
 
 @Composable
 fun MsgViewLeft(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
+    val clipboardManager = LocalClipboardManager.current
+    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
     Row {
         ImgView(img = msg.pic!!, modifier = modifier
             .height(40.dp)
@@ -235,7 +245,6 @@ fun MsgViewLeft(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
                 )
             )
             .clickable {
-                onClick.invoke(msg.id!!)
             }
         )
         Column {
@@ -244,7 +253,8 @@ fun MsgViewLeft(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
                     .fillMaxWidth(.7f)
             ){
                 Column(modifier = Modifier
-                    .padding(6.dp)
+                    .padding(start = 6.dp,top = 6.dp, bottom = 3.dp)
+                    .bounceClick()
                     .clip(
                         RoundedCornerShape(
                             topStart = 7.dp,
@@ -253,6 +263,15 @@ fun MsgViewLeft(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
                             bottomEnd = 14.dp
                         )
                     )
+                    .combinedClickable(
+                        onClick = {},
+                        onLongClick = {
+                            clipboardManager.setText(AnnotatedString(msg.msg!!))
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            Toast.makeText(context, "Text Copied", Toast.LENGTH_SHORT).show()
+                        },
+                        onDoubleClick = {}
+                    )
                     .background(DeepBlueMoreLess)
                     .padding(8.dp)
                 ) {
@@ -260,11 +279,7 @@ fun MsgViewLeft(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
                         text = msg.nm!!,
                         style = MaterialTheme.typography.headlineSmall,
                         fontSize = 10.sp,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(2.dp))
-                            .clickable {
-                                onClick.invoke(msg.id!!)
-                            }
+                        modifier = Modifier.clip(RoundedCornerShape(2.dp))
                     )
                     Text(
                         text = msg.msg!!,
@@ -277,8 +292,7 @@ fun MsgViewLeft(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
             Text(
                 modifier = Modifier
                     .alpha(.7f)
-                    .padding(start = 6.dp)
-                    .padding(2.dp),
+                    .padding(start = 12.dp, bottom = 2.dp),
                 text = msg.time?.toDateTime()!!,
                 fontSize = 10.sp,
                 style = MaterialTheme.typography.bodySmall
@@ -288,6 +302,9 @@ fun MsgViewLeft(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
 }
 @Composable
 fun MsgViewRight(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
+    val clipboardManager = LocalClipboardManager.current
+    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
     Row(
         horizontalArrangement = Arrangement.End,
         modifier = modifier.fillMaxWidth()
@@ -299,7 +316,8 @@ fun MsgViewRight(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
                     .fillMaxWidth(.7f)
             ){
                 Column(modifier = Modifier
-                    .padding(6.dp)
+                    .padding(end = 6.dp,top = 6.dp, bottom = 3.dp)
+                    .bounceClick()
                     .clip(
                         RoundedCornerShape(
                             topStart = 14.dp,
@@ -308,6 +326,15 @@ fun MsgViewRight(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
                             bottomEnd = 14.dp
                         )
                     )
+                    .combinedClickable(
+                        onClick = {},
+                        onLongClick = {
+                            clipboardManager.setText(AnnotatedString(msg.msg!!))
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            Toast.makeText(context, "Text Copied", Toast.LENGTH_SHORT).show()
+                        },
+                        onDoubleClick = {}
+                    )
                     .background(BlueViolet3.copy(alpha = .7f))
                     .padding(8.dp)
                 ) {
@@ -315,11 +342,7 @@ fun MsgViewRight(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
                         text = msg.nm!!,
                         style = MaterialTheme.typography.headlineSmall,
                         fontSize = 10.sp,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(2.dp))
-                            .clickable {
-                                onClick.invoke(msg.id!!)
-                            }
+                        modifier = Modifier.clip(RoundedCornerShape(2.dp))
                     )
                     Text(
                         text = msg.msg!!,
@@ -332,8 +355,7 @@ fun MsgViewRight(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
             Text(
                 modifier = Modifier
                     .alpha(.7f)
-                    .padding(end = 6.dp)
-                    .padding(2.dp),
+                    .padding(end = 12.dp, bottom = 2.dp),
                 text = msg.time?.toDateTime()!!,
                 fontSize = 10.sp,
                 style = MaterialTheme.typography.bodySmall
@@ -431,24 +453,36 @@ fun SendMsgBar(
                         viewModel.sendMsg(myPath, msg) {
                             Log.d("TAG", "ChatPersonalScreen: $it")
                             Looper.prepare()
-                            Toast.makeText(context, "Couldn't send message", Toast.LENGTH_SHORT).show()
-                            Looper.loop()                        }
+                            Toast
+                                .makeText(context, "Couldn't send message", Toast.LENGTH_SHORT)
+                                .show()
+                            Looper.loop()
+                        }
                         viewModel.refreshProfileInChats(myProfilePath, tarProfile) {
                             Log.d("TAG", "ChatPersonalScreen: $it")
                             Looper.prepare()
-                            Toast.makeText(context, "Couldn't send message", Toast.LENGTH_SHORT).show()
-                            Looper.loop()                        }
-                        if (tarPath != null && id!=myId) {
+                            Toast
+                                .makeText(context, "Couldn't send message", Toast.LENGTH_SHORT)
+                                .show()
+                            Looper.loop()
+                        }
+                        if (tarPath != null && id != myId) {
                             viewModel.sendMsg(tarPath, msg) {
                                 Log.d("TAG", "ChatPersonalScreen: $it")
                                 Looper.prepare()
-                                Toast.makeText(context, "Couldn't send message", Toast.LENGTH_SHORT).show()
-                                Looper.loop()                            }
+                                Toast
+                                    .makeText(context, "Couldn't send message", Toast.LENGTH_SHORT)
+                                    .show()
+                                Looper.loop()
+                            }
                             viewModel.refreshProfileInChats(tarProfilePath!!, msg) {
                                 Log.d("TAG", "ChatPersonalScreen: $it")
                                 Looper.prepare()
-                                Toast.makeText(context, "Couldn't send message", Toast.LENGTH_SHORT).show()
-                                Looper.loop()                            }
+                                Toast
+                                    .makeText(context, "Couldn't send message", Toast.LENGTH_SHORT)
+                                    .show()
+                                Looper.loop()
+                            }
                         }
                         data = ""
                     }

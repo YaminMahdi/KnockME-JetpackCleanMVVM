@@ -16,10 +16,11 @@ interface AuthRepo {
 
     fun getFirebaseAuthState() : Flow<Boolean>
 
-    fun firebaseSignIn(token: AccessToken,
-                               success:()->Unit,
-                               failed:()->Unit
+    fun firebaseSignIn(token: Any,
+                       success:()->Unit,
+                       failed:()->Unit
     )
+
 
     suspend fun firebaseSignOut()  : StateFlow<SignResponse<Boolean>>
 

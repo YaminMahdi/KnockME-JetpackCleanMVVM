@@ -4,8 +4,11 @@ import android.util.Log
 import com.facebook.*
 import com.facebook.login.LoginResult
 import com.facebook.login.widget.LoginButton
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -53,8 +56,13 @@ class AuthRepoImpl @Inject constructor(
 
     }
 
-    override fun firebaseSignIn(token: AccessToken, success: () -> Unit, failed: () -> Unit) {
-        auth.signInWithCredential(FacebookAuthProvider.getCredential(token.token))
+    override fun firebaseSignIn(token: Any, success: () -> Unit, failed: () -> Unit) {
+        var firebaseCredential : AuthCredential? = null
+        if(token is AccessToken)
+            firebaseCredential = FacebookAuthProvider.getCredential(token.token)
+        else if(token is String)
+            firebaseCredential = GoogleAuthProvider.getCredential(token, null)
+        auth.signInWithCredential(firebaseCredential!!)
             .addOnSuccessListener {
                 Log.d("TAG1", "firebase:onSuccess:${it.user}")
                 success.invoke()
@@ -168,6 +176,10 @@ class AuthRepoImpl @Inject constructor(
                         this.cancel()
                     } catch (e: IOException) {
                         send(Resource.Error("Couldn't reach server."))
+                        Log.d("TAG", "getStudentIdInfo: ${e.message} ${e.localizedMessage}")
+                        this.cancel()
+                    } catch (e: Exception) {
+                        send(Resource.Error("Server error."))
                         Log.d("TAG", "getStudentIdInfo: ${e.message} ${e.localizedMessage}")
                         this.cancel()
                     }
@@ -309,6 +321,10 @@ class AuthRepoImpl @Inject constructor(
                                     send(Resource.Error("Couldn't reach server."))
                                     Log.d("TAG", "getStudentIdInfo: ${e.message} ${e.localizedMessage}")
                                     this.cancel()
+                                } catch (e: Exception) {
+                                    send(Resource.Error("Server error."))
+                                    Log.d("TAG", "getStudentIdInfo: ${e.message} ${e.localizedMessage}")
+                                    this.cancel()
                                 }
                             }
                         }
@@ -384,6 +400,10 @@ class AuthRepoImpl @Inject constructor(
                         this.cancel()
                     } catch (e: IOException) {
                         send(Resource.Error("Couldn't reach server."))
+                        Log.d("TAG", "getStudentIdInfo: ${e.message} ${e.localizedMessage}")
+                        this.cancel()
+                    } catch (e: Exception) {
+                        send(Resource.Error("Server error."))
                         Log.d("TAG", "getStudentIdInfo: ${e.message} ${e.localizedMessage}")
                         this.cancel()
                     }

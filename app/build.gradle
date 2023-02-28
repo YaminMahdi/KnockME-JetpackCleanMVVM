@@ -20,8 +20,8 @@ android {
         applicationId "com.mlab.knockme"
         minSdk 23
         targetSdk 33
-        versionCode 6
-        versionName '1.6'
+        versionCode 8
+        versionName '1.8'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -71,6 +71,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-database-ktx'
     implementation 'com.google.firebase:firebase-firestore-ktx'
     implementation 'com.google.firebase:firebase-storage-ktx'
+    implementation 'com.google.android.gms:play-services-auth:20.4.1'
     implementation 'com.facebook.android:facebook-android-sdk:15.2.0'
 
 
@@ -113,6 +114,9 @@ dependencies {
     implementation("com.himanshoe:charty:1.0.1")
     implementation group: 'com.ibm.icu', name: 'icu4j', version: '71.1'
     implementation("se.warting.in-app-update:in-app-update-compose:0.0.17")
+
+    //Play In-App Review:
+    //implementation("com.google.android.play:review-ktx:2.0.1")
 
 
 

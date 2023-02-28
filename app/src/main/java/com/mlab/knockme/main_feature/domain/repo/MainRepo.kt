@@ -69,7 +69,7 @@ interface MainRepo {
     suspend fun updateFullResultInfo(
         publicInfo: PublicInfo,
         fullResultInfoList: List<FullResultInfo>,
-        Success: (List<FullResultInfo>,Double) -> Unit,
+        Success: (List<FullResultInfo>,Double,Double) -> Unit,
         Loading: (msg: String) -> Unit,
         Failed: (msg:String) -> Unit
     )

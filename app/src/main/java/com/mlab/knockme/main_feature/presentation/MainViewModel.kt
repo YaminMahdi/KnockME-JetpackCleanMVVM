@@ -323,10 +323,11 @@ class MainViewModel @Inject constructor(
     ){
         savedStateHandle["isResultLoading"]=true
         viewModelScope.launch(Dispatchers.IO) {
-            mainUseCases.updateFullResultInfo(publicInfo,fullResultInfoList,{it,cgpa->
+            mainUseCases.updateFullResultInfo(publicInfo,fullResultInfoList,{it,cgpa,totalCompletedCredit->
 
                 val updatedProfile = userFullProfileInfo.value.copy(
-                    fullResultInfo= ArrayList(it), publicInfo = userFullProfileInfo.value.publicInfo.copy(cgpa = cgpa)
+                    fullResultInfo= ArrayList(it), publicInfo = userFullProfileInfo.value.publicInfo
+                        .copy(cgpa = cgpa, totalCompletedCredit = totalCompletedCredit)
                 )
                 savedStateHandle["userFullProfileInfo"] = updatedProfile
 
