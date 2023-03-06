@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -65,6 +66,10 @@ import com.mlab.knockme.main_feature.presentation.ProfileInnerScreens
 import com.mlab.knockme.main_feature.presentation.profile.InfoDialog
 import com.mlab.knockme.main_feature.presentation.profile.TitleInfo
 import com.mlab.knockme.ui.theme.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun ChatPersonalScreen(
@@ -80,7 +85,9 @@ fun ChatPersonalScreen(
     val myId = sharedPreferences.getString("studentId","")!!
     val showHadith by viewModel.showHadith.collectAsState()
     var toMain by remember { mutableStateOf(false) }
-
+    if(state.chatList.isNotEmpty() && state.isSearchLoading) {
+        LocalFocusManager.current.clearFocus()
+    }
     LaunchedEffect(key1 = state.isSearchActive){
         //pop backstack
         if(!state.isSearchActive){

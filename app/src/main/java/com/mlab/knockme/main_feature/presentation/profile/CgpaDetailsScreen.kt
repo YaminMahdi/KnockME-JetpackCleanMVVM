@@ -3,9 +3,7 @@ package com.mlab.knockme.main_feature.presentation.profile
 import android.content.Context
 import android.os.Looper
 import android.widget.Toast
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,7 +24,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -137,6 +139,7 @@ fun CgpaDetailsScreen(id: String,index: Int, navController: NavHostController, v
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ResultItemRGB(
     resultInfo: ResultInfo,
@@ -144,6 +147,9 @@ fun ResultItemRGB(
     mediumColor: Color=BlueViolet2,
     darkColor: Color=BlueViolet3
 ) {
+    val clipboardManager = LocalClipboardManager.current
+    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
     BoxWithConstraints(
         modifier = Modifier
             .padding(vertical = 7.5.dp)
@@ -151,9 +157,16 @@ fun ResultItemRGB(
             .wrapContentHeight()
             .bounceClick()
             .clip(RoundedCornerShape(10.dp))
-            .clickable {
-
-            }
+            .combinedClickable(
+                onClick = {},
+                onLongClick = {
+                    val text = "${resultInfo.courseTitle} (${resultInfo.customCourseId})\nCredit: ${resultInfo.totalCredit.toInt()}\nCG: ${resultInfo.pointEquivalent}"
+                    clipboardManager.setText(AnnotatedString(text))
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    Toast.makeText(context, "Data Copied", Toast.LENGTH_SHORT).show()
+                },
+                onDoubleClick = {}
+            )
             .background(darkColor)
     ) {
         val width = constraints.maxWidth

@@ -239,6 +239,7 @@ fun BackBtn(navController: NavHostController) {
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun Profile(
     pic: String?,
@@ -251,6 +252,9 @@ fun Profile(
             .width(300.dp),
         contentAlignment = Alignment.Center
     ) {
+        val clipboardManager = LocalClipboardManager.current
+        val haptic = LocalHapticFeedback.current
+        val context = LocalContext.current
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -264,6 +268,7 @@ fun Profile(
                     .clip(RoundedCornerShape(100.dp))
                     .background(DarkerButtonBlue)
             ) {
+
                 when (painter.state) {
                     is AsyncImagePainter.State.Loading -> {
                         CircularProgressIndicator(
@@ -289,13 +294,33 @@ fun Profile(
                 text = if(!publicInfo?.nm.isNullOrEmpty()) publicInfo?.nm!! else "",
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.headlineLarge,
+                modifier = Modifier
+                    .combinedClickable(
+                        onClick = {},
+                        onLongClick = {
+                            clipboardManager.setText(AnnotatedString(publicInfo?.nm!!))
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            Toast.makeText(context, "Data Copied", Toast.LENGTH_SHORT).show()
+                        },
+                        onDoubleClick = {}
+                    )
             )
         }
         if(!publicInfo?.id?.hasAlphabet()!!) {
             CgpaToast(
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .padding(start = 185.dp, top = 25.dp),
+                    .padding(start = 185.dp, top = 25.dp)
+                    .combinedClickable(
+                        onClick = {},
+                        onLongClick = {
+                            val text = if(!publicInfo.cgpa.isNaN()) "CGPA: ${publicInfo.cgpa}" else "CGPA: 0.0"
+                            clipboardManager.setText(AnnotatedString(text))
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            Toast.makeText(context, "Data Copied", Toast.LENGTH_SHORT).show()
+                        },
+                        onDoubleClick = {}
+                    ),
                 pb = publicInfo,
                 isLoading = isLoading,
             ) {

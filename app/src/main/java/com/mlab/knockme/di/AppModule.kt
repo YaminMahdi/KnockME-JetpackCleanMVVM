@@ -73,12 +73,12 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideFirebaseAuth(app: Application) =
+    fun provideFirebaseAuth() =
         Firebase.auth
 
     @Provides
     @Singleton
-    fun provideFirebaseDatabase(app: Application) =
+    fun provideFirebaseDatabase() =
         Firebase.database
 
     @Provides
@@ -88,7 +88,7 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideFirebaseFirestore(app: Application) =
+    fun provideFirebaseFirestore() =
         Firebase.firestore
 
 
@@ -112,18 +112,18 @@ object AppModule {
             .build()
             .create(PortalApi::class.java)
 
-    @Provides
-    @Singleton
-    fun provideAuthUseCases(repo: AuthRepo) =
-        AuthUseCases(
-            IsUserAuthenticated(repo),
-            FirebaseAuthState(repo),
-            FirebaseSignIn(repo),
-            FacebookLogin(repo),
-            FirebaseSignOut(repo),
-            GetStudentIdInfo(repo),
-            GetStudentInfo(repo)
-        )
+//    @Provides
+//    @Singleton
+//    fun provideAuthUseCases(repo: AuthRepo) =
+//        AuthUseCases(
+//            IsUserAuthenticated(repo),
+//            FirebaseAuthState(repo),
+//            FirebaseSignIn(repo),
+//            FacebookLogin(repo),
+//            FirebaseSignOut(repo),
+//            GetStudentIdInfo(repo),
+//            GetStudentInfo(repo)
+//        )
 
     @Provides
     @Singleton
@@ -131,22 +131,22 @@ object AppModule {
         return MainRepoImpl(firebase,firestore,api)
     }
 
-    @Provides
-    @Singleton
-    fun provideMainUseCases(repo: MainRepo) =
-        MainUseCases(
-            GetChatProfiles(repo),
-            GetUserBasicInfo(repo),
-            GetUserFullProfile(repo),
-            GetOrCreateUserProfileInfo(repo),
-            GetRandomHadith(repo),
-            GetMsg(repo),
-            SendMsg(repo),
-            RefreshProfileInChats(repo),
-            DeleteMsg(repo),
-            UpdatePaymentInfo(repo),
-            UpdateRegCourseInfo(repo),
-            UpdateLiveResultInfo(repo),
-            UpdateFullResultInfo(repo)
-        )
+//    @Provides
+//    @Singleton
+//    fun provideMainUseCases(repo: MainRepo) =
+//        MainUseCases(
+//            GetChatProfiles(repo),
+//            GetUserBasicInfo(repo),
+//            GetUserFullProfile(repo),
+//            GetOrCreateUserProfileInfo(repo),
+//            GetRandomHadith(repo),
+//            GetMsg(repo),
+//            SendMsg(repo),
+//            RefreshProfileInChats(repo),
+//            DeleteMsg(repo),
+//            UpdatePaymentInfo(repo),
+//            UpdateRegCourseInfo(repo),
+//            UpdateLiveResultInfo(repo),
+//            UpdateFullResultInfo(repo)
+//        )
 }

@@ -245,6 +245,7 @@ fun MsgViewLeft(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
                 )
             )
             .clickable {
+                onClick.invoke(msg.id!!)
             }
         )
         Column {

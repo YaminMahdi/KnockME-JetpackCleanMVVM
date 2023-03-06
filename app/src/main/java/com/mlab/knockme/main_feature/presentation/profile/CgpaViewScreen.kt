@@ -3,9 +3,7 @@ package com.mlab.knockme.main_feature.presentation.profile
 import android.content.Context
 import android.os.Looper
 import android.widget.Toast
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -24,7 +22,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,10 +41,12 @@ import com.mlab.knockme.main_feature.presentation.main.TopBar
 import com.mlab.knockme.profile_feature.presentation.components.standardQuadFromTo
 import com.mlab.knockme.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun CgpaViewScreen(id: String, navController: NavHostController, viewModel: MainViewModel = hiltViewModel()) {
     val context: Context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
+    val haptic = LocalHapticFeedback.current
     val myFullProfile by viewModel.userFullProfileInfo.collectAsState()
     val loading by viewModel.isResultLoading.collectAsState()
     val loadingTxt by viewModel.resultLoadingTxt.collectAsState()
@@ -70,6 +74,7 @@ fun CgpaViewScreen(id: String, navController: NavHostController, viewModel: Main
 //        )
     val lst= mutableListOf<SemesterInfo>()
     var semesterCount = 0
+
     myFullProfile.fullResultInfo.forEach{
         lst.add(it.semesterInfo)
         if(it.semesterInfo.sgpa!=0.0)
@@ -112,9 +117,16 @@ fun CgpaViewScreen(id: String, navController: NavHostController, viewModel: Main
                             bottomEnd = 7.dp
                         )
                     )
-                    .clickable {
-
-                    }
+                    .combinedClickable(
+                        onClick = {},
+                        onLongClick = {
+                            val text = "CGPA: ${myFullProfile.publicInfo.cgpa}"
+                            clipboardManager.setText(AnnotatedString(text))
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            Toast.makeText(context, "Data Copied", Toast.LENGTH_SHORT).show()
+                        },
+                        onDoubleClick = {}
+                    )
                     .background(BlueViolet3)
                     .padding(27.dp)
                     .padding(horizontal = 5.dp)
@@ -190,6 +202,7 @@ fun CgpaViewScreen(id: String, navController: NavHostController, viewModel: Main
 
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SemesterInfoItem(
     semesterInfo: SemesterInfo,
@@ -198,15 +211,27 @@ fun SemesterInfoItem(
     darkColor: Color = Limerick3,
     onClick: () -> Unit
 ) {
+    val clipboardManager = LocalClipboardManager.current
+    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
     BoxWithConstraints(
         modifier = Modifier
             .padding(5.dp)
             .aspectRatio(1f)
             .bounceClick()
             .clip(RoundedCornerShape(10.dp))
-            .clickable {
-                onClick.invoke()
-            }
+            .combinedClickable(
+                onClick = {
+                    onClick.invoke()
+                },
+                onLongClick = {
+                    val text = "Semester: ${semesterInfo.toShortSemName()}\nSGPA: ${semesterInfo.sgpa}\nCredits: ${semesterInfo.creditTaken.toInt()}"
+                    clipboardManager.setText(AnnotatedString(text))
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    Toast.makeText(context, "Data Copied", Toast.LENGTH_SHORT).show()
+                },
+                onDoubleClick = {}
+            )
             .background(darkColor)
     ) {
         val width = constraints.maxWidth

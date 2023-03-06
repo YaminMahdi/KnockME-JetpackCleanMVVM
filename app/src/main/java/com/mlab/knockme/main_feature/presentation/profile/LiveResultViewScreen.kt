@@ -3,9 +3,7 @@ package com.mlab.knockme.main_feature.presentation.profile
 import android.content.Context
 import android.os.Looper
 import android.widget.Toast
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -25,7 +23,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -141,6 +143,7 @@ fun LiveResultViewScreen(navController: NavHostController, viewModel: MainViewMo
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LiveRegCourseItem(
     courseResultInfo: LiveResultInfo,
@@ -148,6 +151,9 @@ fun LiveRegCourseItem(
     mediumColor: Color = BlueViolet2,
     darkColor: Color = BlueViolet3
 ) {
+    val clipboardManager = LocalClipboardManager.current
+    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
     BoxWithConstraints(
         modifier = Modifier
             .padding(vertical = 7.5.dp)
@@ -155,9 +161,18 @@ fun LiveRegCourseItem(
             .wrapContentHeight()
             .bounceClick()
             .clip(RoundedCornerShape(10.dp))
-            .clickable {
-
-            }
+            .combinedClickable(
+                onClick = {},
+                onLongClick = {
+                    val text = "${courseResultInfo.courseTitle} (${courseResultInfo.customCourseId})\nQuiz 1:  ${courseResultInfo.q1}\n" +
+                            "Quiz 2:  ${courseResultInfo.q2}\n" +
+                            "Quiz 3:  ${courseResultInfo.q3}\nQuiz Average:  ${courseResultInfo.quiz}\nMidterm:  ${courseResultInfo.mid1}"
+                    clipboardManager.setText(AnnotatedString(text))
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    Toast.makeText(context, "Data Copied", Toast.LENGTH_SHORT).show()
+                },
+                onDoubleClick = {}
+            )
             .background(darkColor)
     ) {
         val width = constraints.maxWidth

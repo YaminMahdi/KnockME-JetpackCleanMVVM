@@ -7,9 +7,7 @@ import android.net.Uri
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -32,9 +30,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -59,6 +61,7 @@ import com.mlab.knockme.main_feature.presentation.ProfileInnerScreens
 import com.mlab.knockme.main_feature.presentation.profile.components.Feature
 import com.mlab.knockme.profile_feature.presentation.components.standardQuadFromTo
 import com.mlab.knockme.ui.theme.*
+import kotlinx.coroutines.delay
 
 @Composable
 fun ProfileScreen(
@@ -70,26 +73,48 @@ fun ProfileScreen(
     val sharedPreferences = context.getSharedPreferences(
         context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
     )
+    val preferenceEditor = sharedPreferences.edit()
     //val preferencesEditor = sharedPreferences.edit()
     val myId = sharedPreferences.getString("studentId","0")!!
+    val myNm = sharedPreferences.getString("nm","0")!!
+    val myProShortName = sharedPreferences.getString("proShortName","0")!!
+
+    val myFullProfile by viewModel.userFullProfileInfo.collectAsState()
+    if(!myFullProfile.publicInfo.id.isNullOrEmpty()){
+        preferenceEditor.putString("nm", myFullProfile.publicInfo.nm).apply()
+        preferenceEditor.putString("proShortName", myFullProfile.publicInfo.progShortName).apply()
+    }
     LaunchedEffect(key1 = "1")
     {
-        viewModel.getUserFullProfileInfo(myId,{
-            viewModel.updateUserFullResultInfo(
-                publicInfo = it.publicInfo,
-                fullResultInfoList = it.fullResultInfo)
+        viewModel.getUserFullProfileInfo(myId,{            viewModel.updateUserPaymentInfo(
+            id = myId,
+            accessToken = it.token,
+            paymentInfo = it.paymentInfo
+        ){ }
             viewModel.updateUserPaymentInfo(
                 id = myId,
                 accessToken = it.token,
                 paymentInfo = it.paymentInfo
             ){ }
+            viewModel.updateUserLiveResultInfo(
+                id = myId,
+                accessToken = it.token,
+                liveResultInfoList = it.liveResultInfo
+            ){ }
+            viewModel.updateUserRegCourseInfo(
+                id = myId,
+                accessToken = it.token,
+                regCourseList = it.regCourseInfo
+            ){ }
+            viewModel.updateUserFullResultInfo(
+                publicInfo = it.publicInfo,
+                fullResultInfoList = it.fullResultInfo)
         },{
             Looper.prepare()
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             Looper.loop()
         })
     }
-    val myFullProfile by viewModel.userFullProfileInfo.collectAsState()
 
     InfoDialog(viewModel,context,myId,navController)
     Column(
@@ -100,9 +125,9 @@ fun ProfileScreen(
             viewModel.setInfoDialogVisibility(true)
         }
         PersonInfo(
-            myFullProfile.publicInfo.nm!!,
+            myNm,
             myFullProfile.privateInfo.pic!!,
-            myFullProfile.publicInfo.progShortName!!,
+            myProShortName,
             myId,
             navController
             )
@@ -399,7 +424,7 @@ fun PersonInfo(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = id,
+                text = "ID: $id",
                 style = MaterialTheme.typography.headlineMedium
             )
         }
@@ -435,18 +460,31 @@ fun FeatureSection(navController: NavHostController,id: String, features: List<F
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FeatureItem(
     feature: Feature,
     onClick: (() -> Unit)
 ) {
+    val clipboardManager = LocalClipboardManager.current
+    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
     BoxWithConstraints(
         modifier = Modifier
             .padding(7.5.dp)
             .aspectRatio(1f)
             .bounceClick()
             .clip(RoundedCornerShape(20.dp))
-            .clickable { onClick.invoke() }
+            .combinedClickable(
+                onClick = { onClick.invoke() },
+                onLongClick = {
+                    val text = "${feature.title}: ${feature.info}"
+                    clipboardManager.setText(AnnotatedString(text))
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    Toast.makeText(context, "Data Copied", Toast.LENGTH_SHORT).show()
+                },
+                onDoubleClick = {}
+            )
             .background(feature.darkColor)
     ) {
         val width = constraints.maxWidth

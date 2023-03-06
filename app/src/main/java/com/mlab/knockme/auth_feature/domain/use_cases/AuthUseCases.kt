@@ -1,6 +1,8 @@
 package com.mlab.knockme.auth_feature.domain.use_cases
 
-data class AuthUseCases(
+import javax.inject.Inject
+
+data class AuthUseCases @Inject constructor(
     val isUserAuthenticated: IsUserAuthenticated,
     val firebaseAuthState: FirebaseAuthState,
     val firebaseSignIn: FirebaseSignIn,

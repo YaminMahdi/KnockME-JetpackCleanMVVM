@@ -1,6 +1,8 @@
 package com.mlab.knockme.main_feature.domain.use_case
 
-data class MainUseCases (
+import javax.inject.Inject
+
+data class MainUseCases @Inject constructor(
     val getChatProfiles: GetChatProfiles,
     val getUserBasicInfo: GetUserBasicInfo,
     val getUserFullProfile: GetUserFullProfile,
