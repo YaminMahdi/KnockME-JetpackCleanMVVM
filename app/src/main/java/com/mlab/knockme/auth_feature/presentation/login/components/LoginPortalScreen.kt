@@ -24,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -34,7 +35,6 @@ import com.mlab.knockme.core.util.bounceClick
 import com.mlab.knockme.main_feature.presentation.profile.ReportProblem
 import com.mlab.knockme.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginPortalScreen(onClick:(id:String,pass:String)->Unit) {
 
@@ -56,6 +56,7 @@ fun LoginPortalScreen(onClick:(id:String,pass:String)->Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
+                val fm= LocalFocusManager.current
                 TextField(
                     value = id,
                     onValueChange = { id = it },
@@ -82,6 +83,7 @@ fun LoginPortalScreen(onClick:(id:String,pass:String)->Unit) {
                         .bounceClick()
                     ,
                     onClick = {
+                        fm.clearFocus()
                         hidden = false
                         onClick.invoke(id,password)
                     },
@@ -128,14 +130,14 @@ fun TitlePortal() {
 @Composable
 fun textFieldColors() =
     TextFieldDefaults.textFieldColors(
-    textColor = DeepBlueLess,
-    focusedLabelColor = LightGreen2,
-    unfocusedLabelColor= LightGreen2,
-    focusedIndicatorColor = LightGreen2,
-    unfocusedIndicatorColor = LightGreen2,
+    focusedTextColor = TextWhite,
+    focusedLabelColor = BlueViolet3,
+    unfocusedLabelColor= BlueViolet3,
+    focusedIndicatorColor = BlueViolet3,
+    unfocusedIndicatorColor = BlueViolet3,
     containerColor = DeepBlueLess,
     cursorColor = AquaBlue,
-    placeholderColor = DeepBlueLess
+    focusedPlaceholderColor = DeepBlueLess
 )
 
 

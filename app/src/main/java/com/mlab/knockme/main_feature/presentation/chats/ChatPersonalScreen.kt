@@ -85,7 +85,7 @@ fun ChatPersonalScreen(
     val myId = sharedPreferences.getString("studentId","")!!
     val showHadith by viewModel.showHadith.collectAsState()
     var toMain by remember { mutableStateOf(false) }
-    if(state.chatList.isNotEmpty() && state.isSearchLoading) {
+    if(state.chatList.size==1 && state.isSearchLoading) {
         LocalFocusManager.current.clearFocus()
     }
     LaunchedEffect(key1 = state.isSearchActive){
@@ -200,6 +200,7 @@ fun SearchBox(state: ChatListState, viewModel: MainViewModel) {
             }
         )
         AnimatedVisibility(visible = state.isSearchActive) {
+            val fm = LocalFocusManager.current
             Icon(
                 Icons.Rounded.Close,
                 contentDescription = "",
@@ -213,6 +214,7 @@ fun SearchBox(state: ChatListState, viewModel: MainViewModel) {
                         interactionSource = MutableInteractionSource(),
                         indication = rememberRipple(color = Color.White),
                         onClick = {
+                            fm.clearFocus()
                             viewModel.setSearchActive(false)
                             data = ""
                         }
@@ -228,10 +230,10 @@ fun SearchBox(state: ChatListState, viewModel: MainViewModel) {
 @Composable
 fun searchFieldColors() =
     TextFieldDefaults.textFieldColors(
-        textColor = DeepBlueLess,
+        focusedTextColor = TextWhite,
         containerColor = DeepBlueLess,
         cursorColor = AquaBlue,
-        placeholderColor = DeepBlueLess,
+        focusedPlaceholderColor = DeepBlueLess,
         focusedIndicatorColor =  DarkerButtonBlue,
         unfocusedIndicatorColor = DarkerButtonBlue,
         focusedLeadingIconColor = TextWhite,

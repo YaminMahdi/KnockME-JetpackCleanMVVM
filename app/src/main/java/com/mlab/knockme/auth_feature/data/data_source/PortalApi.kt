@@ -41,14 +41,14 @@ interface PortalApi {
     suspend fun getResultInfo(
         @Query("semesterId") semesterId : String,
         @Query("studentId") studentId : String
-    ) : ArrayList<ResultInfoDto>
+    ) : List<ResultInfoDto>
 
 
     //completed semester list
     @GET("/registeredCourse/semesterList")
     suspend fun getAllSemesterInfo(
         @Header("accessToken") accessToken : String
-    ) : ArrayList<SemesterInfoDto>  //[0].semesterId
+    ) : List<SemesterInfoDto>  //[0].semesterId
 
 
     //registered course by semesterId
@@ -56,7 +56,7 @@ interface PortalApi {
     suspend fun getRegisteredCourse(
         @Query("semesterId") semesterId : String,
         @Header("accessToken") accessToken : String
-    ) : ArrayList<CourseInfoDto>  //courseSectionId
+    ) : List<CourseInfoDto>  //courseSectionId
 
     //live result by courseSectionId
     @GET("/liveResult")
@@ -71,6 +71,12 @@ interface PortalApi {
     suspend fun getPaymentInfo(
         @Header("accessToken") accessToken : String
     ) : PaymentInfoDto
+
+    //payment info
+    @GET("/accounts/semester-exam-clearance")
+    suspend fun getClearanceInfo(
+        @Header("accessToken") accessToken : String
+    ) : List<ClearanceInfoDto>
 
     //ip info without base url
     @GET("http://ip-api.com/json")

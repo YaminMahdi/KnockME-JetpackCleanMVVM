@@ -84,7 +84,7 @@ fun ProfileViewScreen(
         context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
     )
     //val preferencesEditor = sharedPreferences.edit()
-    val myId = sharedPreferences.getString("studentId","0")
+    val myId = sharedPreferences.getString("studentId","0")!!
 //    val isLoading by viewModel.isLoading.collectAsState()
 //    val hasPrivateInfo  by viewModel.hasPrivateInfo.collectAsState()
 //    val userBasicInfo  by viewModel.userBasicInfo.collectAsState()
@@ -98,8 +98,7 @@ fun ProfileViewScreen(
                     fullResultInfoList = it.fullResultInfo)
             }
         }
-        viewModel.getMyBasicInfo(id)
-
+        viewModel.getMyBasicInfo(myId)
     }
 
     Scaffold(topBar = {
@@ -124,7 +123,7 @@ fun ProfileViewScreen(
                 isLoading = isLoading,
                 navController
             )
-            SocialLink(viewModel,userBasicInfo, hasPrivateInfo, navController, id, myId!!)
+            SocialLink(viewModel,userBasicInfo, hasPrivateInfo, navController, id, myId)
             if(!id.hasAlphabet()){
                 Column(
                     modifier = Modifier

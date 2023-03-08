@@ -1,6 +1,5 @@
 package com.mlab.knockme.core.util
 
-import android.util.Log
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -15,18 +14,9 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import com.ibm.icu.text.RuleBasedNumberFormat
-import com.mlab.knockme.auth_feature.data.data_source.PortalApi
-import com.mlab.knockme.auth_feature.domain.model.FullResultInfo
-import com.mlab.knockme.auth_feature.domain.model.ResultInfo
-import kotlinx.coroutines.*
-import retrofit2.HttpException
-import java.io.EOFException
-import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
-import kotlin.math.roundToInt
-
 
 enum class ButtonState { Pressed, Idle }
 fun Modifier.bounceClick() = composed {
@@ -80,6 +70,14 @@ fun String.toTeacherInitial(): String{
             initial+=nm[0]
     }
     return initial
+}
+
+fun String.toShortSemester(): String{
+    var shortSem=this
+    val l = this.split(", ")
+    if(l.size>1 && !l[1].hasAlphabet())
+        shortSem = "${l[0]}'${l[1].toInt()%100}"
+    return shortSem
 }
 
 fun Int.toWords(): String {

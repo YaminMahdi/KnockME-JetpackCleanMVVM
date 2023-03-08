@@ -215,6 +215,16 @@ fun Main(viewModel: MainViewModel) {
                 }){
                 LiveResultViewScreen(navController)
             }
+            composable(
+                ProfileInnerScreens.ClearanceScreen.route,
+                enterTransition = {
+                    fadeIn() + slideInVertically(animationSpec = tween(1000))
+                },
+                exitTransition = {
+                    fadeOut() + slideOutVertically(animationSpec = tween(1000))
+                }){
+                ClearanceViewScreen(navController)
+            }
         }
     }
 //    BackHandler {

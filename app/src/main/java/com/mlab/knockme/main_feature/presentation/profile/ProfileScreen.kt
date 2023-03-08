@@ -52,6 +52,7 @@ import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import com.google.android.play.core.review.ReviewManagerFactory
 import com.mlab.knockme.R
+import com.mlab.knockme.auth_feature.domain.model.ClearanceInfo
 import com.mlab.knockme.core.util.bounceClick
 import com.mlab.knockme.core.util.toK
 import com.mlab.knockme.core.util.toWords
@@ -61,8 +62,9 @@ import com.mlab.knockme.main_feature.presentation.ProfileInnerScreens
 import com.mlab.knockme.main_feature.presentation.profile.components.Feature
 import com.mlab.knockme.profile_feature.presentation.components.standardQuadFromTo
 import com.mlab.knockme.ui.theme.*
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 
+@OptIn(DelicateCoroutinesApi::class)
 @Composable
 fun ProfileScreen(
     navController: NavHostController,
@@ -80,35 +82,54 @@ fun ProfileScreen(
     val myProShortName = sharedPreferences.getString("proShortName","0")!!
 
     val myFullProfile by viewModel.userFullProfileInfo.collectAsState()
+    val lastClearanceInfo =if(myFullProfile.clearanceInfo.isNotEmpty()) myFullProfile.clearanceInfo.last() else ClearanceInfo()
+    val last1 =if(lastClearanceInfo.registration) "✔" else "✖"
+    val last2 =if(lastClearanceInfo.midTermExam) "✔" else "✖"
+    val last3 =if(lastClearanceInfo.finalExam) "✔" else "✖"
+    val last = "$last1 $last2 $last3"
+
     if(!myFullProfile.publicInfo.id.isNullOrEmpty()){
         preferenceEditor.putString("nm", myFullProfile.publicInfo.nm).apply()
         preferenceEditor.putString("proShortName", myFullProfile.publicInfo.progShortName).apply()
     }
     LaunchedEffect(key1 = "1")
     {
-        viewModel.getUserFullProfileInfo(myId,{            viewModel.updateUserPaymentInfo(
-            id = myId,
-            accessToken = it.token,
-            paymentInfo = it.paymentInfo
-        ){ }
-            viewModel.updateUserPaymentInfo(
-                id = myId,
-                accessToken = it.token,
-                paymentInfo = it.paymentInfo
-            ){ }
-            viewModel.updateUserLiveResultInfo(
-                id = myId,
-                accessToken = it.token,
-                liveResultInfoList = it.liveResultInfo
-            ){ }
-            viewModel.updateUserRegCourseInfo(
-                id = myId,
-                accessToken = it.token,
-                regCourseList = it.regCourseInfo
-            ){ }
-            viewModel.updateUserFullResultInfo(
-                publicInfo = it.publicInfo,
-                fullResultInfoList = it.fullResultInfo)
+        viewModel.getUserFullProfileInfo(myId,{
+            GlobalScope.launch(Dispatchers.IO){
+                viewModel.updateUserPaymentInfo(
+                    id = myId,
+                    accessToken = it.token,
+                    paymentInfo = it.paymentInfo
+                ){ }
+                delay(100)
+                viewModel.updateUserPaymentInfo(
+                    id = myId,
+                    accessToken = it.token,
+                    paymentInfo = it.paymentInfo
+                ){ }
+                delay(100)
+                viewModel.updateUserLiveResultInfo(
+                    id = myId,
+                    accessToken = it.token,
+                    liveResultInfoList = it.liveResultInfo
+                ){ }
+                delay(100)
+                viewModel.updateUserRegCourseInfo(
+                    id = myId,
+                    accessToken = it.token,
+                    regCourseList = it.regCourseInfo
+                ){ }
+                delay(100)
+                viewModel.updateClearanceInfo(
+                    id = myId,
+                    accessToken = it.token,
+                    clearanceInfoList = it.clearanceInfo
+                ){ }
+                delay(100)
+                viewModel.updateUserFullResultInfo(
+                    publicInfo = it.publicInfo,
+                    fullResultInfoList = it.fullResultInfo)
+            }
         },{
             Looper.prepare()
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
@@ -161,6 +182,13 @@ fun ProfileScreen(
                 LightGreen1,
                 LightGreen2,
                 LightGreen3
+            ),
+            Feature(
+                title = "Clearance",
+                info = last,
+                OrangeYellow1,
+                OrangeYellow2,
+                OrangeYellow3
             )
         ))
     }
@@ -451,8 +479,7 @@ fun FeatureSection(navController: NavHostController,id: String, features: List<F
                         1 -> navController.navigate(ProfileInnerScreens.DueScreen.route)
                         2 -> navController.navigate(ProfileInnerScreens.RegCourseScreen.route)
                         3 -> navController.navigate(ProfileInnerScreens.LiveResultScreen.route)
-
-
+                        4 -> navController.navigate(ProfileInnerScreens.ClearanceScreen.route)
                     }
                 }
             }

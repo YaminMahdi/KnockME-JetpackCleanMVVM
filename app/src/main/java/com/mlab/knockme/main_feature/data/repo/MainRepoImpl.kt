@@ -10,6 +10,7 @@ import com.google.gson.GsonBuilder
 import com.mlab.knockme.auth_feature.data.data_source.PortalApi
 import com.mlab.knockme.auth_feature.data.data_source.dto.DailyHadithDto
 import com.mlab.knockme.auth_feature.domain.model.*
+import com.mlab.knockme.core.util.Resource
 import com.mlab.knockme.core.util.getCgpa
 import com.mlab.knockme.core.util.getSemesterList
 import com.mlab.knockme.core.util.notEqualsIgnoreOrder
@@ -343,12 +344,13 @@ class MainRepoImpl @Inject constructor(
         val docRef = firestore.collection("userProfile").document(id)
         try {
             val semInfo =api.getAllSemesterInfo(accessToken)
-            var lastSemesterId = semInfo[0].semesterId
-            Log.d("getStudentInfo", "lastSemesterId: $lastSemesterId")
-            var regCourseInfoNew = api.getRegisteredCourse(lastSemesterId, accessToken).map { it.toCourseInfo() }
-            if(regCourseInfoNew.isEmpty()){
-                lastSemesterId = semInfo[1].semesterId
-                regCourseInfoNew = api.getRegisteredCourse(lastSemesterId, accessToken).map { it.toCourseInfo() }
+            var regCourseInfoNew = emptyList<CourseInfo>()
+            run lit@{
+                semInfo.forEach {lsInfo ->
+                    regCourseInfoNew = api.getRegisteredCourse(lsInfo.semesterId, accessToken).map { it.toCourseInfo() }
+                    if(regCourseInfoNew.isNotEmpty())
+                        return@lit
+                }
             }
             Log.d("getStudentInfo", "registeredCourse: $regCourseInfoNew")
             if (regCourseInfoList notEqualsIgnoreOrder regCourseInfoNew && regCourseInfoNew.isNotEmpty()){
@@ -369,7 +371,8 @@ class MainRepoImpl @Inject constructor(
         } catch (e: IOException) {
             Failed.invoke("Couldn't reach server.")
             Log.d("TAG", "getStudentIdInfo: ${e.message} ${e.localizedMessage}")
-        }    }
+        }
+    }
 
     override suspend fun updateLiveResultInfo(
         id: String,
@@ -382,12 +385,13 @@ class MainRepoImpl @Inject constructor(
         val liveResultInfoListNew = mutableListOf<LiveResultInfo>()
         try {
             val semInfo =api.getAllSemesterInfo(accessToken)
-            var lastSemesterId = semInfo[0].semesterId
-            Log.d("getStudentInfo", "lastSemesterId: $lastSemesterId")
-            var registeredCourse = api.getRegisteredCourse(lastSemesterId, accessToken).map { it.toCourseInfo() }
-            if(registeredCourse.isEmpty()) {
-                lastSemesterId = semInfo[1].semesterId
-                registeredCourse = api.getRegisteredCourse(lastSemesterId, accessToken).map { it.toCourseInfo() }
+            var registeredCourse = emptyList<CourseInfo>()
+            run lit@{
+                semInfo.forEach {lsInfo ->
+                    registeredCourse = api.getRegisteredCourse(lsInfo.semesterId, accessToken).map { it.toCourseInfo() }
+                    if(registeredCourse.isNotEmpty())
+                        return@lit
+                }
             }
             Log.d("getStudentInfo", "registeredCourse: $registeredCourse")
             registeredCourse.forEach {
@@ -445,6 +449,38 @@ class MainRepoImpl @Inject constructor(
             else Failed.invoke("No new data found.")
 
         })
+    }
+
+    override suspend fun updateClearanceInfo(
+        id: String,
+        accessToken: String,
+        clearanceInfoList: List<ClearanceInfo>,
+        Success: (clearanceInfoList: List<ClearanceInfo>) -> Unit,
+        Failed: (msg: String) -> Unit
+    ) {
+        val docRef = firestore.collection("userProfile").document(id)
+        try {
+            val clearanceInfoNew =api.getClearanceInfo(accessToken).map { it.toClearanceInfo() }
+            Log.d("getStudentInfo", "clearanceInfoList: $clearanceInfoNew")
+            if (clearanceInfoList notEqualsIgnoreOrder clearanceInfoNew && clearanceInfoNew.isNotEmpty()){
+                Success.invoke(clearanceInfoNew)
+                docRef.update("clearanceInfo" , clearanceInfoNew)
+                docRef.update("lastUpdatedClearanceInfo" , System.currentTimeMillis())
+            }
+            else Failed.invoke("No new data found.")
+
+
+        }
+        catch (e: HttpException) {
+            Failed.invoke("Oops, something went wrong.")
+            Log.d("TAG", "getStudentIdInfo: ${e.message} ${e.localizedMessage}")
+        } catch (e: EOFException) {
+            Failed.invoke("Student Portal Server Error.")
+            Log.d("TAG", "getStudentIdInfo: ${e.message} ${e.localizedMessage}")
+        } catch (e: IOException) {
+            Failed.invoke("Couldn't reach server.")
+            Log.d("TAG", "getStudentIdInfo: ${e.message} ${e.localizedMessage}")
+        }
     }
 
     override suspend fun getRandomHadith(

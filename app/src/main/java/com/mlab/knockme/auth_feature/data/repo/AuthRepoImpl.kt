@@ -4,7 +4,6 @@ import android.util.Log
 import com.facebook.*
 import com.facebook.login.LoginResult
 import com.facebook.login.widget.LoginButton
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.FirebaseAuth
@@ -213,13 +212,14 @@ class AuthRepoImpl @Inject constructor(
                                     Log.d("getStudentInfo", "privateInfo: $privateInfo")
                                     send(Resource.Loading("Getting lastSemester Info.."))
                                     val semInfo =api.getAllSemesterInfo(authInfo.accessToken)
-                                    var lastSemesterId = semInfo[0].semesterId
-                                    Log.d("getStudentInfo", "lastSemesterId: $lastSemesterId")
-                                    send(Resource.Loading("Getting registeredCourse Info.."))
-                                    var registeredCourse = api.getRegisteredCourse(lastSemesterId, authInfo.accessToken).map { it.toCourseInfo() }
-                                    if(registeredCourse.isEmpty()){
-                                        lastSemesterId = semInfo[1].semesterId
-                                        registeredCourse = api.getRegisteredCourse(lastSemesterId, authInfo.accessToken).map { it.toCourseInfo() }
+                                    var registeredCourse = emptyList<CourseInfo>()
+                                    run lit@{
+                                        semInfo.forEach {lsInfo ->
+                                            send(Resource.Loading("Getting registeredCourse Info.."))
+                                            registeredCourse = api.getRegisteredCourse(lsInfo.semesterId, authInfo.accessToken).map { it.toCourseInfo() }
+                                            if(registeredCourse.isNotEmpty())
+                                                return@lit
+                                        }
                                     }
                                     Log.d("getStudentInfo", "registeredCourse: $registeredCourse")
                                     send(Resource.Loading("Getting Live Result Info.."))
@@ -234,6 +234,9 @@ class AuthRepoImpl @Inject constructor(
                                     send(Resource.Loading("Getting payment Info.."))
                                     val paymentInfo = api.getPaymentInfo(authInfo.accessToken).toPaymentInfo()
                                     Log.d("getStudentInfo", "paymentInfo: $paymentInfo")
+                                    send(Resource.Loading("Getting Clearance Info.."))
+                                    val clearanceInfo = api.getClearanceInfo(authInfo.accessToken).map { it.toClearanceInfo() }
+                                    Log.d("getStudentInfo", "clearanceInfo: $clearanceInfo")
                                     send(Resource.Loading("Getting location Info.."))
                                     val locationInfo = api.getLocationInfo().toLocationInfo()
                                     Log.d("getStudentInfo", "locationInfo: $locationInfo")
@@ -256,14 +259,15 @@ class AuthRepoImpl @Inject constructor(
                                                 task.result.toString()
                                             else
                                                 fbInfo.pic
-
+                                        val time = System.currentTimeMillis()
                                         val userProfile =
                                             UserProfile(
                                                 token = authInfo.accessToken,
-                                                lastUpdatedPaymentInfo = System.currentTimeMillis(),
-                                                lastUpdatedRegCourseInfo = System.currentTimeMillis(),
-                                                lastUpdatedLiveResultInfo = System.currentTimeMillis(),
-                                                lastUpdatedResultInfo = System.currentTimeMillis(),
+                                                lastUpdatedPaymentInfo = time,
+                                                lastUpdatedRegCourseInfo = time,
+                                                lastUpdatedLiveResultInfo = time,
+                                                lastUpdatedResultInfo = time,
+                                                lastUpdatedClearanceInfo = time,
                                                 publicInfo = PublicInfo(
                                                     id = id,
                                                     nm = publicInfo.studentName!!,
@@ -285,8 +289,9 @@ class AuthRepoImpl @Inject constructor(
                                                 ),
                                                 paymentInfo = paymentInfo,
                                                 regCourseInfo = ArrayList(registeredCourse),
-                                                liveResultInfo = ArrayList(liveResultInfoList) ,
-                                                fullResultInfo = ArrayList(fullResultInfo)
+                                                liveResultInfo = ArrayList(liveResultInfoList),
+                                                fullResultInfo = ArrayList(fullResultInfo),
+                                                clearanceInfo = ArrayList(clearanceInfo)
                                             )
 
                                         Log.d("TAG", "getStudentInfoFinal: $userProfile")
@@ -347,18 +352,19 @@ class AuthRepoImpl @Inject constructor(
                         Log.d("getStudentInfo", "privateInfo: $privateInfo")
                         send(Resource.Loading("Getting lastSemester Info.."))
                         val semInfo = api.getAllSemesterInfo(authInfo.accessToken)
-                        var lastSemesterId = semInfo[0].semesterId
-                        Log.d("getStudentInfo", "lastSemesterId: $lastSemesterId")
-                        send(Resource.Loading("Getting registeredCourse Info.."))
-                        var registeredCourse = api.getRegisteredCourse(lastSemesterId, authInfo.accessToken).map { it.toCourseInfo() }
-                        if(registeredCourse.isEmpty()){
-                            lastSemesterId = semInfo[1].semesterId
-                            registeredCourse = api.getRegisteredCourse(lastSemesterId, authInfo.accessToken).map { it.toCourseInfo() }
+                        var registeredCourse = emptyList<CourseInfo>()
+                        run lit@{
+                            semInfo.forEach {lsInfo ->
+                                send(Resource.Loading("Getting registeredCourse Info.."))
+                                registeredCourse = api.getRegisteredCourse(lsInfo.semesterId, authInfo.accessToken).map { it.toCourseInfo() }
+                                if(registeredCourse.isNotEmpty())
+                                    return@lit
+                            }
                         }
                         Log.d("getStudentInfo", "registeredCourse: $registeredCourse")
                         send(Resource.Loading("Getting Live Result Info.."))
                         val liveResultInfoList = mutableListOf<LiveResultInfo>()
-                        registeredCourse.onEach {
+                        registeredCourse.forEach {
                             liveResultInfoList.add(api
                                 .getLiveResult(it.courseSectionId!!, authInfo.accessToken)
                                 .toLiveResultInfo(it.customCourseId!!, it.courseTitle!!, it.toShortSemName())

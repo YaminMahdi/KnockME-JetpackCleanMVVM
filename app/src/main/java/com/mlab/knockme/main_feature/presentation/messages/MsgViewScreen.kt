@@ -497,10 +497,10 @@ fun SendMsgBar(
 @Composable
 fun searchFieldColors() =
     TextFieldDefaults.textFieldColors(
-        textColor = TextBlue,
+        focusedTextColor = TextWhite,
         containerColor = DeepBlueMoreLess,
         cursorColor = AquaBlue,
-        placeholderColor = DeepBlueLess,
+        focusedPlaceholderColor = DeepBlueLess,
         focusedIndicatorColor =  Color.Transparent,
         unfocusedIndicatorColor = Color.Transparent,
         focusedLeadingIconColor = TextWhite,

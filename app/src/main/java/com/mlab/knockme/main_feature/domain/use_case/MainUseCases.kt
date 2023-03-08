@@ -17,5 +17,6 @@ data class MainUseCases @Inject constructor(
     val updatePaymentInfo: UpdatePaymentInfo,
     val updateRegCourseInfo: UpdateRegCourseInfo,
     val updateLiveResultInfo: UpdateLiveResultInfo,
-    val updateFullResultInfo: UpdateFullResultInfo
+    val updateFullResultInfo: UpdateFullResultInfo,
+    val updateClearanceInfo: UpdateClearanceInfo
 )

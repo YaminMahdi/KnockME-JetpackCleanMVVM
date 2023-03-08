@@ -63,9 +63,11 @@ suspend fun getCgpa(
 
                     //add a semester result to list
                     semesterResultInfo.resultInfo = rInfo
-                    resultInfo.forEach{
-                        semesterResultInfo.semesterInfo = it.toSemesterInfo(creditTaken)
-                        if(it.cgpa!=0.0) return@forEach
+                    run lit@{
+                        resultInfo.forEach{
+                            semesterResultInfo.semesterInfo = it.toSemesterInfo(creditTaken)
+                            if(it.cgpa!=0.0) return@lit
+                        }
                     }
                     fullResultInfo.add(semesterResultInfo)  //adding
                 }

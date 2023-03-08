@@ -20,8 +20,8 @@ android {
         applicationId "com.mlab.knockme"
         minSdk 23
         targetSdk 33
-        versionCode 9
-        versionName '1.9'
+        versionCode 10
+        versionName '2.0'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -61,22 +61,22 @@ dependencies {
     implementation 'androidx.compose.ui:ui-graphics'
     implementation 'androidx.compose.ui:ui-tooling-preview'
     //implementation 'androidx.compose.material3:material3'
-    implementation 'androidx.compose.material3:material3:1.1.0-alpha05'
-    implementation 'androidx.compose.material3:material3-window-size-class:1.1.0-alpha05'
-    implementation "com.google.accompanist:accompanist-navigation-animation:0.29.0-alpha"
+    implementation 'androidx.compose.material3:material3:1.1.0-alpha07'
+    implementation 'androidx.compose.material3:material3-window-size-class:1.1.0-alpha07'
+    implementation 'com.google.accompanist:accompanist-navigation-animation:0.29.1-alpha'
 
     //firebase .. fb
-    implementation platform('com.google.firebase:firebase-bom:31.2.0')
+    implementation platform('com.google.firebase:firebase-bom:31.2.2')
     implementation 'com.google.firebase:firebase-auth-ktx'
     implementation 'com.google.firebase:firebase-database-ktx'
     implementation 'com.google.firebase:firebase-firestore-ktx'
     implementation 'com.google.firebase:firebase-storage-ktx'
     implementation 'com.google.android.gms:play-services-auth:20.4.1'
-    implementation 'com.facebook.android:facebook-android-sdk:15.2.0'
+    implementation 'com.facebook.android:facebook-android-sdk:16.0.0'
 
 
     implementation platform('androidx.compose:compose-bom:2023.01.00')
-    implementation 'androidx.appcompat:appcompat:1.6.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.8.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.core:core-ktx:1.9.0'
@@ -95,11 +95,11 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.5.1"
 
     //Dagger - Hilt
-    implementation 'com.google.dagger:hilt-android:2.44.2'
-    kapt 'com.google.dagger:hilt-compiler:2.44.2'
+    implementation 'com.google.dagger:hilt-android:2.45'
+    kapt 'com.google.dagger:hilt-compiler:2.45'
     implementation 'androidx.hilt:hilt-navigation-compose:1.0.0'
 
-    implementation 'com.github.skydoves:cloudy:0.1.1'
+//    implementation 'com.github.skydoves:cloudy:0.1.1'
     implementation 'io.coil-kt:coil-compose:2.2.2'
     implementation 'androidx.navigation:navigation-compose:2.5.3'
 
@@ -112,7 +112,16 @@ dependencies {
 
     //bar chart
     implementation("com.himanshoe:charty:1.0.1")
-    implementation group: 'com.ibm.icu', name: 'icu4j', version: '71.1'
+    implementation(group: 'com.ibm.icu', name: 'icu4j', version: '72.1'){
+        exclude(group: "com.ibm.icu", module: "util")
+        exclude(group: "com.ibm.icu", module: "impl")
+        exclude(group: "com.ibm.icu", module: "lang")
+        exclude(group: "com.ibm.icu", module: "math")
+        exclude(group: "com.ibm.icu", module: "message2")
+        exclude(group: "com.ibm.icu", module: "number")
+
+
+    }
     implementation("se.warting.in-app-update:in-app-update-compose:0.0.17")
 
     //Play In-App Review:

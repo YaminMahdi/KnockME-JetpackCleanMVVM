@@ -317,6 +317,20 @@ class MainViewModel @Inject constructor(
 
     }
 
+    fun updateClearanceInfo(
+        id: String,
+        accessToken: String,
+        clearanceInfoList: List<ClearanceInfo>,
+        Failed: (msg:String) -> Unit
+    ){
+        viewModelScope.launch(Dispatchers.IO) {
+            mainUseCases.updateClearanceInfo(id,accessToken,clearanceInfoList,{
+                val updatedProfile = userFullProfileInfo.value.copy(clearanceInfo = ArrayList(it))
+                savedStateHandle["userFullProfileInfo"]=updatedProfile
+            },Failed)
+        }
+
+    }
     fun updateUserFullResultInfo(
         publicInfo: PublicInfo,
         fullResultInfoList: List<FullResultInfo>,

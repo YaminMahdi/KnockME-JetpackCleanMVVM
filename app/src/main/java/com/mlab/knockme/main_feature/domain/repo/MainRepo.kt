@@ -74,6 +74,14 @@ interface MainRepo {
         Failed: (msg:String) -> Unit
     )
 
+    suspend fun updateClearanceInfo(
+        id: String,
+        accessToken: String,
+        clearanceInfoList: List<ClearanceInfo>,
+        Success: (clearanceInfoList: List<ClearanceInfo>) -> Unit,
+        Failed: (msg:String) -> Unit
+    )
+
     suspend fun getRandomHadith(
         Success: (DailyHadithDto) -> Unit,
         Failed: (msg:String) -> Unit

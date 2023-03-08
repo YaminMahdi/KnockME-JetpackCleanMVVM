@@ -6,5 +6,7 @@ sealed class ProfileInnerScreens(val route:String){
     object DueScreen : ProfileInnerScreens("payment_view")  //?fbId={fbId}&pic={pic}
     object RegCourseScreen : ProfileInnerScreens("reg_view")
     object LiveResultScreen : ProfileInnerScreens("live_res_view")
+    object ClearanceScreen : ProfileInnerScreens("clearance_view")
+
 
 }
