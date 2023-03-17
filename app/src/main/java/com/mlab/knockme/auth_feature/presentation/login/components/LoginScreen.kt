@@ -110,7 +110,11 @@ fun LoginScreen(fbUpdate: (View) -> Unit, googleUpdate: (View) -> Unit) {
             )
             //Spacer(modifier = Modifier.padding(10.dp))
             //NbNote(text = "FB Login is needed to save Portal info in the backup server")
-            NbNote(text = "Please use an account with a valid Profile Picture")
+            NbNote(
+                text = "By signing in you are agreeing with our ",
+                linkText = "Terms and Condition",
+                link = "https://knock-me.github.io/terms.htm"
+            )
         }
         ReportProblem(
             context = context,

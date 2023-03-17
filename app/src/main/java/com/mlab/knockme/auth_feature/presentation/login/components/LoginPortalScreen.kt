@@ -1,5 +1,6 @@
 package com.mlab.knockme.auth_feature.presentation.login.components
 
+import android.text.Spannable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -25,9 +27,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -98,7 +105,18 @@ fun LoginPortalScreen(onClick:(id:String,pass:String)->Unit) {
                 }
             }
         }
-        NbNote(modifier= Modifier.align(Alignment.BottomCenter))
+//        NbNote(
+//            text = "By signing in you are agreeing with our ",
+//            modifier= Modifier.align(Alignment.BottomCenter),
+//            linkText = "Terms and Condition",
+//            link = "https://knock-me.github.io/terms.htm"
+//        )
+        NbNote(
+            text = "The application is secure because it's open source on ",
+            modifier= Modifier.align(Alignment.BottomCenter),
+            linkText = "GitHub",
+            link = "https://github.com/YaminMahdi/KnockME-JetpackCleanMVVM"
+        )
         ReportProblem(
             context = context,
             myId = id.ifEmpty { "xxx-xx-xxxx" },
@@ -144,8 +162,11 @@ fun textFieldColors() =
 @Composable
 fun NbNote(
     modifier: Modifier = Modifier,
-    text: String= "The application is secure because it's open source."
+    text: String,
+    linkText: String,
+    link: String
 ) {
+    val uriHandler = LocalUriHandler.current
     Column(
         modifier = modifier
             .padding(vertical = 80.dp, horizontal = 70.dp),
@@ -154,13 +175,25 @@ fun NbNote(
         Text(
             text = "N.B.",
             style = MaterialTheme.typography.headlineSmall,
-            color = LightGreen2
+            color = LightBlue
         )
         Spacer(modifier = Modifier.padding(5.dp))
-        Text(
-            text = text,
-            style = MaterialTheme.typography.headlineSmall,
-            textAlign = TextAlign.Center
+        val annotatedString = buildAnnotatedString {
+            append(text)
+            withStyle(style = MaterialTheme.typography.headlineSmall.toSpanStyle().copy(color = LightBlue)) {
+                pushStringAnnotation(tag = linkText, annotation = linkText)
+                append(linkText)
+            }
+        }
+        ClickableText(text = annotatedString, onClick = { offset ->
+            annotatedString.getStringAnnotations(offset, offset)
+                .firstOrNull()?.let { span ->
+                    println("Clicked on ${span.item}")
+                    if(span.item==linkText)
+                        uriHandler.openUri(link)
+                }
+        },
+            style = MaterialTheme.typography.headlineSmall.copy(textAlign = TextAlign.Center),
         )
     }
 }
