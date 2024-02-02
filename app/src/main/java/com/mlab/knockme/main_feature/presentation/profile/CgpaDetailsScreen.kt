@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ripple.rememberRipple
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -17,6 +16,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -39,11 +40,10 @@ import com.mlab.knockme.auth_feature.domain.model.SemesterInfo
 import com.mlab.knockme.core.util.bounceClick
 import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.main.BackBtn
-import com.mlab.knockme.profile_feature.presentation.components.standardQuadFromTo
+import com.mlab.knockme.main_feature.util.standardQuadFromTo
 import com.mlab.knockme.ui.theme.*
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CgpaDetailsScreen(id: String,index: Int, navController: NavHostController, viewModel: MainViewModel = hiltViewModel()) {
     val context: Context = LocalContext.current
@@ -278,6 +278,8 @@ fun ResultItemRGB(
 
 @Composable
 fun ResultItem(resultInfo: ResultInfo) {
+    val mutableInteractionSource by remember { mutableStateOf(MutableInteractionSource()) }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -286,7 +288,7 @@ fun ResultItem(resultInfo: ResultInfo) {
             .clip(RoundedCornerShape(10.dp))
             .background(DeepBlueLess)
             .clickable(
-                interactionSource = MutableInteractionSource(),
+                interactionSource = mutableInteractionSource,
                 indication = rememberRipple(color = Color.White),
                 onClick = { }
             )

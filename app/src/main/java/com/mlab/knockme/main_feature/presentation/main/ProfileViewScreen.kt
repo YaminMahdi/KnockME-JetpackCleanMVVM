@@ -15,7 +15,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.*
@@ -65,7 +65,6 @@ import com.mlab.knockme.main_feature.presentation.profile.Ic
 import com.mlab.knockme.ui.theme.*
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileViewScreen(
     id: String="",
@@ -219,8 +218,10 @@ fun TopBar(navController: NavHostController,onClick: (() -> Unit)? = null) {
 
 @Composable
 fun BackBtn(navController: NavHostController) {
+    val mutableInteractionSource by remember { mutableStateOf(MutableInteractionSource()) }
+
     Icon(
-        Icons.Rounded.ArrowBack,
+        Icons.AutoMirrored.Rounded.ArrowBack,
         contentDescription = "",
         tint = Color.White,
         modifier = Modifier
@@ -228,7 +229,7 @@ fun BackBtn(navController: NavHostController) {
             .bounceClick()
             .clip(RoundedCornerShape(30.dp))
             .clickable(
-                interactionSource = MutableInteractionSource(),
+                interactionSource = mutableInteractionSource,
                 indication = rememberRipple(color = Color.White),
                 onClick = {
                     navController.popBackStack()
@@ -338,12 +339,12 @@ fun CgpaToast(modifier: Modifier, pb: PublicInfo, isLoading: Boolean, onClick: (
     val toastHeight by animateDpAsState(
         targetValue = if (!isLoading) 25.dp else 15.dp, animationSpec = spring(
             dampingRatio = Spring.DampingRatioHighBouncy, stiffness = Spring.StiffnessMedium
-        )
+        ), label = ""
     )
     val toastWidth by animateDpAsState(
         targetValue = if (!isLoading) 90.dp else 15.dp, animationSpec = spring(
             dampingRatio = Spring.DampingRatioHighBouncy, stiffness = Spring.StiffnessMedium
-        )
+        ), label = ""
     )
 //    val context = LocalContext.current
 //    val clipboardManager = LocalClipboardManager.current
@@ -399,6 +400,8 @@ fun SocialLink(
     myId: String
 ) {
     val myBasicInfo by viewModel.myBasicInfo.collectAsState()
+    val mutableInteractionSource by remember { mutableStateOf(MutableInteractionSource()) }
+
     Row(
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
@@ -487,7 +490,7 @@ fun SocialLink(
                     .bounceClick()
                     .clip(RoundedCornerShape(10.dp))
                     .clickable(
-                        interactionSource = MutableInteractionSource(),
+                        interactionSource = mutableInteractionSource,
                         indication = rememberRipple(color = Color.White),
                         onClick = {
                             if (!userBasicInfo.privateInfo.fbLink.isNullOrEmpty())
@@ -516,7 +519,7 @@ fun SocialLink(
                     .bounceClick()
                     .clip(RoundedCornerShape(10.dp))
                     .clickable(
-                        interactionSource = MutableInteractionSource(),
+                        interactionSource = mutableInteractionSource,
                         indication = rememberRipple(color = Color.White),
                         onClick = {
                             if (!userBasicInfo.privateInfo.email.isNullOrEmpty()) {
@@ -644,7 +647,7 @@ fun BarChart(barDataList: List<CombinedBarData>, pb: PublicInfo, navController: 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun Details(userBasicInfo: UserBasicInfo, hasPrivateInfo: Boolean) {
-    val clipboardManager = LocalClipboardManager.current
+//    val clipboardManager = LocalClipboardManager.current
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "Details:",

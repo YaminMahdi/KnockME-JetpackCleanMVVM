@@ -221,6 +221,10 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun updateTarBasicInfo(userBasicInfo: UserBasicInfo?){
+        savedStateHandle["tarBasicInfo"] = userBasicInfo
+    }
+
     fun getMyBasicInfo(id: String){
         viewModelScope.launch(Dispatchers.IO) {
             mainUseCases.getUserBasicInfo(id,

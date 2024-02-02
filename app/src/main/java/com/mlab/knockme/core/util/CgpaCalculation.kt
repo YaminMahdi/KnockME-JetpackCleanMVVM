@@ -5,7 +5,6 @@ import com.mlab.knockme.auth_feature.data.data_source.PortalApi
 import com.mlab.knockme.auth_feature.domain.model.FullResultInfo
 import com.mlab.knockme.auth_feature.domain.model.ResultInfo
 import kotlinx.coroutines.*
-import retrofit2.HttpException
 import java.io.EOFException
 import java.io.IOException
 import java.util.*
@@ -38,7 +37,7 @@ suspend fun getCgpa(
                     delay(i * 250L + (0..100).random())
                 val resultInfo = api.getResultInfo(semesterId, id)
                 Log.d("TAG", "getCgpa $semesterId resultInfo: $resultInfo")
-                if (resultInfo.isNotEmpty()) {
+                if (!resultInfo.isNullOrEmpty()) {
                     loading.invoke(i+1-nullSemester)
                     var creditTaken = 0.0
                     val rInfo = arrayListOf<ResultInfo>()

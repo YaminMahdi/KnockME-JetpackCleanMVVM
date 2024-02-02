@@ -1,12 +1,12 @@
 package com.mlab.knockme.main_feature.presentation
 
 sealed class ProfileInnerScreens(val route:String){
-    object CgpaScreen : ProfileInnerScreens("cgpa_view/")
-    object CgpaInnerScreen : ProfileInnerScreens("cgpa_details_view/")
-    object DueScreen : ProfileInnerScreens("payment_view")  //?fbId={fbId}&pic={pic}
-    object RegCourseScreen : ProfileInnerScreens("reg_view")
-    object LiveResultScreen : ProfileInnerScreens("live_res_view")
-    object ClearanceScreen : ProfileInnerScreens("clearance_view")
+    data object CgpaScreen : ProfileInnerScreens("cgpa_view/")
+    data object CgpaInnerScreen : ProfileInnerScreens("cgpa_details_view/")
+    data object DueScreen : ProfileInnerScreens("payment_view")  //?fbId={fbId}&pic={pic}
+    data object RegCourseScreen : ProfileInnerScreens("reg_view")
+    data object LiveResultScreen : ProfileInnerScreens("live_res_view")
+    data object ClearanceScreen : ProfileInnerScreens("clearance_view")
 
 
 }

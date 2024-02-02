@@ -60,16 +60,12 @@ import com.mlab.knockme.main_feature.domain.model.ChatListState
 import com.mlab.knockme.core.util.bounceClick
 import com.mlab.knockme.core.util.toDateTime
 import com.mlab.knockme.core.util.toDayPassed
+import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
 import com.mlab.knockme.main_feature.presentation.ChatInnerScreens
 import com.mlab.knockme.main_feature.presentation.MainScreens
-import com.mlab.knockme.main_feature.presentation.ProfileInnerScreens
 import com.mlab.knockme.main_feature.presentation.profile.InfoDialog
 import com.mlab.knockme.main_feature.presentation.profile.TitleInfo
 import com.mlab.knockme.ui.theme.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @Composable
 fun ChatPersonalScreen(
@@ -129,7 +125,7 @@ fun ChatPersonalScreen(
         else {
             Spacer(modifier = Modifier.size(17.dp))
         }
-        LoadChatList(state,navController,myId)
+        LoadChatList(state,navController,myId, viewModel)
 
 //        LoadChatList(chatList =
 //        listOf(
@@ -172,10 +168,10 @@ fun CustomToast(isLoading: Boolean,loadingText: String) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchBox(state: ChatListState, viewModel: MainViewModel) {
     var data by remember { mutableStateOf(state.searchText) }
+    val mutableInteractionSource by remember { mutableStateOf(MutableInteractionSource()) }
 
     Row{
         OutlinedTextField(
@@ -211,7 +207,7 @@ fun SearchBox(state: ChatListState, viewModel: MainViewModel) {
                     .bounceClick()
                     .clip(RoundedCornerShape(30.dp))
                     .clickable(
-                        interactionSource = MutableInteractionSource(),
+                        interactionSource =mutableInteractionSource ,
                         indication = rememberRipple(color = Color.White),
                         onClick = {
                             fm.clearFocus()
@@ -226,16 +222,18 @@ fun SearchBox(state: ChatListState, viewModel: MainViewModel) {
 
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun searchFieldColors() =
-    TextFieldDefaults.textFieldColors(
+    TextFieldDefaults.colors().copy(
         focusedTextColor = TextWhite,
-        containerColor = DeepBlueLess,
+        focusedLabelColor = BlueViolet3,
+        unfocusedLabelColor= BlueViolet3,
+        focusedIndicatorColor = BlueViolet3,
+        unfocusedIndicatorColor = BlueViolet3,
+        focusedContainerColor = DeepBlueLess,
+        unfocusedContainerColor = DeepBlueLess,
         cursorColor = AquaBlue,
         focusedPlaceholderColor = DeepBlueLess,
-        focusedIndicatorColor =  DarkerButtonBlue,
-        unfocusedIndicatorColor = DarkerButtonBlue,
         focusedLeadingIconColor = TextWhite,
         unfocusedLeadingIconColor = LessWhite
     )
@@ -258,7 +256,12 @@ private fun ProgressBar(){
 }
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun LoadChatList(state: ChatListState,navController: NavHostController,myId: String) {
+fun LoadChatList(
+    state: ChatListState,
+    navController: NavHostController,
+    myId: String,
+    viewModel: MainViewModel
+) {
     LazyColumn(
         modifier = Modifier
             .fillMaxHeight()
@@ -270,6 +273,7 @@ fun LoadChatList(state: ChatListState,navController: NavHostController,myId: Str
                     .animateItemPlacement(),
                 state.isSearchActive
             ){ id ->
+                viewModel.updateTarBasicInfo(UserBasicInfo())   //empty
                 if(!state.isSearchActive) {
                     when (navController.currentDestination?.route) {
                         MainScreens.CtPersonalScreen.route -> {
@@ -296,6 +300,7 @@ fun ChatView(
     isSearchActive: Boolean,
     onClick: (id: String) -> Unit,
 ) {
+    val mutableInteractionSource by remember { mutableStateOf(MutableInteractionSource()) }
     Row(
         verticalAlignment=Alignment.CenterVertically,
         modifier = modifier
@@ -308,7 +313,7 @@ fun ChatView(
             .bounceClick()
             .clip(RoundedCornerShape(10.dp))
             .clickable(
-                interactionSource = MutableInteractionSource(),
+                interactionSource = mutableInteractionSource,
                 indication = rememberRipple(color = Color.White),
                 onClick = {
                     onClick.invoke(proView.id!!)

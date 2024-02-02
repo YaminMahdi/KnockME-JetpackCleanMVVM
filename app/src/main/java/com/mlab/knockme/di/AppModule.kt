@@ -1,13 +1,7 @@
 package com.mlab.knockme.di
 
-import android.app.Activity
-import android.app.Application
 import android.content.Context
-import android.content.res.Resources
-import com.google.android.gms.auth.api.identity.BeginSignInRequest
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.chuckerteam.chucker.api.ChuckerInterceptor
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.FirebaseDatabase
@@ -17,25 +11,21 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.ktx.storage
-import com.mlab.knockme.R
+import com.mlab.knockme.BuildConfig
+import com.mlab.knockme.auth_feature.data.data_source.NullOnEmptyConverterFactory
 import com.mlab.knockme.auth_feature.data.data_source.PortalApi
 import com.mlab.knockme.auth_feature.data.repo.AuthRepoImpl
 import com.mlab.knockme.auth_feature.domain.repo.AuthRepo
-import com.mlab.knockme.auth_feature.domain.use_cases.AuthUseCases
-import com.mlab.knockme.auth_feature.domain.use_cases.FacebookLogin
-import com.mlab.knockme.auth_feature.domain.use_cases.FirebaseAuthState
-import com.mlab.knockme.auth_feature.domain.use_cases.FirebaseSignIn
-import com.mlab.knockme.auth_feature.domain.use_cases.FirebaseSignOut
-import com.mlab.knockme.auth_feature.domain.use_cases.GetStudentIdInfo
-import com.mlab.knockme.auth_feature.domain.use_cases.GetStudentInfo
-import com.mlab.knockme.auth_feature.domain.use_cases.IsUserAuthenticated
 import com.mlab.knockme.main_feature.data.repo.MainRepoImpl
 import com.mlab.knockme.main_feature.domain.repo.MainRepo
 import com.mlab.knockme.main_feature.domain.use_case.*
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
@@ -99,54 +89,46 @@ object AppModule {
         api: PortalApi,
         firestore: FirebaseFirestore,
         cloudStore: FirebaseStorage
-    ) : AuthRepo{
-        return AuthRepoImpl(auth,api,firestore,cloudStore)
+    ): AuthRepo {
+        return AuthRepoImpl(auth, api, firestore, cloudStore)
     }
 
     @Provides
     @Singleton
-    fun providePortalApi(): PortalApi =
+    fun provideOkHttpClient(@ApplicationContext context: Context) = if (BuildConfig.DEBUG) {
+        val chuckerInterceptor =
+            ChuckerInterceptor.Builder(context).apply {
+                maxContentLength(10000)
+            }.build()
+        val loggingInterceptor = HttpLoggingInterceptor()
+        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY)
+        OkHttpClient.Builder()
+            .addInterceptor(loggingInterceptor)
+            .addInterceptor(chuckerInterceptor)
+            .build()
+    } else OkHttpClient
+        .Builder()
+        .build()
+
+    @Provides
+    @Singleton
+    fun providePortalApi(okHttpClient: OkHttpClient): PortalApi =
         Retrofit.Builder()
+            .client(okHttpClient)
             .baseUrl(PortalApi.BASE_URL)
+            .addConverterFactory(NullOnEmptyConverterFactory())
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(PortalApi::class.java)
 
-//    @Provides
-//    @Singleton
-//    fun provideAuthUseCases(repo: AuthRepo) =
-//        AuthUseCases(
-//            IsUserAuthenticated(repo),
-//            FirebaseAuthState(repo),
-//            FirebaseSignIn(repo),
-//            FacebookLogin(repo),
-//            FirebaseSignOut(repo),
-//            GetStudentIdInfo(repo),
-//            GetStudentInfo(repo)
-//        )
 
     @Provides
     @Singleton
-    fun provideMainRepo(firebase: FirebaseDatabase,firestore: FirebaseFirestore, api: PortalApi): MainRepo{
-        return MainRepoImpl(firebase,firestore,api)
+    fun provideMainRepo(
+        firebase: FirebaseDatabase,
+        firestore: FirebaseFirestore,
+        api: PortalApi
+    ): MainRepo {
+        return MainRepoImpl(firebase, firestore, api)
     }
-
-//    @Provides
-//    @Singleton
-//    fun provideMainUseCases(repo: MainRepo) =
-//        MainUseCases(
-//            GetChatProfiles(repo),
-//            GetUserBasicInfo(repo),
-//            GetUserFullProfile(repo),
-//            GetOrCreateUserProfileInfo(repo),
-//            GetRandomHadith(repo),
-//            GetMsg(repo),
-//            SendMsg(repo),
-//            RefreshProfileInChats(repo),
-//            DeleteMsg(repo),
-//            UpdatePaymentInfo(repo),
-//            UpdateRegCourseInfo(repo),
-//            UpdateLiveResultInfo(repo),
-//            UpdateFullResultInfo(repo)
-//        )
 }

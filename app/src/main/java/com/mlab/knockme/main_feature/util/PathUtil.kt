@@ -1,4 +1,4 @@
-package com.mlab.knockme.profile_feature.presentation.components
+package com.mlab.knockme.main_feature.util
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path

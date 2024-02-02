@@ -42,7 +42,7 @@ fun BottomNav(row: @Composable ()-> Unit) {
     val activeHighlightColor: Color = ButtonBlue
     val activeTextColor: Color = Color.White
     val inactiveTextColor: Color = AquaBlue
-    val initialSelectedItemIndex: Int = 0
+    val initialSelectedItemIndex = 0
     var selectedItemIndex by remember {
         mutableStateOf(initialSelectedItemIndex)
     }

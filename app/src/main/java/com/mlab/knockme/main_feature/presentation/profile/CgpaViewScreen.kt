@@ -3,12 +3,12 @@ package com.mlab.knockme.main_feature.presentation.profile
 import android.content.Context
 import android.os.Looper
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -16,6 +16,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,6 +30,7 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,10 +42,15 @@ import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.ProfileInnerScreens
 import com.mlab.knockme.main_feature.presentation.chats.CustomToast
 import com.mlab.knockme.main_feature.presentation.main.TopBar
-import com.mlab.knockme.profile_feature.presentation.components.standardQuadFromTo
+import com.mlab.knockme.main_feature.util.standardQuadFromTo
 import com.mlab.knockme.ui.theme.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.seconds
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CgpaViewScreen(id: String, navController: NavHostController, viewModel: MainViewModel = hiltViewModel()) {
     val context: Context = LocalContext.current
@@ -50,6 +59,13 @@ fun CgpaViewScreen(id: String, navController: NavHostController, viewModel: Main
     val myFullProfile by viewModel.userFullProfileInfo.collectAsState()
     val loading by viewModel.isResultLoading.collectAsState()
     val loadingTxt by viewModel.resultLoadingTxt.collectAsState()
+
+    val semesterInfoList = myFullProfile.fullResultInfo.map { it.semesterInfo }
+    val semesterCount = semesterInfoList.count { it.sgpa != 0.0 }
+    var isMsgNeeded: Boolean? by rememberSaveable { mutableStateOf(false) }
+    if(isMsgNeeded != null)
+        isMsgNeeded = semesterCount > 5
+
     LaunchedEffect(key1 = ""){
         viewModel.getUserFullProfileInfo(id,{
             viewModel.updateUserFullResultInfo(
@@ -72,14 +88,7 @@ fun CgpaViewScreen(id: String, navController: NavHostController, viewModel: Main
 //        SemesterInfo("","Summer",2023,3.45,15.0),
 //
 //        )
-    val lst= mutableListOf<SemesterInfo>()
-    var semesterCount = 0
 
-    myFullProfile.fullResultInfo.forEach{
-        lst.add(it.semesterInfo)
-        if(it.semesterInfo.sgpa!=0.0)
-            semesterCount++
-    }
     Scaffold(
         topBar = {
         TopBar(navController){
@@ -91,11 +100,12 @@ fun CgpaViewScreen(id: String, navController: NavHostController, viewModel: Main
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-            .fillMaxSize()
-            .background(DeepBlue)
-            .padding(it)
-            .padding(horizontal = 10.dp)
+                .fillMaxSize()
+                .background(DeepBlue)
+                .padding(it)
+                .padding(horizontal = 10.dp)
         ) {
+            LastUpdated(myFullProfile.lastUpdatedResultInfo)
             Text(
                 text = "Result",
                 style = MaterialTheme.typography.headlineMedium,
@@ -123,7 +133,9 @@ fun CgpaViewScreen(id: String, navController: NavHostController, viewModel: Main
                             val text = "CGPA: ${myFullProfile.publicInfo.cgpa}"
                             clipboardManager.setText(AnnotatedString(text))
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            Toast.makeText(context, "Data Copied", Toast.LENGTH_SHORT).show()
+                            Toast
+                                .makeText(context, "Data Copied", Toast.LENGTH_SHORT)
+                                .show()
                         },
                         onDoubleClick = {}
                     )
@@ -139,7 +151,7 @@ fun CgpaViewScreen(id: String, navController: NavHostController, viewModel: Main
                 )
             }
             Text(
-                text = if(lst.isNotEmpty()) "Congratulation," else "Oops!",
+                text = if(semesterInfoList.isNotEmpty()) "Congratulation," else "Oops!",
                 style = MaterialTheme.typography.headlineLarge,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -149,9 +161,9 @@ fun CgpaViewScreen(id: String, navController: NavHostController, viewModel: Main
             )
             Text(
                 text =
-                if(lst.size>1)
+                if(semesterInfoList.size>1)
                     "You have completed $semesterCount semesters\nand ${myFullProfile.publicInfo.totalCompletedCredit.toInt()} credits."
-                else if(lst.size==1)
+                else if(semesterInfoList.size==1)
                     "You have completed $semesterCount semester\nand ${myFullProfile.publicInfo.totalCompletedCredit.toInt()} credits."
                 else
                     "You haven't completed any semester.",
@@ -163,8 +175,26 @@ fun CgpaViewScreen(id: String, navController: NavHostController, viewModel: Main
                     .padding(horizontal = 14.dp, vertical = 5.dp),
                 //textAlign = TextAlign.End
             )
+            AnimatedVisibility(visible = isMsgNeeded ?: false) {
+                Text(
+                    textAlign = TextAlign.Center,
+                    text = "N.B : CGPA is calculated without the Final defense result",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = AquaBlue,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp)
+                        .padding(10.dp),
+                )
+                CoroutineScope(Dispatchers.Main).launch {
+                    // Simulate loading data
+                    delay(7.seconds)
+                    isMsgNeeded = null
+                }
+            }
+
             Text(
-                text = if(lst.isNotEmpty()) "All SGPAs" else "",
+                text = if(semesterInfoList.isNotEmpty()) "All SGPAs" else "",
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -174,28 +204,28 @@ fun CgpaViewScreen(id: String, navController: NavHostController, viewModel: Main
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
                 contentPadding = PaddingValues(start = 5.dp, end = 5.dp, bottom = 100.dp),
-                modifier = Modifier.fillMaxHeight()
+                modifier = Modifier.weight(1f)
             ) {
-                items(lst.size) {ind->
-                    if(lst[ind].sgpa < 3.0)
-                        SemesterInfoItem(lst[ind], Beige1, Beige2, Beige3){
+                items(semesterInfoList.size) { ind->
+                    if(semesterInfoList[ind].sgpa < 3.0)
+                        SemesterInfoItem(semesterInfoList[ind], Beige1, Beige2, Beige3){
                             navController.navigate(ProfileInnerScreens.CgpaInnerScreen.route+id+"/"+ind)
                         }
-                    else if(lst[ind].sgpa >= 3.7)
-                        SemesterInfoItem(lst[ind], LightGreen1, LightGreen2, LightGreen3){
+                    else if(semesterInfoList[ind].sgpa >= 3.7)
+                        SemesterInfoItem(semesterInfoList[ind], LightGreen1, LightGreen2, LightGreen3){
                             navController.navigate(ProfileInnerScreens.CgpaInnerScreen.route+id+"/"+ind)
                         }
-                    else if(lst[ind].sgpa >= 3.5)
-                        SemesterInfoItem(lst[ind], BlueViolet1, BlueViolet2, BlueViolet3){
+                    else if(semesterInfoList[ind].sgpa >= 3.5)
+                        SemesterInfoItem(semesterInfoList[ind], BlueViolet1, BlueViolet2, BlueViolet3){
                             navController.navigate(ProfileInnerScreens.CgpaInnerScreen.route+id+"/"+ind)
                         }
                     else
-                        SemesterInfoItem(lst[ind], Limerick1, Limerick2, Limerick3){
+                        SemesterInfoItem(semesterInfoList[ind], Limerick1, Limerick2, Limerick3){
                             navController.navigate(ProfileInnerScreens.CgpaInnerScreen.route+id+"/"+ind)
                         }
                 }
             }
-            LastUpdated(myFullProfile.lastUpdatedResultInfo)
+
         }
     }
     CustomToast(loading, loadingTxt)
@@ -225,10 +255,13 @@ fun SemesterInfoItem(
                     onClick.invoke()
                 },
                 onLongClick = {
-                    val text = "Semester: ${semesterInfo.toShortSemName()}\nSGPA: ${semesterInfo.sgpa}\nCredits: ${semesterInfo.creditTaken.toInt()}"
+                    val text =
+                        "Semester: ${semesterInfo.toShortSemName()}\nSGPA: ${semesterInfo.sgpa}\nCredits: ${semesterInfo.creditTaken.toInt()}"
                     clipboardManager.setText(AnnotatedString(text))
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    Toast.makeText(context, "Data Copied", Toast.LENGTH_SHORT).show()
+                    Toast
+                        .makeText(context, "Data Copied", Toast.LENGTH_SHORT)
+                        .show()
                 },
                 onDoubleClick = {}
             )

@@ -8,37 +8,37 @@ import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
 interface MainRepo {
     fun getMessages(
         path: String,
-        Success: (msgList: List<Msg>) -> Unit,
-        Failed: (msg:String) -> Unit
+        success: (msgList: List<Msg>) -> Unit,
+        failed: (msg:String) -> Unit
     )
-    fun sendMessages(path: String, msg: Msg,Failed: (msg:String) -> Unit)
+    fun sendMessages(path: String, msg: Msg,failed: (msg:String) -> Unit)
 
-    fun refreshProfileInChats(path: String, msg: Msg,Failed: (msg:String) -> Unit)
+    fun refreshProfileInChats(path: String, msg: Msg,failed: (msg:String) -> Unit)
 
     fun deleteMessage(path: String, id: String): Boolean
     fun getChatProfiles(
         path: String,
-        Success: (profileList: List<Msg>) -> Unit,
-        Failed: (msg:String) -> Unit
+        success: (profileList: List<Msg>) -> Unit,
+        failed: (msg:String) -> Unit
     )
 
     fun getUserBasicInfo(
         id: String,
-        Success: (userBasicInfo: UserBasicInfo) -> Unit,
-        Failed: (msg:String) -> Unit
+        success: (userBasicInfo: UserBasicInfo) -> Unit,
+        failed: (msg:String) -> Unit
     )
 
     fun getUserFullProfile(
         id: String,
-        Success: (UserProfile) -> Unit,
-        Failed: (msg:String) -> Unit
+        success: (UserProfile) -> Unit,
+        failed: (msg:String) -> Unit
     )
 
     fun getOrCreateUserProfileInfo(
         id: String,
-        Success: (Msg) -> Unit,
-        Loading: (msg: String) -> Unit,
-        Failed: (msg:String) -> Unit
+        success: (Msg) -> Unit,
+        loading: (msg: String) -> Unit,
+        failed: (msg:String) -> Unit
     )
 
 
@@ -47,44 +47,44 @@ interface MainRepo {
         id: String,
         accessToken: String,
         paymentInfo: PaymentInfo,
-        Success: (PaymentInfo) -> Unit,
-        Failed: (msg:String) -> Unit
+        success: (PaymentInfo) -> Unit,
+        failed: (msg:String) -> Unit
     )
     suspend fun updateRegCourseInfo(
         id: String,
         accessToken: String,
         regCourseInfoList: List<CourseInfo>,
-        Success: (List<CourseInfo>) -> Unit,
-        Failed: (msg:String) -> Unit
+        success: (List<CourseInfo>) -> Unit,
+        failed: (msg:String) -> Unit
     )
 
     suspend fun updateLiveResultInfo(
         id: String,
         accessToken: String,
         liveResultInfoList: List<LiveResultInfo>,
-        Success: (List<LiveResultInfo>) -> Unit,
-        Failed: (msg:String) -> Unit
+        success: (List<LiveResultInfo>) -> Unit,
+        failed: (msg:String) -> Unit
     )
 
     suspend fun updateFullResultInfo(
         publicInfo: PublicInfo,
         fullResultInfoList: List<FullResultInfo>,
-        Success: (List<FullResultInfo>,Double,Double) -> Unit,
-        Loading: (msg: String) -> Unit,
-        Failed: (msg:String) -> Unit
+        success: (List<FullResultInfo>,Double,Double) -> Unit,
+        loading: (msg: String) -> Unit,
+        failed: (msg:String) -> Unit
     )
 
     suspend fun updateClearanceInfo(
         id: String,
         accessToken: String,
         clearanceInfoList: List<ClearanceInfo>,
-        Success: (clearanceInfoList: List<ClearanceInfo>) -> Unit,
-        Failed: (msg:String) -> Unit
+        success: (clearanceInfoList: List<ClearanceInfo>) -> Unit,
+        failed: (msg:String) -> Unit
     )
 
     suspend fun getRandomHadith(
-        Success: (DailyHadithDto) -> Unit,
-        Failed: (msg:String) -> Unit
+        success: (DailyHadithDto) -> Unit,
+        failed: (msg:String) -> Unit
     )
 
 }

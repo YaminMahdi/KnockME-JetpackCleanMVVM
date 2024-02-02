@@ -4,10 +4,10 @@ import androidx.annotation.DrawableRes
 import com.mlab.knockme.R
 
 sealed class MainScreens(val route:String, val title:String, @DrawableRes val iconId: Int){
-    object CtPersonalScreen : MainScreens("chat_personal","Chats", R.drawable.ic_chat)
-    object CtPlacewiseScreen : MainScreens("chat_placewise","Placewise",R.drawable.ic_education)  //?fbId={fbId}&pic={pic}
-    object CtBusInfoScreen : MainScreens("chat_bus_info","Bus Info",R.drawable.ic_bus)
-    object ProScreen : MainScreens("profile","Profile",R.drawable.ic_profile)
+    data object CtPersonalScreen : MainScreens("chat_personal","Chats", R.drawable.ic_chat)
+    data object CtPlacewiseScreen : MainScreens("chat_placewise","Placewise",R.drawable.ic_education)  //?fbId={fbId}&pic={pic}
+    data object CtBusInfoScreen : MainScreens("chat_bus_info","Bus Info",R.drawable.ic_bus)
+    data object ProScreen : MainScreens("profile","Profile",R.drawable.ic_profile)
 
 
 

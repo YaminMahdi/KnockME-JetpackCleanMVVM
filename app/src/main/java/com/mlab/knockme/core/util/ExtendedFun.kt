@@ -21,7 +21,9 @@ import java.util.concurrent.TimeUnit
 enum class ButtonState { Pressed, Idle }
 fun Modifier.bounceClick() = composed {
     var buttonState by remember { mutableStateOf(ButtonState.Idle) }
-    val scale by animateFloatAsState(if (buttonState == ButtonState.Pressed) 0.85f else 1f)
+    val scale by animateFloatAsState(if (buttonState == ButtonState.Pressed) 0.85f else 1f,
+        label = ""
+    )
 
     this
         .graphicsLayer {
@@ -102,6 +104,24 @@ infix fun <T> List<T>.notEqualsIgnoreOrder(other: List<T>) = this.size != other.
 
 fun String.hasAlphabet(): Boolean {
     return this.matches("^[a-zA-Z1-9]*$".toRegex())
+}
+
+fun Boolean?.isTrue(block: () -> Unit) {
+    if (this == true)
+        block.invoke()
+}
+fun <T> List<T>.isNotEmpty(block: (List<T>) -> Unit) {
+    if (!isEmpty())
+        block.invoke(this)
+}
+fun <T> List<T>.isEmpty(block: (List<T>) -> Unit) {
+    if (isEmpty())
+        block.invoke(this)
+}
+
+fun String.isNotEmpty(block: (String) -> Unit) {
+    if (!isEmpty())
+        block.invoke(this)
 }
 
 

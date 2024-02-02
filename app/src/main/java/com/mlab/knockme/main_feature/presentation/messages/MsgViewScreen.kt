@@ -6,7 +6,6 @@ import android.content.Context
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.animation.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,7 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Send
+import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -46,6 +45,7 @@ import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import com.mlab.knockme.R
 import com.mlab.knockme.core.util.bounceClick
+import com.mlab.knockme.core.util.isNotEmpty
 import com.mlab.knockme.core.util.toDateTime
 import com.mlab.knockme.main_feature.domain.model.Msg
 import com.mlab.knockme.main_feature.presentation.ChatInnerScreens
@@ -53,7 +53,6 @@ import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.main.BackBtn
 import com.mlab.knockme.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MsgViewScreen(path: String, id: String,
                   navController: NavHostController,viewModel: MainViewModel = hiltViewModel()) {
@@ -115,6 +114,7 @@ fun MsgViewScreen(path: String, id: String,
 
 @Composable
 fun MsgTopBar(navController: NavHostController, id: String, viewModel: MainViewModel) {
+    val mutableInteractionSource by remember { mutableStateOf(MutableInteractionSource()) }
     val tarBasicInfo by viewModel.tarBasicInfo.collectAsState()
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -131,10 +131,12 @@ fun MsgTopBar(navController: NavHostController, id: String, viewModel: MainViewM
                 .bounceClick()
                 .clip(RoundedCornerShape(10.dp))
                 .clickable(
-                    interactionSource = MutableInteractionSource(),
+                    interactionSource = mutableInteractionSource,
                     indication = rememberRipple(color = Color.White),
                     onClick = {
-                        navController.navigate(ChatInnerScreens.UserProfileScreen.route + id)
+                        tarBasicInfo.publicInfo.nm?.isNotEmpty {
+                            navController.navigate(ChatInnerScreens.UserProfileScreen.route + id)
+                        }
                     }
                 )
         ) {
@@ -200,7 +202,7 @@ fun LoadMsgList(
 ) {
     //var lst by remember { mutableStateOf(state.msgList) }
     val msgList by viewModel.msgList.collectAsState()
-
+    val context = LocalContext.current
     LazyColumn(
         modifier = modifier
             .fillMaxHeight()
@@ -213,14 +215,20 @@ fun LoadMsgList(
                     msg,
                     modifier = Modifier.animateItemPlacement()
                 ) { id ->
-                    navController.navigate(ChatInnerScreens.UserProfileScreen.route+id)
+                    if(id.isNotEmpty())
+                        navController.navigate(ChatInnerScreens.UserProfileScreen.route+id)
+                    else
+                        Toast.makeText(context, "Account deleted", Toast.LENGTH_SHORT).show()
                 }
             else
                 MsgViewLeft(
                     msg,
                     modifier = Modifier.animateItemPlacement()
                 ) { id ->
-                    navController.navigate(ChatInnerScreens.UserProfileScreen.route+id)
+                    if(id.isNotEmpty())
+                        navController.navigate(ChatInnerScreens.UserProfileScreen.route+id)
+                    else
+                        Toast.makeText(context, "Account deleted", Toast.LENGTH_SHORT).show()
                 }
         }
     }
@@ -254,7 +262,7 @@ fun MsgViewLeft(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
                     .fillMaxWidth(.7f)
             ){
                 Column(modifier = Modifier
-                    .padding(start = 6.dp,top = 6.dp, bottom = 3.dp)
+                    .padding(start = 6.dp, top = 6.dp, bottom = 3.dp)
                     .bounceClick()
                     .clip(
                         RoundedCornerShape(
@@ -269,7 +277,9 @@ fun MsgViewLeft(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
                         onLongClick = {
                             clipboardManager.setText(AnnotatedString(msg.msg!!))
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            Toast.makeText(context, "Text Copied", Toast.LENGTH_SHORT).show()
+                            Toast
+                                .makeText(context, "Text Copied", Toast.LENGTH_SHORT)
+                                .show()
                         },
                         onDoubleClick = {}
                     )
@@ -317,7 +327,7 @@ fun MsgViewRight(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
                     .fillMaxWidth(.7f)
             ){
                 Column(modifier = Modifier
-                    .padding(end = 6.dp,top = 6.dp, bottom = 3.dp)
+                    .padding(end = 6.dp, top = 6.dp, bottom = 3.dp)
                     .bounceClick()
                     .clip(
                         RoundedCornerShape(
@@ -332,7 +342,9 @@ fun MsgViewRight(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
                         onLongClick = {
                             clipboardManager.setText(AnnotatedString(msg.msg!!))
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            Toast.makeText(context, "Text Copied", Toast.LENGTH_SHORT).show()
+                            Toast
+                                .makeText(context, "Text Copied", Toast.LENGTH_SHORT)
+                                .show()
                         },
                         onDoubleClick = {}
                     )
@@ -382,7 +394,6 @@ fun MsgViewRight(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SendMsgBar(
     viewModel: MainViewModel,
@@ -394,6 +405,7 @@ fun SendMsgBar(
     var data by remember { mutableStateOf("") }
     val myBasicInfo by viewModel.myBasicInfo.collectAsState()
     val tarBasicInfo by viewModel.tarBasicInfo.collectAsState()
+    val mutableInteractionSource by remember { mutableStateOf(MutableInteractionSource()) }
     val myPath = path+"chats/$id"
     val myProfilePath = path+"profiles/$id"
     var tarPath : String?= null
@@ -425,7 +437,7 @@ fun SendMsgBar(
             maxLines = 2
         )
         Icon(
-            Icons.Rounded.Send,
+            Icons.AutoMirrored.Rounded.Send,
             contentDescription = "",
             tint = Color.White,
             modifier = Modifier
@@ -433,7 +445,7 @@ fun SendMsgBar(
                 .bounceClick()
                 .clip(RoundedCornerShape(10.dp))
                 .clickable(
-                    interactionSource = MutableInteractionSource(),
+                    interactionSource = mutableInteractionSource,
                     indication = rememberRipple(color = Color.Transparent),
                     onClick = {
                         val time = System.currentTimeMillis()
@@ -493,19 +505,24 @@ fun SendMsgBar(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun searchFieldColors() =
-    TextFieldDefaults.textFieldColors(
+    TextFieldDefaults.colors().copy(
         focusedTextColor = TextWhite,
-        containerColor = DeepBlueMoreLess,
+        focusedLabelColor = BlueViolet3,
+        unfocusedLabelColor= BlueViolet3,
+        focusedIndicatorColor = BlueViolet3,
+        unfocusedIndicatorColor = BlueViolet3,
+        focusedContainerColor = DeepBlueLess,
+        unfocusedContainerColor = DeepBlueLess,
         cursorColor = AquaBlue,
         focusedPlaceholderColor = DeepBlueLess,
-        focusedIndicatorColor =  Color.Transparent,
-        unfocusedIndicatorColor = Color.Transparent,
         focusedLeadingIconColor = TextWhite,
         unfocusedLeadingIconColor = LessWhite
     )
+
+
+
 
 @Preview(showBackground = true)
 @Composable

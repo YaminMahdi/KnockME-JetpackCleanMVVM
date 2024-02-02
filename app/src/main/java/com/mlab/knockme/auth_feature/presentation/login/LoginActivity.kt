@@ -10,25 +10,19 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.facebook.AccessToken
 import com.facebook.CallbackManager
 import com.facebook.login.widget.LoginButton
-import com.google.android.gms.auth.api.credentials.Credential
-import com.google.android.gms.auth.api.identity.BeginSignInRequest
-import com.google.android.gms.auth.api.identity.SignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -147,8 +141,8 @@ class LoginActivity : ComponentActivity() {
                             }
 
                         })
-                        if(loadingState._isLoadingActive)
-                            LoadingScreen(data = loadingState._loadingText)
+                        if(loadingState.isLoadingActive)
+                            LoadingScreen(data = loadingState.loadingText)
                     }
                     composable(
                         route =
@@ -201,8 +195,8 @@ class LoginActivity : ComponentActivity() {
                             }
                             //navController.navigate(AuthScreens.LoadingInfoScreen.route+"/{$id}")
                         }
-                        if(loadingState._isLoadingActive)
-                            LoadingScreen(data = loadingState._loadingText)
+                        if(loadingState.isLoadingActive)
+                            LoadingScreen(data = loadingState.loadingText)
                     }
                     composable(route = AuthScreens.LoadingInfoScreen.route){
 

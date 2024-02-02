@@ -60,7 +60,7 @@ import com.mlab.knockme.main_feature.presentation.ChatInnerScreens
 import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.ProfileInnerScreens
 import com.mlab.knockme.main_feature.presentation.profile.components.Feature
-import com.mlab.knockme.profile_feature.presentation.components.standardQuadFromTo
+import com.mlab.knockme.main_feature.util.standardQuadFromTo
 import com.mlab.knockme.ui.theme.*
 import kotlinx.coroutines.*
 

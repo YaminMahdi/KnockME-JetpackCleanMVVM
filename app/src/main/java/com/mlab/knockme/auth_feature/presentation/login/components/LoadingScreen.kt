@@ -96,7 +96,7 @@ fun CircularProgressbar3(
         animationSpec = tween(
             durationMillis = animationDuration,
             delayMillis = animationDelay
-        )
+        ), label = "animate"
     )
 
     // This is to start the animation when the activity is opened

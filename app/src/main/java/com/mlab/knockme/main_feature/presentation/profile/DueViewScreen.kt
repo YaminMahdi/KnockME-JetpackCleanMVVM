@@ -3,11 +3,20 @@ package com.mlab.knockme.main_feature.presentation.profile
 import android.content.Context
 import android.os.Looper
 import android.widget.Toast
-import androidx.compose.foundation.*
-import com.mlab.knockme.R
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -36,15 +45,28 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.mlab.knockme.R
 import com.mlab.knockme.core.util.bounceClick
 import com.mlab.knockme.core.util.toDayPassed
 import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.main.TopBar
-import com.mlab.knockme.profile_feature.presentation.components.standardQuadFromTo
-import com.mlab.knockme.ui.theme.*
-import kotlinx.coroutines.*
+import com.mlab.knockme.main_feature.util.standardQuadFromTo
+import com.mlab.knockme.ui.theme.Beige1
+import com.mlab.knockme.ui.theme.Beige2
+import com.mlab.knockme.ui.theme.Beige3
+import com.mlab.knockme.ui.theme.BlueViolet1
+import com.mlab.knockme.ui.theme.BlueViolet2
+import com.mlab.knockme.ui.theme.BlueViolet3
+import com.mlab.knockme.ui.theme.DeepBlue
+import com.mlab.knockme.ui.theme.KnockMETheme
+import com.mlab.knockme.ui.theme.LightGreen1
+import com.mlab.knockme.ui.theme.LightGreen2
+import com.mlab.knockme.ui.theme.LightGreen3
+import com.mlab.knockme.ui.theme.Limerick1
+import com.mlab.knockme.ui.theme.Limerick2
+import com.mlab.knockme.ui.theme.Limerick3
+import com.mlab.knockme.ui.theme.TextWhite
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DueViewScreen(navController: NavHostController, viewModel: MainViewModel= hiltViewModel()) {
     val context: Context = LocalContext.current

@@ -56,7 +56,7 @@ fun ChatPlacewiseScreen(
             viewModel.setInfoDialogVisibility(true)
         }
         Separator()
-        LoadChatList(state,navController,myId)
+        LoadChatList(state, navController, myId, viewModel)
     }
 }
 

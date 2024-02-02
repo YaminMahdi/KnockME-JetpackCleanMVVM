@@ -5,6 +5,7 @@ data class LoginInfoDto(
     val commaSeparatedRoles: String,
     val deviceName: String,
     val message: String,
+    val responseMessage: String,
     val name: String,
     val userName: String
 )
