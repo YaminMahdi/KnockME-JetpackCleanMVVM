@@ -18,7 +18,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Send
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -48,7 +47,7 @@ import com.mlab.knockme.core.util.bounceClick
 import com.mlab.knockme.core.util.isNotEmpty
 import com.mlab.knockme.core.util.toDateTime
 import com.mlab.knockme.main_feature.domain.model.Msg
-import com.mlab.knockme.main_feature.presentation.ChatInnerScreens
+import com.mlab.knockme.main_feature.presentation.InnerScreens
 import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.main.BackBtn
 import com.mlab.knockme.ui.theme.*
@@ -86,15 +85,6 @@ fun MsgViewScreen(path: String, id: String,
         ) {
             LoadMsgList(
                 viewModel = viewModel,
-//                listOf(
-//                    Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423),
-//                    Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423),
-//                    Msg("193","Yamin Mahdi", "hi, I'm mahdi hi, I'm mahdi hi, I'm mahdihi, I'm mahdihi, I'm mahdihi, I'm mahdihi, I'm mahdihi, I'm mahdihi, I'm mahdihi, I'm mahdi","",46238423),
-//                    Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423),
-//                    Msg("193","Yamin Mahdi", "hi, I'm mahdi","",46238423),
-//                    Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423),
-//                    Msg("13","Yamin Mahdi", "hi, I'm mahdi","",46238423)
-//                ),
                 modifier = Modifier
                     .weight(1f)
                 ,navController,myId!!
@@ -132,10 +122,10 @@ fun MsgTopBar(navController: NavHostController, id: String, viewModel: MainViewM
                 .clip(RoundedCornerShape(10.dp))
                 .clickable(
                     interactionSource = mutableInteractionSource,
-                    indication = rememberRipple(color = Color.White),
+                    indication = ripple(color = Color.White),
                     onClick = {
-                        tarBasicInfo.publicInfo.nm?.isNotEmpty {
-                            navController.navigate(ChatInnerScreens.UserProfileScreen.route + id)
+                        tarBasicInfo.publicInfo.nm.isNotEmpty {
+                            navController.navigate(InnerScreens.UserProfile(id))
                         }
                     }
                 )
@@ -148,7 +138,7 @@ fun MsgTopBar(navController: NavHostController, id: String, viewModel: MainViewM
                     .clip(RoundedCornerShape(50.dp))
             )
             Text(
-                text = tarBasicInfo.publicInfo.nm!!,
+                text = tarBasicInfo.publicInfo.nm,
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier
                     .padding(horizontal = 5.dp)
@@ -192,7 +182,7 @@ fun ImgView(img: String,modifier: Modifier) {
     }
 
 }
-@OptIn(ExperimentalFoundationApi::class)
+
 @Composable
 fun LoadMsgList(
     viewModel: MainViewModel,
@@ -213,20 +203,20 @@ fun LoadMsgList(
             if(msg.id==myId)
                 MsgViewRight(
                     msg,
-                    modifier = Modifier.animateItemPlacement()
+                    modifier = Modifier.animateItem()
                 ) { id ->
                     if(id.isNotEmpty())
-                        navController.navigate(ChatInnerScreens.UserProfileScreen.route+id)
+                        navController.navigate(InnerScreens.UserProfile(id))
                     else
                         Toast.makeText(context, "Account deleted", Toast.LENGTH_SHORT).show()
                 }
             else
                 MsgViewLeft(
                     msg,
-                    modifier = Modifier.animateItemPlacement()
+                    modifier = Modifier.animateItem()
                 ) { id ->
                     if(id.isNotEmpty())
-                        navController.navigate(ChatInnerScreens.UserProfileScreen.route+id)
+                        navController.navigate(InnerScreens.UserProfile(id))
                     else
                         Toast.makeText(context, "Account deleted", Toast.LENGTH_SHORT).show()
                 }
@@ -311,6 +301,7 @@ fun MsgViewLeft(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
         }
     }
 }
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MsgViewRight(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
     val clipboardManager = LocalClipboardManager.current
@@ -446,7 +437,7 @@ fun SendMsgBar(
                 .clip(RoundedCornerShape(10.dp))
                 .clickable(
                     interactionSource = mutableInteractionSource,
-                    indication = rememberRipple(color = Color.Transparent),
+                    indication = ripple(color = Color.Transparent),
                     onClick = {
                         val time = System.currentTimeMillis()
                         val msg = Msg(

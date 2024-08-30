@@ -7,8 +7,25 @@ import android.net.Uri
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -56,9 +73,9 @@ import com.mlab.knockme.auth_feature.domain.model.ClearanceInfo
 import com.mlab.knockme.core.util.bounceClick
 import com.mlab.knockme.core.util.toK
 import com.mlab.knockme.core.util.toWords
-import com.mlab.knockme.main_feature.presentation.ChatInnerScreens
+import com.mlab.knockme.main_feature.presentation.InnerScreens
+import com.mlab.knockme.main_feature.presentation.MainScreens
 import com.mlab.knockme.main_feature.presentation.MainViewModel
-import com.mlab.knockme.main_feature.presentation.ProfileInnerScreens
 import com.mlab.knockme.main_feature.presentation.profile.components.Feature
 import com.mlab.knockme.main_feature.util.standardQuadFromTo
 import com.mlab.knockme.ui.theme.*
@@ -88,7 +105,7 @@ fun ProfileScreen(
     val last3 =if(lastClearanceInfo.finalExam) "✔" else "✖"
     val last = "$last1 $last2 $last3"
 
-    if(!myFullProfile.publicInfo.id.isNullOrEmpty()){
+    if(myFullProfile.publicInfo.id.isNotEmpty()){
         preferenceEditor.putString("nm", myFullProfile.publicInfo.nm).apply()
         preferenceEditor.putString("proShortName", myFullProfile.publicInfo.progShortName).apply()
     }
@@ -312,7 +329,7 @@ fun InfoDialog(
                             .clip(RoundedCornerShape(10.dp))
                             .clickable {
                                 viewModel.setInfoDialogVisibility(false)
-                                navController.navigate(ChatInnerScreens.UserProfileScreen.route + "193-15-1071")
+                                navController.navigate(InnerScreens.UserProfile("193-15-1071"))
                             }
                             .padding(15.dp)
 
@@ -398,7 +415,7 @@ fun PersonInfo(
         modifier = Modifier
             .fillMaxWidth()
             .bounceClick()
-            .clickable { navController.navigate(ChatInnerScreens.UserProfileScreen.route + id) }
+            .clickable { navController.navigate(InnerScreens.UserProfile(id)) }
     ) {
         SubcomposeAsyncImage(
             model = pic,
@@ -449,7 +466,8 @@ fun PersonInfo(
             Text(
                 text = program,
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(vertical = 12.dp)
             )
             Text(
                 text = "ID: $id",
@@ -475,11 +493,11 @@ fun FeatureSection(navController: NavHostController,id: String, features: List<F
             items(features.size) {
                 FeatureItem(feature = features[it]){
                     when (it) {
-                        0 -> navController.navigate(ProfileInnerScreens.CgpaScreen.route+id)
-                        1 -> navController.navigate(ProfileInnerScreens.DueScreen.route)
-                        2 -> navController.navigate(ProfileInnerScreens.RegCourseScreen.route)
-                        3 -> navController.navigate(ProfileInnerScreens.LiveResultScreen.route)
-                        4 -> navController.navigate(ProfileInnerScreens.ClearanceScreen.route)
+                        0 -> navController.navigate(MainScreens.Profile.Cgpa(id))
+                        1 -> navController.navigate(MainScreens.Profile.Due)
+                        2 -> navController.navigate(MainScreens.Profile.RegisterdCourse)
+                        3 -> navController.navigate(MainScreens.Profile.LiveResult)
+                        4 -> navController.navigate(MainScreens.Profile.Clearance)
                     }
                 }
             }

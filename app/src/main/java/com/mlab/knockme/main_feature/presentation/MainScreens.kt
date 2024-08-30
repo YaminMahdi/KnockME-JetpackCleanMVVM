@@ -2,23 +2,41 @@ package com.mlab.knockme.main_feature.presentation
 
 import androidx.annotation.DrawableRes
 import com.mlab.knockme.R
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.serializer
+import kotlin.reflect.typeOf
 
-sealed class MainScreens(val route:String, val title:String, @DrawableRes val iconId: Int){
-    data object CtPersonalScreen : MainScreens("chat_personal","Chats", R.drawable.ic_chat)
-    data object CtPlacewiseScreen : MainScreens("chat_placewise","Placewise",R.drawable.ic_education)  //?fbId={fbId}&pic={pic}
-    data object CtBusInfoScreen : MainScreens("chat_bus_info","Bus Info",R.drawable.ic_bus)
-    data object ProScreen : MainScreens("profile","Profile",R.drawable.ic_profile)
-
-
-
-    fun withArgs(args: Map<String,String>):String =
-        buildString {
-            append(route)
-            args.onEachIndexed { index, entry ->
-                if(index==0)
-                    append("?${entry.key}=${entry.value}")
-                else
-                    append("&${entry.key}=${entry.value}")
-            }
-        }
+object MainScreens{
+    @Serializable data object ChatPersonal
+    @Serializable data object ChatPlaceWise
+    @Serializable data object ChatBusInfo
+    @Serializable object Profile{
+        @Serializable data class Cgpa(val studentId: String)
+        @Serializable data class CgpaInner(val studentId: String, val index: Int)
+        @Serializable data object Due
+        @Serializable data object RegisterdCourse
+        @Serializable data object LiveResult
+        @Serializable data object Clearance
+    }
 }
+
+object InnerScreens{
+    @Serializable data class UserProfile(val studentId: String)
+    @Serializable data class Conversation(val path: String, val studentId: String)
+}
+
+@Suppress("UNCHECKED_CAST", "UnusedReceiverParameter")
+@OptIn(ExperimentalSerializationApi::class)
+inline val <reified T> T.route
+    get() = (serializer(typeOf<T>()) as KSerializer<T>).descriptor.serialName
+
+enum class NavItems(val route:String, val title:String, @DrawableRes val iconId: Int){
+    Personal(MainScreens.ChatPersonal.route,"Chats", R.drawable.ic_chat),
+    PlaceWise(MainScreens.ChatPlaceWise.route,"Placewise",R.drawable.ic_education),
+    BusInfo(MainScreens.ChatBusInfo.route,"Bus Info",R.drawable.ic_bus),
+    Profile(MainScreens.Profile.route,"Profile",R.drawable.ic_profile)
+}
+
+

@@ -17,7 +17,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Refresh
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -57,9 +56,9 @@ import com.mlab.knockme.core.util.hasAlphabet
 import com.mlab.knockme.core.util.toDayPassed
 import com.mlab.knockme.main_feature.domain.model.Msg
 import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
-import com.mlab.knockme.main_feature.presentation.ChatInnerScreens
+import com.mlab.knockme.main_feature.presentation.InnerScreens
+import com.mlab.knockme.main_feature.presentation.MainScreens
 import com.mlab.knockme.main_feature.presentation.MainViewModel
-import com.mlab.knockme.main_feature.presentation.ProfileInnerScreens
 import com.mlab.knockme.main_feature.presentation.chats.CustomToast
 import com.mlab.knockme.main_feature.presentation.profile.Ic
 import com.mlab.knockme.ui.theme.*
@@ -230,9 +229,9 @@ fun BackBtn(navController: NavHostController) {
             .clip(RoundedCornerShape(30.dp))
             .clickable(
                 interactionSource = mutableInteractionSource,
-                indication = rememberRipple(color = Color.White),
+                indication = ripple(color = Color.White),
                 onClick = {
-                    navController.popBackStack()
+                    navController.navigateUp()
                 }
             )
             .padding(10.dp)
@@ -324,7 +323,7 @@ fun Profile(
                 pb = publicInfo,
                 isLoading = isLoading,
             ) {
-                navController.navigate(ProfileInnerScreens.CgpaScreen.route + publicInfo.id)
+                navController.navigate(MainScreens.Profile.Cgpa(publicInfo.id))
             }
         }
 
@@ -448,10 +447,10 @@ fun SocialLink(
                         Toast.makeText(context, "Couldn't send message", Toast.LENGTH_SHORT).show()
                         Looper.loop()
                     }
-                    navController.navigate(ChatInnerScreens.MsgScreen.route+"path=$path&id=$id")
+                    navController.navigate(InnerScreens.Conversation(path, id))
                 }
                 else{
-                    navController.popBackStack()
+                    navController.navigateUp()
                 }
             },
             shape = RoundedCornerShape(10.dp),
@@ -491,7 +490,7 @@ fun SocialLink(
                     .clip(RoundedCornerShape(10.dp))
                     .clickable(
                         interactionSource = mutableInteractionSource,
-                        indication = rememberRipple(color = Color.White),
+                        indication = ripple(color = Color.White),
                         onClick = {
                             if (!userBasicInfo.privateInfo.fbLink.isNullOrEmpty())
                                 uriHandler.openUri(userBasicInfo.privateInfo.fbLink!!)
@@ -520,7 +519,7 @@ fun SocialLink(
                     .clip(RoundedCornerShape(10.dp))
                     .clickable(
                         interactionSource = mutableInteractionSource,
-                        indication = rememberRipple(color = Color.White),
+                        indication = ripple(color = Color.White),
                         onClick = {
                             if (!userBasicInfo.privateInfo.email.isNullOrEmpty()) {
                                 try {
@@ -635,7 +634,7 @@ fun BarChart(barDataList: List<CombinedBarData>, pb: PublicInfo, navController: 
                 .clip(RoundedCornerShape(5.dp))
                 .bounceClick()
                 .clickable {
-                    navController.navigate(ProfileInnerScreens.CgpaScreen.route + pb.id)
+                    navController.navigate(MainScreens.Profile.Cgpa(pb.id))
                 }
                 .padding(5.dp),
             textAlign = TextAlign.Center

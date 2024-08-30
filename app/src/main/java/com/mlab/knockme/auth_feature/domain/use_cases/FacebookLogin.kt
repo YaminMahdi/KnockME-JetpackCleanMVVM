@@ -1,6 +1,5 @@
 package com.mlab.knockme.auth_feature.domain.use_cases
 
-import com.facebook.AccessToken
 import com.facebook.CallbackManager
 import com.facebook.login.widget.LoginButton
 import com.mlab.knockme.auth_feature.domain.model.FBResponse

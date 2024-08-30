@@ -55,7 +55,7 @@ class MainViewModel @Inject constructor(
 
     fun getMeg(
         path: String,
-        Failed: (msg: String) -> Unit
+        failed: (msg: String) -> Unit
     ) {
         getMsgJob?.apply {
             this.cancel()
@@ -67,30 +67,30 @@ class MainViewModel @Inject constructor(
                 x.addAll(it)
                 savedStateHandle["msgList"] = x
                 Log.d("TAG", "getMeg: hi from  savedStateHandle[\"msgList\"] = it")
-            }, Failed)
+            }, failed)
         }
     }
 
     fun sendMsg(
         path: String,
         msg: Msg,
-        Failed: (msg:String) -> Unit
+        failed: (msg:String) -> Unit
     ){
         viewModelScope.launch(Dispatchers.IO) {
             //savedStateHandle["msgText"] = msg.msg
-            mainUseCases.sendMsg(path, msg, Failed)
+            mainUseCases.sendMsg(path, msg, failed)
         }
     }
-    fun refreshProfileInChats(path: String, msg: Msg, Failed: (msg: String) -> Unit) {
+    fun refreshProfileInChats(path: String, msg: Msg, failed: (msg: String) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             //savedStateHandle["msgText"] = msg.msg
-            mainUseCases.refreshProfileInChats(path, msg, Failed)
+            mainUseCases.refreshProfileInChats(path, msg, failed)
         }
     }
 
     fun getChatProfiles(
         path: String,
-        Failed: (msg:String) -> Unit
+        failed: (msg:String) -> Unit
     ){
         getChatsProfileJob?.cancel()
         searchJob?.cancel()
@@ -102,7 +102,7 @@ class MainViewModel @Inject constructor(
                 path, {
                     val x =it.toList()
                     savedStateHandle["chatList"] = x
-                }, Failed)
+                }, failed)
         }
     }
     fun setSearchActive(visibility: Boolean){
@@ -140,11 +140,11 @@ class MainViewModel @Inject constructor(
             searchJob=
                 viewModelScope.launch(Dispatchers.IO){
                     delay(500)
-                    getIdRange(id).forEachIndexed{ i,ID->
+                    getIdRange(id).forEachIndexed{ i,id->
                         if(i!=0)
                             delay(i*250L+700L)
                         mainUseCases.getOrCreateUserProfileInfo(
-                            ID, {user ->
+                            id, {user ->
                                 Log.d("TAG69", "searchUser: $user")
                                 if(user.id==id)
                                     searchList.add(0,user)
@@ -234,7 +234,7 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun getUserBasicInfo(id: String, Success: (profile:UserBasicInfo) -> Unit){
+    fun getUserBasicInfo(id: String, success: (profile:UserBasicInfo) -> Unit){
     savedStateHandle["hasPrivateInfo"] = false
     savedStateHandle["isLoading"] = true
 
@@ -242,7 +242,7 @@ class MainViewModel @Inject constructor(
             mainUseCases.getUserBasicInfo(id,
                 {
                     savedStateHandle["userBasicInfo"] = it
-                    Success.invoke(it)
+                    success.invoke(it)
                     viewModelScope.launch(Dispatchers.IO) {
                         delay(700)
                         savedStateHandle["isLoading"] = false
@@ -268,41 +268,41 @@ class MainViewModel @Inject constructor(
 
     fun getUserFullProfileInfo(
         id: String,
-        Success: (profile:UserProfile) -> Unit = {},
-        Failed: (msg:String) -> Unit,
+        success: (profile:UserProfile) -> Unit = {},
+        failed: (msg:String) -> Unit,
 
     ) {
         mainUseCases.getUserFullProfile(id,{
             savedStateHandle["userFullProfileInfo"]=it
-            Success.invoke(it)
-        },Failed)
+            success.invoke(it)
+        },failed)
     }
 
     fun updateUserPaymentInfo(
         id: String,
         accessToken: String,
         paymentInfo: PaymentInfo,
-        Failed: (msg:String) -> Unit
+        failed: (msg:String) -> Unit
     ){
         viewModelScope.launch(Dispatchers.IO) {
             mainUseCases.updatePaymentInfo(id,accessToken,paymentInfo,{
                 val updatedProfile = userFullProfileInfo.value.copy(paymentInfo= it)
                 savedStateHandle["userFullProfileInfo"]=updatedProfile
-                //getUserFullProfileInfo(id,{},Failed)
-            },Failed)
+                //getUserFullProfileInfo(id,{},failed)
+            },failed)
         }
     }
     fun updateUserLiveResultInfo(
         id: String,
         accessToken: String,
         liveResultInfoList: List<LiveResultInfo>,
-        Failed: (msg:String) -> Unit
+        failed: (msg:String) -> Unit
     ){
         viewModelScope.launch(Dispatchers.IO) {
             mainUseCases.updateLiveResultInfo(id,accessToken,liveResultInfoList,{
                 val updatedProfile = userFullProfileInfo.value.copy(liveResultInfo= ArrayList(it))
                 savedStateHandle["userFullProfileInfo"]=updatedProfile
-            },Failed)
+            },failed)
         }
 
     }
@@ -310,13 +310,13 @@ class MainViewModel @Inject constructor(
         id: String,
         accessToken: String,
         regCourseList: List<CourseInfo>,
-        Failed: (msg:String) -> Unit
+        failed: (msg:String) -> Unit
     ){
         viewModelScope.launch(Dispatchers.IO) {
             mainUseCases.updateRegCourseInfo(id,accessToken,regCourseList,{
                 val updatedProfile = userFullProfileInfo.value.copy(regCourseInfo= ArrayList(it))
                 savedStateHandle["userFullProfileInfo"]=updatedProfile
-            },Failed)
+            },failed)
         }
 
     }
@@ -325,13 +325,13 @@ class MainViewModel @Inject constructor(
         id: String,
         accessToken: String,
         clearanceInfoList: List<ClearanceInfo>,
-        Failed: (msg:String) -> Unit
+        failed: (msg:String) -> Unit
     ){
         viewModelScope.launch(Dispatchers.IO) {
             mainUseCases.updateClearanceInfo(id,accessToken,clearanceInfoList,{
                 val updatedProfile = userFullProfileInfo.value.copy(clearanceInfo = ArrayList(it))
                 savedStateHandle["userFullProfileInfo"]=updatedProfile
-            },Failed)
+            },failed)
         }
 
     }
@@ -376,12 +376,12 @@ class MainViewModel @Inject constructor(
     val showHadith = savedStateHandle.getStateFlow("showHadith", true)
     val dialogVisibility = savedStateHandle.getStateFlow("dialogVisibility", false)
     val infoDialogVisibility = savedStateHandle.getStateFlow("infoDialogVisibility", false)
-    fun getRandomHadith(Failed: (msg:String) -> Unit){
+    fun getRandomHadith(failed: (msg:String) -> Unit){
         viewModelScope.launch(Dispatchers.IO) {
             mainUseCases.getRandomHadith({
                 savedStateHandle["hadith"] = it
                 setDialogVisibility(true)
-            },Failed)
+            },failed)
         }
     }
     fun setShowHadith(visibility: Boolean){

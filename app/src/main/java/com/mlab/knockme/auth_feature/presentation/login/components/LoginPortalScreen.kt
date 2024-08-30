@@ -1,6 +1,7 @@
 package com.mlab.knockme.auth_feature.presentation.login.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,10 +27,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -187,20 +192,30 @@ fun NbNote(
         Spacer(modifier = Modifier.padding(5.dp))
         val annotatedString = buildAnnotatedString {
             append(text)
-            withStyle(style = MaterialTheme.typography.headlineSmall.toSpanStyle().copy(color = LightBlue)) {
-                pushStringAnnotation(tag = linkText, annotation = linkText)
+//            withStyle(style = MaterialTheme.typography.headlineSmall.toSpanStyle().copy(color = LightBlue)) {
+//                pushStringAnnotation(tag = linkText, annotation = linkText)
+//                append(linkText)
+//            }
+            withLink(LinkAnnotation.Url(url = link,
+                styles = TextLinkStyles(style = SpanStyle(color = LightBlue)))
+            ) {
                 append(linkText)
             }
         }
-        ClickableText(text = annotatedString, onClick = { offset ->
-            annotatedString.getStringAnnotations(offset, offset)
-                .firstOrNull()?.let { span ->
-                    println("Clicked on ${span.item}")
-                    if(span.item==linkText)
-                        uriHandler.openUri(link)
-                }
-        },
-            style = MaterialTheme.typography.headlineSmall.copy(textAlign = TextAlign.Center),
+//        ClickableText(text = annotatedString, onClick = { offset ->
+//            annotatedString.getStringAnnotations(offset, offset)
+//                .firstOrNull()?.let { span ->
+//                    println("Clicked on ${span.item}")
+//                    if(span.item==linkText)
+//                        uriHandler.openUri(link)
+//                }
+//        },
+//            style = MaterialTheme.typography.headlineSmall.copy(textAlign = TextAlign.Center),
+//        )
+        Text(
+            text = annotatedString,
+            style = MaterialTheme.typography.headlineSmall
+                .copy(textAlign = TextAlign.Center),
         )
     }
 }

@@ -8,10 +8,10 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -289,7 +289,7 @@ fun ResultItem(resultInfo: ResultInfo) {
             .background(DeepBlueLess)
             .clickable(
                 interactionSource = mutableInteractionSource,
-                indication = rememberRipple(color = Color.White),
+                indication = ripple(color = Color.White),
                 onClick = { }
             )
             .padding(16.dp)

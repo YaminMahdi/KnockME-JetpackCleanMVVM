@@ -2,54 +2,58 @@ package com.mlab.knockme.main_feature.presentation
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
+import androidx.navigation.compose.*
+import androidx.navigation.toRoute
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.mlab.knockme.R
 import com.mlab.knockme.auth_feature.presentation.login.LoginActivity
 import com.mlab.knockme.core.components.InAppUpdate
-import com.mlab.knockme.main_feature.presentation.chats.ChatBusInfoScreen
-import com.mlab.knockme.main_feature.presentation.chats.ChatPersonalScreen
-import com.mlab.knockme.main_feature.presentation.chats.ChatPlacewiseScreen
+import com.mlab.knockme.main_feature.presentation.chats.*
 import com.mlab.knockme.main_feature.presentation.main.ProfileViewScreen
 import com.mlab.knockme.main_feature.presentation.main.components.BottomMenuItem
 import com.mlab.knockme.main_feature.presentation.main.components.BottomNav
 import com.mlab.knockme.main_feature.presentation.messages.MsgViewScreen
 import com.mlab.knockme.main_feature.presentation.profile.*
+import com.mlab.knockme.ui.theme.DeepBlue
 import com.mlab.knockme.ui.theme.KnockMETheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    private val inAppUpdate = InAppUpdate(this)
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
+        enableEdgeToEdge(navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT))
         super.onCreate(savedInstanceState)
         val viewModel: MainViewModel by viewModels()
 
         setContent {
             KnockMETheme {
                 // A surface container using the 'background' color from the theme
-                Main(viewModel)
+                Main(viewModel, inAppUpdate)
             }
         }
     }
@@ -64,33 +68,34 @@ class MainActivity : ComponentActivity() {
             this.finish()
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+        inAppUpdate.onResume()
+    }
 }
 
 @Composable
-fun Main(viewModel: MainViewModel) {
+fun Main(viewModel: MainViewModel, inAppUpdate: InAppUpdate? = null) {
     //val viewModel: MainViewModel = hiltViewModel()
     val navController = rememberNavController()
-    val navItems = listOf(
-        MainScreens.CtPersonalScreen,
-        MainScreens.CtPlacewiseScreen,
-        MainScreens.CtBusInfoScreen,
-        MainScreens.ProScreen,
-    )
+
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+    val navVisibility = NavItems.entries.any { it.route == currentDestination?.route }
 
     Scaffold(
+        modifier = Modifier
+            .background(DeepBlue)
+            .systemBarsPadding(),
         bottomBar = {
-            //val navVisibility = viewModel.isNavVisible.collectAsState().value
-           // var bottomBarState by remember { mutableStateOf(navVisibility) }
-            val navBackStackEntry by navController.currentBackStackEntryAsState()
-            val currentDestination = navBackStackEntry?.destination
-            val navVisibility = navItems.any { it.route== currentDestination?.route }
             AnimatedVisibility(
                 visible = navVisibility,
                 enter = slideInVertically(initialOffsetY = { it }),
                 exit = slideOutVertically(targetOffsetY = { it }),
             ){
                 BottomNav{
-                    navItems.forEach { screenMenuItem ->
+                    NavItems.entries.forEach { screenMenuItem ->
                         BottomMenuItem(
                             item = screenMenuItem,
                             isSelected = currentDestination?.hierarchy?.any { it.route == screenMenuItem.route } == true,
@@ -99,7 +104,7 @@ fun Main(viewModel: MainViewModel) {
                                     // Pop up to the start destination of the graph to
                                     // avoid building up a large stack of destinations
                                     // on the back stack as users select items
-                                    popUpTo(navController.graph.findStartDestination().id) {
+                                    popUpTo(MainScreens.ChatPersonal) {
                                         saveState = true
                                     }
                                     // Avoid multiple copies of the same destination when
@@ -114,30 +119,31 @@ fun Main(viewModel: MainViewModel) {
                 }
             }
 
-
-
-
         }
-    ) { bottomPadding ->
-        NavHost(navController, startDestination = MainScreens.CtPersonalScreen.route, Modifier.padding(bottomPadding)) {
-            composable(MainScreens.CtPersonalScreen.route) {
+    ) { bottomNavPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = MainScreens.ChatPersonal.route,
+            modifier = Modifier.padding(bottomNavPadding)
+        ) {
+            composable<MainScreens.ChatPersonal> {
                 //ChatMainMsgNav(1, navController)
-                InAppUpdate()
+                inAppUpdate?.checkForUpdate()
                 ChatPersonalScreen(navController,viewModel)
             }
-            composable(MainScreens.CtPlacewiseScreen.route) {
+            composable<MainScreens.ChatPlaceWise> {
                 //ChatMainMsgNav(2, navController)
                 ChatPlacewiseScreen(navController)
             }
-            composable(MainScreens.CtBusInfoScreen.route) {
+            composable<MainScreens.ChatBusInfo> {
                 //ChatMainMsgNav(3, navController)
                 ChatBusInfoScreen(navController)
             }
-            composable(MainScreens.ProScreen.route) {
+            composable<MainScreens.Profile>{
                 ProfileScreen(navController)
             }
-            composable(
-                ChatInnerScreens.UserProfileScreen.route+"{id}",
+            composable<InnerScreens.UserProfile>(
+//                InnerScreens.UserProfileScreen.route+"{id}",
                 enterTransition = {
                     fadeIn() + slideInVertically(animationSpec = tween(1000))
                 },
@@ -145,10 +151,10 @@ fun Main(viewModel: MainViewModel) {
                     fadeOut() + slideOutVertically(animationSpec = tween(1000))
                 }){
                 // ProfileViewScreen(navController, it.arguments?.getString("id"))
-                ProfileViewScreen(it.arguments?.getString("id")!!,navController,viewModel)
+                ProfileViewScreen(it.toRoute<InnerScreens.UserProfile>().studentId,navController,viewModel)
             }
-            composable(
-                ChatInnerScreens.MsgScreen.route+"path={path}&id={id}",
+            composable<InnerScreens.Conversation>(
+//                InnerScreens.MsgScreen.route+"path={path}&id={id}",
                 enterTransition = {
                     fadeIn() + slideInVertically(animationSpec = tween(1000))
                 },
@@ -156,14 +162,15 @@ fun Main(viewModel: MainViewModel) {
                     fadeOut() + slideOutVertically(animationSpec = tween(1000))
                 }
             ){
+                val data = it.toRoute<InnerScreens.Conversation>()
                 MsgViewScreen(
-                    it.arguments?.getString("path")!!,
-                    it.arguments?.getString("id")!!,
+                    data.path,
+                    data.studentId,
                     navController,viewModel
                 )
             }
-            composable(
-                ProfileInnerScreens.CgpaScreen.route+"{id}",
+            composable<MainScreens.Profile.Cgpa>(
+//                MainScreens.Profile.CgpaScreen.route+"{id}",
                 enterTransition = {
                     fadeIn() + slideInVertically(animationSpec = tween(1000))
                 },
@@ -171,19 +178,18 @@ fun Main(viewModel: MainViewModel) {
                     fadeOut() + slideOutVertically(animationSpec = tween(1000))
                 }
             ){
-                CgpaViewScreen(it.arguments?.getString("id")!!,navController)
+                CgpaViewScreen(it.toRoute<MainScreens.Profile.Cgpa>().studentId,navController)
             }
-            composable(
-                ProfileInnerScreens.CgpaInnerScreen.route+"{id}/{index}",
-                arguments = listOf(navArgument("index") { type = NavType.IntType })
-            ){
-                CgpaDetailsScreen(
-                    it.arguments?.getString("id")!!,
-                    it.arguments?.getInt("index")!!,
-                    navController)
+            composable<MainScreens.Profile.CgpaInner>
+//                MainScreens.Profile.CgpaInnerScreen.route+"{id}/{index}",
+//                arguments = listOf(navArgument("index") { type = NavType.IntType })
+            {
+                it.toRoute<MainScreens.Profile.CgpaInner>().also { data->
+                    CgpaDetailsScreen(data.studentId, data.index, navController)
+                }
             }
-            composable(
-                ProfileInnerScreens.DueScreen.route,
+            composable<MainScreens.Profile.Due>(
+//                MainScreens.Profile.DueScreen.route,
                 enterTransition = {
                     fadeIn() + slideInVertically(animationSpec = tween(1000))
                 },
@@ -193,8 +199,8 @@ fun Main(viewModel: MainViewModel) {
             ){
                 DueViewScreen(navController)
             }
-            composable(
-                ProfileInnerScreens.RegCourseScreen.route,
+            composable<MainScreens.Profile.RegisterdCourse>(
+//                MainScreens.Profile.RegCourseScreen.route,
                 enterTransition = {
                     fadeIn() + slideInVertically(animationSpec = tween(1000))
                 },
@@ -203,8 +209,8 @@ fun Main(viewModel: MainViewModel) {
                 }){
                 RegCourseViewScreen(navController)
             }
-            composable(
-                ProfileInnerScreens.LiveResultScreen.route,
+            composable<MainScreens.Profile.LiveResult>(
+//                MainScreens.Profile.LiveResultScreen.route,
                 enterTransition = {
                     fadeIn() + slideInVertically(animationSpec = tween(1000))
                 },
@@ -213,8 +219,8 @@ fun Main(viewModel: MainViewModel) {
                 }){
                 LiveResultViewScreen(navController)
             }
-            composable(
-                ProfileInnerScreens.ClearanceScreen.route,
+            composable<MainScreens.Profile.Clearance>(
+//                MainScreens.Profile.ClearanceScreen.route,
                 enterTransition = {
                     fadeIn() + slideInVertically(animationSpec = tween(1000))
                 },

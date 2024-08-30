@@ -5,7 +5,7 @@ import androidx.compose.ui.graphics.Path
 import kotlin.math.abs
 
 fun Path.standardQuadFromTo(from: Offset, to: Offset) {
-    quadraticBezierTo(
+    quadraticTo(
         from.x,
         from.y,
         abs(from.x + to.x) / 2f,

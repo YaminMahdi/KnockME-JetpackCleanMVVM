@@ -18,7 +18,6 @@ import com.mlab.knockme.auth_feature.data.repo.AuthRepoImpl
 import com.mlab.knockme.auth_feature.domain.repo.AuthRepo
 import com.mlab.knockme.main_feature.data.repo.MainRepoImpl
 import com.mlab.knockme.main_feature.domain.repo.MainRepo
-import com.mlab.knockme.main_feature.domain.use_case.*
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -33,33 +32,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
-
-//    @Provides
-//    @Singleton
-//    fun provideGoogleSignInRequest() =
-//        BeginSignInRequest.builder()
-//            .setGoogleIdTokenRequestOptions(
-//                BeginSignInRequest.GoogleIdTokenRequestOptions.builder()
-//                .setSupported(true)
-//                // Your server's client ID, not your Android client ID.
-//                .setServerClientId(Resources.getSystem().getString(R.string.knock_me_web_client_id))
-//                // Only show accounts previously used to sign in.
-//                .setFilterByAuthorizedAccounts(true)
-//                .build()
-//            )
-//            .build()
-
-//    @Provides
-//    @Singleton
-//    fun provideGoogleLoginAuth(context: Context): GoogleSignInClient {
-//        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-//            .requestEmail()
-//            .requestIdToken(context.getString(R.string.knock_me_web_client_id))
-//            .requestId()
-//            .requestProfile()
-//            .build()
-//        return GoogleSignIn.getClient(context, gso)
-//    }
 
     @Provides
     @Singleton

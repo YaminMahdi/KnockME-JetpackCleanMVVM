@@ -38,8 +38,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.mlab.knockme.auth_feature.domain.model.SemesterInfo
 import com.mlab.knockme.core.util.bounceClick
+import com.mlab.knockme.main_feature.presentation.MainScreens
 import com.mlab.knockme.main_feature.presentation.MainViewModel
-import com.mlab.knockme.main_feature.presentation.ProfileInnerScreens
 import com.mlab.knockme.main_feature.presentation.chats.CustomToast
 import com.mlab.knockme.main_feature.presentation.main.TopBar
 import com.mlab.knockme.main_feature.util.standardQuadFromTo
@@ -206,23 +206,18 @@ fun CgpaViewScreen(id: String, navController: NavHostController, viewModel: Main
                 contentPadding = PaddingValues(start = 5.dp, end = 5.dp, bottom = 100.dp),
                 modifier = Modifier.weight(1f)
             ) {
+                val navigateNext :(index: Int)-> Unit = {index->
+                    navController.navigate(MainScreens.Profile.CgpaInner(studentId = id, index = index))
+                }
                 items(semesterInfoList.size) { ind->
                     if(semesterInfoList[ind].sgpa < 3.0)
-                        SemesterInfoItem(semesterInfoList[ind], Beige1, Beige2, Beige3){
-                            navController.navigate(ProfileInnerScreens.CgpaInnerScreen.route+id+"/"+ind)
-                        }
+                        SemesterInfoItem(semesterInfoList[ind], ind, Beige1, Beige2, Beige3, onClick = navigateNext)
                     else if(semesterInfoList[ind].sgpa >= 3.7)
-                        SemesterInfoItem(semesterInfoList[ind], LightGreen1, LightGreen2, LightGreen3){
-                            navController.navigate(ProfileInnerScreens.CgpaInnerScreen.route+id+"/"+ind)
-                        }
+                        SemesterInfoItem(semesterInfoList[ind], ind,LightGreen1, LightGreen2, LightGreen3, onClick = navigateNext)
                     else if(semesterInfoList[ind].sgpa >= 3.5)
-                        SemesterInfoItem(semesterInfoList[ind], BlueViolet1, BlueViolet2, BlueViolet3){
-                            navController.navigate(ProfileInnerScreens.CgpaInnerScreen.route+id+"/"+ind)
-                        }
+                        SemesterInfoItem(semesterInfoList[ind], ind,BlueViolet1, BlueViolet2, BlueViolet3, onClick = navigateNext)
                     else
-                        SemesterInfoItem(semesterInfoList[ind], Limerick1, Limerick2, Limerick3){
-                            navController.navigate(ProfileInnerScreens.CgpaInnerScreen.route+id+"/"+ind)
-                        }
+                        SemesterInfoItem(semesterInfoList[ind], ind,Limerick1, Limerick2, Limerick3, onClick = navigateNext)
                 }
             }
 
@@ -236,10 +231,11 @@ fun CgpaViewScreen(id: String, navController: NavHostController, viewModel: Main
 @Composable
 fun SemesterInfoItem(
     semesterInfo: SemesterInfo,
+    index: Int,
     lightColor: Color = Limerick1,
     mediumColor: Color = Limerick2,
     darkColor: Color = Limerick3,
-    onClick: () -> Unit
+    onClick: (Int) -> Unit
 ) {
     val clipboardManager = LocalClipboardManager.current
     val haptic = LocalHapticFeedback.current
@@ -252,7 +248,7 @@ fun SemesterInfoItem(
             .clip(RoundedCornerShape(10.dp))
             .combinedClickable(
                 onClick = {
-                    onClick.invoke()
+                    onClick.invoke(index)
                 },
                 onLongClick = {
                     val text =

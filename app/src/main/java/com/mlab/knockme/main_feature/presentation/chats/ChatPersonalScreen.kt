@@ -5,13 +5,11 @@ import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,7 +17,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -61,10 +58,11 @@ import com.mlab.knockme.core.util.bounceClick
 import com.mlab.knockme.core.util.toDateTime
 import com.mlab.knockme.core.util.toDayPassed
 import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
-import com.mlab.knockme.main_feature.presentation.ChatInnerScreens
+import com.mlab.knockme.main_feature.presentation.InnerScreens
 import com.mlab.knockme.main_feature.presentation.MainScreens
 import com.mlab.knockme.main_feature.presentation.profile.InfoDialog
 import com.mlab.knockme.main_feature.presentation.profile.TitleInfo
+import com.mlab.knockme.main_feature.presentation.route
 import com.mlab.knockme.ui.theme.*
 
 @Composable
@@ -105,7 +103,7 @@ fun ChatPersonalScreen(
         }
     }
     if(toMain)
-        navController.navigate(MainScreens.ProScreen.route)
+        navController.navigate(MainScreens.Profile.route)
 //    BackHandler {
 //        val activity= context as Activity
 //        activity.finish()
@@ -127,21 +125,6 @@ fun ChatPersonalScreen(
         }
         LoadChatList(state,navController,myId, viewModel)
 
-//        LoadChatList(chatList =
-//        listOf(
-//            UserChatInfo("Yamin Mahdi","", lastMsg = "hi, I'm mahdi"),
-//            UserChatInfo("Yamin Mahdi","", lastMsg = "fgnfdjgnfjdnhgffgnhngnhfjknh nhfhnfghfghfgjhihi, I'm mahdi"),
-//            UserChatInfo("Yamin Mahdi","", lastMsg = "hi, I'm mahdi"),
-//            UserChatInfo("Yamin Mahdi","", lastMsg = "hi, I'm mahdi"),
-//            UserChatInfo("Yamin Mahdi","", lastMsg = "hi, I'm mahdi"),
-//            UserChatInfo("Yamin Mahdi","", lastMsg = "hi, I'm mahdi"),
-//            UserChatInfo("Yamin Mahdi","", lastMsg = "hi, I'm mahdi"),
-//            UserChatInfo("Yamin Mahdi","", lastMsg = "hi, I'm mahdi"),
-//            UserChatInfo("Yamin Mahdi","", lastMsg = "hi, I'm mahdi"),
-//            UserChatInfo("Yamin Mahdi","", lastMsg = "hi, I'm mahdi"),
-//            UserChatInfo("Yamin Mahdi","", lastMsg = "hi, I'm mahdi"),
-//            UserChatInfo("Yamin Mahdi","", lastMsg = "hi, I'm mahdi")
-//        ))
     }
     CustomToast(state.isSearchLoading, state.loadingText)
 }
@@ -207,8 +190,8 @@ fun SearchBox(state: ChatListState, viewModel: MainViewModel) {
                     .bounceClick()
                     .clip(RoundedCornerShape(30.dp))
                     .clickable(
-                        interactionSource =mutableInteractionSource ,
-                        indication = rememberRipple(color = Color.White),
+                        interactionSource = mutableInteractionSource,
+                        indication = ripple(color = Color.White),
                         onClick = {
                             fm.clearFocus()
                             viewModel.setSearchActive(false)
@@ -254,7 +237,6 @@ private fun ProgressBar(){
         )
     }
 }
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LoadChatList(
     state: ChatListState,
@@ -270,24 +252,22 @@ fun LoadChatList(
             ChatView(
                 proView,
                 modifier = Modifier
-                    .animateItemPlacement(),
+                    .animateItem(),
                 state.isSearchActive
             ){ id ->
                 viewModel.updateTarBasicInfo(UserBasicInfo())   //empty
                 if(!state.isSearchActive) {
                     when (navController.currentDestination?.route) {
-                        MainScreens.CtPersonalScreen.route -> {
-                            val path = "personalMsg/$myId/"
-                            navController.navigate(ChatInnerScreens.MsgScreen.route+"path=$path&id=$id")
-                        }
-                        MainScreens.CtPlacewiseScreen.route ->
-                            navController.navigate(ChatInnerScreens.MsgScreen.route+"path=groupMsg/placewise/&id=$id")
-                        MainScreens.CtBusInfoScreen.route ->
-                            navController.navigate(ChatInnerScreens.MsgScreen.route+"path=groupMsg/busInfo/&id=$id")
+                        MainScreens.ChatPersonal.route ->
+                            navController.navigate(InnerScreens.Conversation("personalMsg/$myId/", id))
+                        MainScreens.ChatPlaceWise.route ->
+                            navController.navigate(InnerScreens.Conversation("groupMsg/placewise/", id))
+                        MainScreens.ChatBusInfo.route ->
+                            navController.navigate(InnerScreens.Conversation("groupMsg/busInfo/", id))
                     }
                 }
                 else
-                    navController.navigate(ChatInnerScreens.UserProfileScreen.route+id)
+                    navController.navigate(InnerScreens.UserProfile(id))
             }
         }
     }
@@ -314,7 +294,7 @@ fun ChatView(
             .clip(RoundedCornerShape(10.dp))
             .clickable(
                 interactionSource = mutableInteractionSource,
-                indication = rememberRipple(color = Color.White),
+                indication = ripple(color = Color.White),
                 onClick = {
                     onClick.invoke(proView.id!!)
                 }
@@ -368,7 +348,7 @@ fun ChatView(
                 softWrap = false,
                 modifier = Modifier
                     .fillMaxWidth(.9f)
-                    .padding(vertical = 5.dp)
+                    .padding(vertical = 7.dp)
             )
             Text(
                 text =
@@ -387,17 +367,6 @@ fun ChatView(
 fun HadithDialog(viewModel: MainViewModel) {
     val dialogVisibility by viewModel.dialogVisibility.collectAsState()
     val hadith by viewModel.hadith.collectAsState()
-    //val dialogVisibility by remember { mutableStateOf(true) }
-//    val hadithDto = DailyHadithDto(
-//        id = "0",
-//        b = "আবদুল্লাহ ইবনু ’আমর (রাঃ) থেকে বর্ণিত,",
-//        bn = "এক ব্যাক্তি রাসূল সাল্লাল্লাহু আলাইহি ওয়াসাল্লাম-কে জিজ্ঞাসা করল, ‘ইসলামের কোন্ কাজ সবচাইতে উত্তম?’ তিনি বললেনঃ তুমি লোকদের আহার করাবে এবং পরিচিত-অপরিচিত নির্বিশেষে সকলকে সালাম দিবে।",
-//        e = "Narrated 'Abdullah bin 'Amr:",
-//        en = "A person asked Allah's Messenger (sallallahu 'alaihi wa sallam). \"What (sort of) deeds in Islam are good?\" He replied, \"To feed (the poor) and greet those whom you know and those whom you don't know.\",",
-//        ref = "Sahih al-Bukhari, 28",
-//        src = "https://www.hadithbd.com/hadith/link/?id=30",
-//        t = "h"
-//    )
     var lang by remember { mutableStateOf("EN") }
     val uriHandler = LocalUriHandler.current
 

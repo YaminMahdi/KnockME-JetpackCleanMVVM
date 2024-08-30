@@ -41,7 +41,8 @@ fun ChatBusInfoScreen(
             Log.d("TAG", "ChatPersonalScreen: $it")
             Looper.prepare()
             Toast.makeText(context, "Chat couldn't be loaded", Toast.LENGTH_SHORT).show()
-            Looper.loop()        }
+            Looper.loop()
+        }
     }
     InfoDialog(viewModel, context, myId, navController)
     Column(
