@@ -1,22 +1,20 @@
 package com.mlab.knockme.main_feature.presentation.chats
 
 import android.content.Context
-import android.os.Looper
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.mlab.knockme.R
+import com.mlab.knockme.core.util.toast
 import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.profile.InfoDialog
 import com.mlab.knockme.main_feature.presentation.profile.TitleInfo
@@ -29,19 +27,15 @@ fun ChatBusInfoScreen(
     viewModel: MainViewModel= hiltViewModel()
 ) {
     val context: Context = LocalContext.current
-    val state by viewModel.state.collectAsState()
-    val sharedPreferences = context.getSharedPreferences(
-        context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
-    )
-    //val preferencesEditor = sharedPreferences.edit()
-    val myId = sharedPreferences.getString("studentId","0")!!
-    LaunchedEffect(key1 = "3"){
+    val state by viewModel.state.collectAsStateWithLifecycle()
+//    val myId = sharedPreferences.getString("studentId","")!!
+    val user by viewModel.userFullProfileInfo.collectAsStateWithLifecycle()
+    val myId = user.publicInfo.id
+    LaunchedEffect(Unit){
         //pop backstack
         viewModel.getChatProfiles("groupMsg/busInfo/profiles"){
             Log.d("TAG", "ChatPersonalScreen: $it")
-            Looper.prepare()
-            Toast.makeText(context, "Chat couldn't be loaded", Toast.LENGTH_SHORT).show()
-            Looper.loop()
+            context.toast("Chat couldn't be loaded")
         }
     }
     InfoDialog(viewModel, context, myId, navController)

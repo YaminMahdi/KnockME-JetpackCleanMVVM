@@ -3,9 +3,7 @@
 package com.mlab.knockme.main_feature.presentation.messages
 
 import android.content.Context
-import android.os.Looper
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -26,11 +24,9 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -38,14 +34,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import coil.compose.AsyncImagePainter
-import coil.compose.SubcomposeAsyncImage
-import coil.compose.SubcomposeAsyncImageContent
+import coil3.compose.AsyncImagePainter
+import coil3.compose.SubcomposeAsyncImage
+import coil3.compose.SubcomposeAsyncImageContent
 import com.mlab.knockme.R
-import com.mlab.knockme.core.util.bounceClick
-import com.mlab.knockme.core.util.isNotEmpty
-import com.mlab.knockme.core.util.toDateTime
+import com.mlab.knockme.core.util.*
 import com.mlab.knockme.main_feature.domain.model.Msg
 import com.mlab.knockme.main_feature.presentation.InnerScreens
 import com.mlab.knockme.main_feature.presentation.MainViewModel
@@ -53,26 +48,24 @@ import com.mlab.knockme.main_feature.presentation.main.BackBtn
 import com.mlab.knockme.ui.theme.*
 
 @Composable
-fun MsgViewScreen(path: String, id: String,
-                  navController: NavHostController,viewModel: MainViewModel = hiltViewModel()) {
-
+fun MsgViewScreen(
+    path: String,
+    id: String,
+    navController: NavHostController,
+    viewModel: MainViewModel = hiltViewModel()
+) {
     val context: Context = LocalContext.current
-    val sharedPreferences = context.getSharedPreferences(
-        context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
-    )
-    //val preferencesEditor = sharedPreferences.edit()
-    val myId = sharedPreferences.getString("studentId",null)
-
+//    val myId = sharedPreferences.getString("studentId","")!!
+    val user by viewModel.userFullProfileInfo.collectAsStateWithLifecycle()
+    val myId = user.publicInfo.id
 
 //    val paddingValue = WindowInsets.ime.getBottom(LocalDensity.current)
-    LaunchedEffect(key1 = "1") {
+    LaunchedEffect(Unit) {
         viewModel.getMeg(path+"chats/$id"){
-            Looper.prepare()
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            Looper.loop()
+            context.toast(it)
         }
         viewModel.getTarBasicInfo(id)
-        viewModel.getMyBasicInfo(myId!!)
+        viewModel.getMyBasicInfo(myId)
     }
 
     Scaffold(
@@ -86,14 +79,16 @@ fun MsgViewScreen(path: String, id: String,
             LoadMsgList(
                 viewModel = viewModel,
                 modifier = Modifier
-                    .weight(1f)
-                ,navController,myId!!
+                    .weight(1f),
+                navController = navController,
+                myId = myId
             )
             SendMsgBar(
                 viewModel = viewModel,
                 path = path,
                 context = context,
-                id,myId
+                id = id,
+                myId = myId
             )
         }
     }
@@ -105,7 +100,7 @@ fun MsgViewScreen(path: String, id: String,
 @Composable
 fun MsgTopBar(navController: NavHostController, id: String, viewModel: MainViewModel) {
     val mutableInteractionSource by remember { mutableStateOf(MutableInteractionSource()) }
-    val tarBasicInfo by viewModel.tarBasicInfo.collectAsState()
+    val tarBasicInfo by viewModel.tarBasicInfo.collectAsStateWithLifecycle()
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -160,7 +155,8 @@ fun ImgView(img: String,modifier: Modifier) {
             .aspectRatio(1f)
             .background(DarkerButtonBlue)
     ) {
-        when (painter.state) {
+        val state by painter.state.collectAsStateWithLifecycle()
+        when (state) {
             is AsyncImagePainter.State.Loading -> {
                 CircularProgressIndicator(
                     color = AquaBlue,
@@ -191,7 +187,7 @@ fun LoadMsgList(
     myId: String
 ) {
     //var lst by remember { mutableStateOf(state.msgList) }
-    val msgList by viewModel.msgList.collectAsState()
+    val msgList by viewModel.msgList.collectAsStateWithLifecycle()
     val context = LocalContext.current
     LazyColumn(
         modifier = modifier
@@ -208,7 +204,7 @@ fun LoadMsgList(
                     if(id.isNotEmpty())
                         navController.navigate(InnerScreens.UserProfile(id))
                     else
-                        Toast.makeText(context, "Account deleted", Toast.LENGTH_SHORT).show()
+                        context.toast("Account deleted")
                 }
             else
                 MsgViewLeft(
@@ -218,7 +214,7 @@ fun LoadMsgList(
                     if(id.isNotEmpty())
                         navController.navigate(InnerScreens.UserProfile(id))
                     else
-                        Toast.makeText(context, "Account deleted", Toast.LENGTH_SHORT).show()
+                        context.toast("Account deleted")
                 }
         }
     }
@@ -226,7 +222,6 @@ fun LoadMsgList(
 
 @Composable
 fun MsgViewLeft(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
-    val clipboardManager = LocalClipboardManager.current
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
     Row {
@@ -265,11 +260,8 @@ fun MsgViewLeft(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
                     .combinedClickable(
                         onClick = {},
                         onLongClick = {
-                            clipboardManager.setText(AnnotatedString(msg.msg!!))
+                            context.setClipBoardData(msg.msg)
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            Toast
-                                .makeText(context, "Text Copied", Toast.LENGTH_SHORT)
-                                .show()
                         },
                         onDoubleClick = {}
                     )
@@ -304,7 +296,6 @@ fun MsgViewLeft(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MsgViewRight(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
-    val clipboardManager = LocalClipboardManager.current
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
     Row(
@@ -331,11 +322,8 @@ fun MsgViewRight(msg: Msg,modifier: Modifier,onClick:(id: String)->Unit) {
                     .combinedClickable(
                         onClick = {},
                         onLongClick = {
-                            clipboardManager.setText(AnnotatedString(msg.msg!!))
+                            context.setClipBoardData(msg.msg)
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            Toast
-                                .makeText(context, "Text Copied", Toast.LENGTH_SHORT)
-                                .show()
                         },
                         onDoubleClick = {}
                     )
@@ -394,8 +382,8 @@ fun SendMsgBar(
     myId: String
 ) {
     var data by remember { mutableStateOf("") }
-    val myBasicInfo by viewModel.myBasicInfo.collectAsState()
-    val tarBasicInfo by viewModel.tarBasicInfo.collectAsState()
+    val myBasicInfo by viewModel.myBasicInfo.collectAsStateWithLifecycle()
+    val tarBasicInfo by viewModel.tarBasicInfo.collectAsStateWithLifecycle()
     val mutableInteractionSource by remember { mutableStateOf(MutableInteractionSource()) }
     val myPath = path+"chats/$id"
     val myProfilePath = path+"profiles/$id"
@@ -456,36 +444,20 @@ fun SendMsgBar(
                         )
                         viewModel.sendMsg(myPath, msg) {
                             Log.d("TAG", "ChatPersonalScreen: $it")
-                            Looper.prepare()
-                            Toast
-                                .makeText(context, "Couldn't send message", Toast.LENGTH_SHORT)
-                                .show()
-                            Looper.loop()
+                            context.toast("Couldn't send message")
                         }
                         viewModel.refreshProfileInChats(myProfilePath, tarProfile) {
                             Log.d("TAG", "ChatPersonalScreen: $it")
-                            Looper.prepare()
-                            Toast
-                                .makeText(context, "Couldn't send message", Toast.LENGTH_SHORT)
-                                .show()
-                            Looper.loop()
+                            context.toast("Couldn't send message")
                         }
                         if (tarPath != null && id != myId) {
                             viewModel.sendMsg(tarPath, msg) {
                                 Log.d("TAG", "ChatPersonalScreen: $it")
-                                Looper.prepare()
-                                Toast
-                                    .makeText(context, "Couldn't send message", Toast.LENGTH_SHORT)
-                                    .show()
-                                Looper.loop()
+                                context.toast("Couldn't send message")
                             }
                             viewModel.refreshProfileInChats(tarProfilePath!!, msg) {
                                 Log.d("TAG", "ChatPersonalScreen: $it")
-                                Looper.prepare()
-                                Toast
-                                    .makeText(context, "Couldn't send message", Toast.LENGTH_SHORT)
-                                    .show()
-                                Looper.loop()
+                                context.toast("Couldn't send message")
                             }
                         }
                         data = ""

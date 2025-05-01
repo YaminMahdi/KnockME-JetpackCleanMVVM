@@ -3,19 +3,20 @@ package com.mlab.knockme.di
 import android.content.Context
 import com.chuckerteam.chucker.api.ChuckerInterceptor
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.ktx.auth
+import com.google.firebase.auth.auth
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ktx.database
+import com.google.firebase.database.database
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.firestore.firestore
+import com.google.firebase.Firebase
 import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.ktx.storage
+import com.google.firebase.storage.storage
 import com.mlab.knockme.BuildConfig
 import com.mlab.knockme.auth_feature.data.data_source.NullOnEmptyConverterFactory
 import com.mlab.knockme.auth_feature.data.data_source.PortalApi
 import com.mlab.knockme.auth_feature.data.repo.AuthRepoImpl
 import com.mlab.knockme.auth_feature.domain.repo.AuthRepo
+import com.mlab.knockme.core.util.Constants
 import com.mlab.knockme.main_feature.data.repo.MainRepoImpl
 import com.mlab.knockme.main_feature.domain.repo.MainRepo
 import dagger.Module
@@ -27,6 +28,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
 @Module
@@ -67,27 +69,32 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(@ApplicationContext context: Context) = if (BuildConfig.DEBUG) {
+    fun provideOkHttpClient(@ApplicationContext context: Context): OkHttpClient {
         val chuckerInterceptor =
             ChuckerInterceptor.Builder(context).apply {
                 maxContentLength(10000)
             }.build()
         val loggingInterceptor = HttpLoggingInterceptor()
         loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY)
-        OkHttpClient.Builder()
-            .addInterceptor(loggingInterceptor)
-            .addInterceptor(chuckerInterceptor)
+        return OkHttpClient.Builder()
+            .connectTimeout(2, TimeUnit.MINUTES)
+            .readTimeout(2, TimeUnit.MINUTES)
+            .writeTimeout(2, TimeUnit.MINUTES)
+            .apply {
+                if (BuildConfig.DEBUG){
+                    addInterceptor(loggingInterceptor)
+                    addInterceptor(chuckerInterceptor)
+                }
+            }
             .build()
-    } else OkHttpClient
-        .Builder()
-        .build()
+    }
 
     @Provides
     @Singleton
     fun providePortalApi(okHttpClient: OkHttpClient): PortalApi =
         Retrofit.Builder()
             .client(okHttpClient)
-            .baseUrl(PortalApi.BASE_URL)
+            .baseUrl(Constants.BASE_URL_NEW)
             .addConverterFactory(NullOnEmptyConverterFactory())
             .addConverterFactory(GsonConverterFactory.create())
             .build()

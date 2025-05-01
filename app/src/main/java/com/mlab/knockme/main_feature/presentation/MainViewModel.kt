@@ -4,10 +4,12 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.android.play.integrity.internal.u
 import com.mlab.knockme.auth_feature.data.data_source.dto.DailyHadithDto
 import com.mlab.knockme.auth_feature.domain.model.*
 import com.mlab.knockme.main_feature.domain.model.*
 import com.mlab.knockme.main_feature.domain.use_case.MainUseCases
+import com.mlab.knockme.pref
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -204,7 +206,7 @@ class MainViewModel @Inject constructor(
     val myBasicInfo = savedStateHandle.getStateFlow("myBasicInfo", UserBasicInfo())
 
     //val userBasicInfo = _userBasicInfo
-    //val stateProfile = ViewProfileState(isLoading.collectAsState(),hasPrivateInfo,userBasicInfo)
+    //val stateProfile = ViewProfileState(isLoading.collectAsStateWithLifecycle(),hasPrivateInfo,userBasicInfo)
     //var stateProfile :StateFlow<ViewProfileState>? = null
 
 //    fun clearUserBasicInfo(){
@@ -257,7 +259,11 @@ class MainViewModel @Inject constructor(
 
 
 
-    val userFullProfileInfo = savedStateHandle.getStateFlow("userFullProfileInfo", UserProfile())
+    val userFullProfileInfo = savedStateHandle.getStateFlow("userFullProfileInfo", UserProfile(publicInfo = PublicInfo(
+        id = pref.getString("studentId","")!!,
+        nm = pref.getString("nm","")!!,
+        progShortName = pref.getString("proShortName","")!!,
+    )))
 //    val userFullResultInfo = savedStateHandle.getStateFlow("userFullResultInfo", emptyList<FullResultInfo>())
 //    val userPaymentInfo = savedStateHandle.getStateFlow("userPaymentInfo", PaymentInfo())
 //    val userLiveResultInfo = savedStateHandle.getStateFlow("userLiveResultInfo", emptyList<LiveResultInfo>())
@@ -293,28 +299,24 @@ class MainViewModel @Inject constructor(
         }
     }
     fun updateUserLiveResultInfo(
-        id: String,
-        accessToken: String,
-        liveResultInfoList: List<LiveResultInfo>,
+        userProfile: UserProfile,
         failed: (msg:String) -> Unit
     ){
         viewModelScope.launch(Dispatchers.IO) {
-            mainUseCases.updateLiveResultInfo(id,accessToken,liveResultInfoList,{
-                val updatedProfile = userFullProfileInfo.value.copy(liveResultInfo= ArrayList(it))
+            mainUseCases.updateLiveResultInfo(userProfile,{
+                val updatedProfile = userFullProfileInfo.value.copy(liveResultInfo= it)
                 savedStateHandle["userFullProfileInfo"]=updatedProfile
             },failed)
         }
 
     }
     fun updateUserRegCourseInfo(
-        id: String,
-        accessToken: String,
-        regCourseList: List<CourseInfo>,
+        userProfile: UserProfile,
         failed: (msg:String) -> Unit
     ){
         viewModelScope.launch(Dispatchers.IO) {
-            mainUseCases.updateRegCourseInfo(id,accessToken,regCourseList,{
-                val updatedProfile = userFullProfileInfo.value.copy(regCourseInfo= ArrayList(it))
+            mainUseCases.updateRegCourseInfo(userProfile,{
+                val updatedProfile = userFullProfileInfo.value.copy(regCourseInfo= it)
                 savedStateHandle["userFullProfileInfo"]=updatedProfile
             },failed)
         }
@@ -329,7 +331,7 @@ class MainViewModel @Inject constructor(
     ){
         viewModelScope.launch(Dispatchers.IO) {
             mainUseCases.updateClearanceInfo(id,accessToken,clearanceInfoList,{
-                val updatedProfile = userFullProfileInfo.value.copy(clearanceInfo = ArrayList(it))
+                val updatedProfile = userFullProfileInfo.value.copy(clearanceInfo = it)
                 savedStateHandle["userFullProfileInfo"]=updatedProfile
             },failed)
         }

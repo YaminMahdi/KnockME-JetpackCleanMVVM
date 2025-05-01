@@ -3,42 +3,18 @@ package com.mlab.knockme.main_feature.presentation.profile
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
-import android.os.Looper
 import android.util.Log
-import android.widget.Toast
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.twotone.Info
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,12 +24,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -62,22 +35,27 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import coil.compose.AsyncImagePainter
-import coil.compose.SubcomposeAsyncImage
-import coil.compose.SubcomposeAsyncImageContent
+import coil3.compose.AsyncImagePainter
+import coil3.compose.SubcomposeAsyncImage
+import coil3.compose.SubcomposeAsyncImageContent
 import com.google.android.play.core.review.ReviewManagerFactory
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import com.mlab.knockme.R
 import com.mlab.knockme.auth_feature.domain.model.ClearanceInfo
-import com.mlab.knockme.core.util.bounceClick
-import com.mlab.knockme.core.util.toK
-import com.mlab.knockme.core.util.toWords
+import com.mlab.knockme.auth_feature.presentation.login.LoginActivity
+import com.mlab.knockme.core.util.*
 import com.mlab.knockme.main_feature.presentation.InnerScreens
 import com.mlab.knockme.main_feature.presentation.MainScreens
 import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.profile.components.Feature
 import com.mlab.knockme.main_feature.util.standardQuadFromTo
+import com.mlab.knockme.pref
 import com.mlab.knockme.ui.theme.*
 import kotlinx.coroutines.*
 
@@ -88,17 +66,16 @@ fun ProfileScreen(
     viewModel: MainViewModel= hiltViewModel()
 ) {
     val context: Context = LocalContext.current
-    //val state by viewModel.state.collectAsState()
-    val sharedPreferences = context.getSharedPreferences(
-        context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
-    )
-    val preferenceEditor = sharedPreferences.edit()
+    //val state by viewModel.state.collectAsStateWithLifecycle()
     //val preferencesEditor = sharedPreferences.edit()
-    val myId = sharedPreferences.getString("studentId","0")!!
-    val myNm = sharedPreferences.getString("nm","0")!!
-    val myProShortName = sharedPreferences.getString("proShortName","0")!!
 
-    val myFullProfile by viewModel.userFullProfileInfo.collectAsState()
+    val myFullProfile by viewModel.userFullProfileInfo.collectAsStateWithLifecycle()
+//    val myId = pref.getString("studentId","")!!
+//    val myNm = pref.getString("nm","")!!
+//    val myProShortName = pref.getString("proShortName","")!!
+    val myId = myFullProfile.publicInfo.id
+    val myNm = myFullProfile.publicInfo.nm
+    val myProShortName = myFullProfile.publicInfo.progShortName
     val lastClearanceInfo =if(myFullProfile.clearanceInfo.isNotEmpty()) myFullProfile.clearanceInfo.last() else ClearanceInfo()
     val last1 =if(lastClearanceInfo.registration) "✔" else "✖"
     val last2 =if(lastClearanceInfo.midTermExam) "✔" else "✖"
@@ -106,11 +83,12 @@ fun ProfileScreen(
     val last = "$last1 $last2 $last3"
 
     if(myFullProfile.publicInfo.id.isNotEmpty()){
-        preferenceEditor.putString("nm", myFullProfile.publicInfo.nm).apply()
-        preferenceEditor.putString("proShortName", myFullProfile.publicInfo.progShortName).apply()
+        pref.edit {
+            putString("nm", myFullProfile.publicInfo.nm)
+            putString("proShortName", myFullProfile.publicInfo.progShortName)
+        }
     }
-    LaunchedEffect(key1 = "1")
-    {
+    LaunchedEffect(Unit) {
         viewModel.getUserFullProfileInfo(myId,{
             GlobalScope.launch(Dispatchers.IO){
                 viewModel.updateUserPaymentInfo(
@@ -118,39 +96,32 @@ fun ProfileScreen(
                     accessToken = it.token,
                     paymentInfo = it.paymentInfo
                 ){ }
-                delay(100)
-                viewModel.updateUserPaymentInfo(
-                    id = myId,
-                    accessToken = it.token,
-                    paymentInfo = it.paymentInfo
-                ){ }
-                delay(100)
-                viewModel.updateUserLiveResultInfo(
-                    id = myId,
-                    accessToken = it.token,
-                    liveResultInfoList = it.liveResultInfo
-                ){ }
-                delay(100)
-                viewModel.updateUserRegCourseInfo(
-                    id = myId,
-                    accessToken = it.token,
-                    regCourseList = it.regCourseInfo
-                ){ }
+//                delay(100)
+//                viewModel.updateUserLiveResultInfo(
+//                    id = myId,
+//                    accessToken = it.token,
+//                    liveResultInfoList = it.liveResultInfo
+//                ){ }
+//                delay(100)
+//                viewModel.updateUserRegCourseInfo(
+//                    id = myId,
+//                    accessToken = it.token,
+//                    regCourseList = it.regCourseInfo
+//                ){ }
                 delay(100)
                 viewModel.updateClearanceInfo(
                     id = myId,
                     accessToken = it.token,
                     clearanceInfoList = it.clearanceInfo
                 ){ }
-                delay(100)
-                viewModel.updateUserFullResultInfo(
-                    publicInfo = it.publicInfo,
-                    fullResultInfoList = it.fullResultInfo)
+//                delay(100)
+//                viewModel.updateUserFullResultInfo(
+//                    publicInfo = it.publicInfo,
+//                    fullResultInfoList = it.fullResultInfo
+//                )
             }
         },{
-            Looper.prepare()
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            Looper.loop()
+            context.toast(it)
         })
     }
 
@@ -265,6 +236,7 @@ fun Ic(
     }
 
 }
+
 @Composable
 fun InfoDialog(
     viewModel: MainViewModel,
@@ -272,8 +244,7 @@ fun InfoDialog(
     myId: String,
     navController: NavHostController
 ) {
-    val dialogVisibility by viewModel.infoDialogVisibility.collectAsState()
-    val uriHandler = LocalUriHandler.current
+    val dialogVisibility by viewModel.infoDialogVisibility.collectAsStateWithLifecycle()
     val manager = ReviewManagerFactory.create(context)
 
     if (dialogVisibility) {
@@ -306,7 +277,7 @@ fun InfoDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(24.dp)
-                        .padding(vertical = 20.dp)
+                        .padding(top = 20.dp)
                 ) {
                     Text(
                         text = "Made With Love \uD83D\uDC95",
@@ -321,7 +292,7 @@ fun InfoDialog(
                         color = LightRed,
                         fontSize = 16.sp,
                         modifier = Modifier
-                            .padding(bottom = 20.dp)
+                            .padding(bottom = 15.dp)
                     )
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -331,7 +302,8 @@ fun InfoDialog(
                                 viewModel.setInfoDialogVisibility(false)
                                 navController.navigate(InnerScreens.UserProfile("193-15-1071"))
                             }
-                            .padding(15.dp)
+                            .padding(10.dp)
+                            .padding(horizontal = 10.dp)
 
                     ) {
                         Text(
@@ -348,12 +320,12 @@ fun InfoDialog(
                             fontFamily = ubuntu,
                             color = Limerick3,
                             fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.Bold
                         )
                     }
-                    Spacer(modifier = Modifier.size(35.dp))
+                    Spacer(modifier = Modifier.size(5.dp))
                     Text(
-                        text = "knock-me.github.io",
+                        text = "taplink.cc/yk_mahdi",
                         fontFamily = ubuntu,
                         color = BlueViolet3,
                         fontSize = 16.sp,
@@ -361,12 +333,33 @@ fun InfoDialog(
                         modifier = Modifier
                             .clip(RoundedCornerShape(5.dp))
                             .clickable {
-                                uriHandler.openUri("https://knock-me.github.io")
+                                context.showCustomTab(Constants.TAP_LINK_URL)
                             }
                             .padding(5.dp)
                     )
-                    Spacer(modifier = Modifier.size(15.dp))
-                    ReportProblem(context, myId)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 40.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ){
+                        ReportProblem(context, myId)
+                        Button(
+                            modifier = Modifier.bounceClick(),
+                            colors = ButtonDefaults.buttonColors().copy(
+                                containerColor = LessRed
+                            ),
+                            shape = RoundedCornerShape(10.dp),
+                            onClick = {
+                                pref.edit {
+                                    clear()
+                                }
+                                Firebase.auth.signOut()
+                                context.startActivity(Intent(context, LoginActivity::class.java))
+                            }
+                        ) {
+                            Text("Logout", color = TextWhite)
+                        }
+                    }
                 }
             }
 
@@ -390,16 +383,14 @@ fun ReportProblem(context: Context, myId: String, modifier: Modifier = Modifier,
                     val intent = Intent(Intent.ACTION_VIEW)
                     val body = "My Student ID is $myId. The issue is.."
                     val data =
-                        Uri.parse("mailto:ahmad15-1071@diu.edu.bd?subject=Having Issue&body=$body")
+                        "mailto:ahmad15-1071@diu.edu.bd?subject=Having Issue&body=$body".toUri()
                     intent.data = data
                     context.startActivity(intent)
-                } catch (e: Exception) {
-                    Toast
-                        .makeText(context, "No Mailing App Found", Toast.LENGTH_SHORT)
-                        .show()
+                } catch (_: Exception) {
+                    context.toast("No Mailing App Found")
                 }
             }
-            .padding(5.dp)
+            .padding(10.dp)
     )
 }
 
@@ -427,7 +418,8 @@ fun PersonInfo(
                 .clip(RoundedCornerShape(10.dp))
                 .background(DarkerButtonBlue)
         ) {
-            when (painter.state) {
+            val state by painter.state.collectAsStateWithLifecycle()
+            when (state) {
                 is AsyncImagePainter.State.Loading -> {
                     CircularProgressIndicator(
                         color = AquaBlue,
@@ -511,7 +503,6 @@ fun FeatureItem(
     feature: Feature,
     onClick: (() -> Unit)
 ) {
-    val clipboardManager = LocalClipboardManager.current
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
     BoxWithConstraints(
@@ -524,16 +515,15 @@ fun FeatureItem(
                 onClick = { onClick.invoke() },
                 onLongClick = {
                     val text = "${feature.title}: ${feature.info}"
-                    clipboardManager.setText(AnnotatedString(text))
+                    context.setClipBoardData(text)
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    Toast.makeText(context, "Data Copied", Toast.LENGTH_SHORT).show()
                 },
                 onDoubleClick = {}
             )
             .background(feature.darkColor)
     ) {
-        val width = constraints.maxWidth
-        val height = constraints.maxHeight
+        val width = this.constraints.maxWidth
+        val height = this.constraints.maxHeight
 
         // Medium colored path
         val mediumColoredPoint1 = Offset(0f, height * 0.3f)

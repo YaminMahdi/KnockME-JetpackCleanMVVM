@@ -1,9 +1,10 @@
 package com.mlab.knockme.main_feature.presentation.profile
 
 import android.content.Context
-import android.os.Looper
-import android.widget.Toast
-import androidx.compose.foundation.*
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -13,7 +14,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,19 +24,18 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.mlab.knockme.R
 import com.mlab.knockme.auth_feature.domain.model.LiveResultInfo
 import com.mlab.knockme.core.util.bounceClick
+import com.mlab.knockme.core.util.setClipBoardData
+import com.mlab.knockme.core.util.toast
 import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.main.TopBar
 import com.mlab.knockme.main_feature.util.standardQuadFromTo
@@ -44,28 +44,14 @@ import com.mlab.knockme.ui.theme.*
 @Composable
 fun LiveResultViewScreen(navController: NavHostController, viewModel: MainViewModel = hiltViewModel()) {
     val context: Context = LocalContext.current
-    val sharedPreferences = context.getSharedPreferences(
-        context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
-    )
-    val myId = sharedPreferences.getString("studentId",null)!!
-    val myFullProfile by viewModel.userFullProfileInfo.collectAsState()
+    val myFullProfile by viewModel.userFullProfileInfo.collectAsStateWithLifecycle()
+    val myId = myFullProfile.publicInfo.id
 
-    LaunchedEffect(key1 = ""){
-        viewModel.getUserFullProfileInfo(myId,{
-            viewModel.updateUserLiveResultInfo(
-                id = myId,
-                accessToken = it.token,
-                it.liveResultInfo
-            ){msg->
-                Looper.prepare()
-                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                Looper.loop()
-            }
-        },{
-            Looper.prepare()
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            Looper.loop()
-        })
+    LaunchedEffect(myId){
+        if(myId.isEmpty()) return@LaunchedEffect
+        viewModel.updateUserLiveResultInfo(myFullProfile){msg->
+            context.toast(msg)
+        }
     }
 //    val lst = listOf(
 //        LiveResultInfo(
@@ -95,14 +81,8 @@ fun LiveResultViewScreen(navController: NavHostController, viewModel: MainViewMo
 //    )
     Scaffold(topBar = {
         TopBar(navController){
-            viewModel.updateUserLiveResultInfo(
-                id = myId,
-                accessToken = myFullProfile.token,
-                myFullProfile.liveResultInfo
-            ){
-                Looper.prepare()
-                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-                Looper.loop()
+            viewModel.updateUserLiveResultInfo(myFullProfile){
+                context.toast(it)
             }
         }
     }) {
@@ -149,7 +129,6 @@ fun LiveRegCourseItem(
     mediumColor: Color = BlueViolet2,
     darkColor: Color = BlueViolet3
 ) {
-    val clipboardManager = LocalClipboardManager.current
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
     BoxWithConstraints(
@@ -165,15 +144,14 @@ fun LiveRegCourseItem(
                     val text = "${courseResultInfo.courseTitle} (${courseResultInfo.customCourseId})\nQuiz 1:  ${courseResultInfo.q1}\n" +
                             "Quiz 2:  ${courseResultInfo.q2}\n" +
                             "Quiz 3:  ${courseResultInfo.q3}\nQuiz Average:  ${courseResultInfo.quiz}\nMidterm:  ${courseResultInfo.mid1}"
-                    clipboardManager.setText(AnnotatedString(text))
+                    context.setClipBoardData(text)
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    Toast.makeText(context, "Data Copied", Toast.LENGTH_SHORT).show()
                 },
                 onDoubleClick = {}
             )
             .background(darkColor)
     ) {
-        val width = constraints.maxWidth
+        val width = this.constraints.maxWidth
         val height = 480
 
         // Medium colored path

@@ -15,10 +15,10 @@ data class UserProfile(
     val publicInfo: PublicInfo = PublicInfo(), //aida ase
     val privateInfo: PrivateInfoExtended = PrivateInfoExtended(),
     val paymentInfo: PaymentInfo = PaymentInfo(),
-    val regCourseInfo: ArrayList<CourseInfo> = arrayListOf(),
-    val liveResultInfo: ArrayList<LiveResultInfo> = arrayListOf(),
-    val fullResultInfo: ArrayList<FullResultInfo> = arrayListOf(),
-    val clearanceInfo: ArrayList<ClearanceInfo> = arrayListOf()
+    val regCourseInfo: List<CourseInfo> = emptyList(),
+    val liveResultInfo: List<LiveResultInfo> = emptyList(),
+    val fullResultInfo: List<FullResultInfo> = emptyList(),
+    val clearanceInfo: List<ClearanceInfo> = emptyList()
 
 ) : Parcelable {
     fun toUserBasicInfo() =

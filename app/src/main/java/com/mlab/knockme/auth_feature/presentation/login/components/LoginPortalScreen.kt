@@ -1,22 +1,13 @@
 package com.mlab.knockme.auth_feature.presentation.login.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material.icons.rounded.VisibilityOff
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,50 +15,41 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextLinkStyles
-import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.*
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withLink
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mlab.knockme.core.util.Constants
 import com.mlab.knockme.core.util.bounceClick
 import com.mlab.knockme.main_feature.presentation.profile.ReportProblem
-import com.mlab.knockme.ui.theme.AquaBlue
-import com.mlab.knockme.ui.theme.BlueViolet3
-import com.mlab.knockme.ui.theme.ButtonBlue
-import com.mlab.knockme.ui.theme.DeepBlue
-import com.mlab.knockme.ui.theme.DeepBlueLess
-import com.mlab.knockme.ui.theme.KnockMETheme
-import com.mlab.knockme.ui.theme.LightBlue
-import com.mlab.knockme.ui.theme.TextBlue
-import com.mlab.knockme.ui.theme.TextWhite
-import com.mlab.knockme.ui.theme.ubuntu
+import com.mlab.knockme.ui.theme.*
 
 @Composable
 fun LoginPortalScreen(onClick:(id:String,pass:String)->Unit) {
     val context = LocalContext.current
     var id by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
-    var hidden by rememberSaveable{ mutableStateOf(true) }
+    var hidden by rememberSaveable { mutableStateOf(true) }
+    var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
     Box(modifier = Modifier
         .fillMaxSize()
         .background(DeepBlue)
     ){
-
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .padding(horizontal = 50.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-                ){
+        ){
             TitlePortal()
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -81,7 +63,8 @@ fun LoginPortalScreen(onClick:(id:String,pass:String)->Unit) {
                     placeholder = {Text("Input Student ID")},
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
-                    colors = textFieldColors()
+                    colors = textFieldColors(),
+                    modifier = Modifier.fillMaxWidth().semantics { contentType = ContentType.Username }
                 )
                 Spacer(modifier = Modifier.padding(10.dp))
                 TextField(
@@ -91,12 +74,22 @@ fun LoginPortalScreen(onClick:(id:String,pass:String)->Unit) {
                     placeholder = {Text("Input Portal Password")},
                     singleLine = true,
                     colors = textFieldColors(),
-                    visualTransformation = PasswordVisualTransformation(),
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    modifier = Modifier.fillMaxWidth().semantics { contentType = ContentType.Password },
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(
+                                imageVector = if (passwordVisible) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
+                                contentDescription = null
+                            )
+                        }
+                    }
                 )
                 Button(
                     modifier = Modifier
                         .padding(top = 70.dp)
+                        .fillMaxWidth()
                         .bounceClick()
                     ,
                     onClick = {
@@ -119,23 +112,27 @@ fun LoginPortalScreen(onClick:(id:String,pass:String)->Unit) {
 //            text = "By signing in you are agreeing with our ",
 //            modifier= Modifier.align(Alignment.BottomCenter),
 //            linkText = "Terms and Condition",
-//            link = "https://knock-me.github.io/terms.htm"
+//            link = Constants.TERMS_URL
 //        )
-        NbNote(
-            text = "The application is secure because it's open source on ",
-            modifier= Modifier.align(Alignment.BottomCenter),
-            linkText = "GitHub",
-            link = "https://github.com/YaminMahdi/KnockME-JetpackCleanMVVM"
-        )
-        ReportProblem(
-            context = context,
-            myId = id.ifEmpty { "xxx-xx-xxxx" },
-            modifier= Modifier
-                .align(Alignment.BottomCenter)
-                .padding(20.dp),
-            color = TextBlue.copy(.7f)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier= Modifier.align(Alignment.BottomCenter)
+        ){
+            NbNote(
+                text = "The application is secure because it's open source on ",
+                linkText = "GitHub",
+                link = Constants.KNOCK_ME_GIT_URL
+            )
+            ReportProblem(
+                context = context,
+                myId = id.ifEmpty { "xxx-xx-xxxx" },
+                modifier= Modifier
+                    .padding(20.dp)
+                    .padding(bottom = 40.dp),
+                color = TextBlue.copy(.7f)
+            )
+        }
 
-        )
 //        if(!hidden){
 //
 //            LoadingScreen(msg)
@@ -145,14 +142,14 @@ fun LoginPortalScreen(onClick:(id:String,pass:String)->Unit) {
 
 @Composable
 fun TitlePortal() {
-    Spacer(modifier = Modifier.padding(20.dp))
+    Spacer(modifier = Modifier.size(20.dp))
     Text(
-        text = "STUDENT PORTAL",
+        text = "STUDENT\nPORTAL",
         style = MaterialTheme.typography.headlineLarge,
         fontSize = 45.sp,
         lineHeight = 50.sp,
         textAlign = TextAlign.Center,
-        modifier = Modifier.padding(50.dp)
+        modifier = Modifier.padding(vertical = 50.dp)
     )
     
 }
@@ -178,10 +175,9 @@ fun NbNote(
     linkText: String,
     link: String
 ) {
-    val uriHandler = LocalUriHandler.current
     Column(
         modifier = modifier
-            .padding(vertical = 80.dp, horizontal = 70.dp),
+            .padding(vertical = 20.dp, horizontal = 70.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
@@ -207,7 +203,7 @@ fun NbNote(
 //                .firstOrNull()?.let { span ->
 //                    println("Clicked on ${span.item}")
 //                    if(span.item==linkText)
-//                        uriHandler.openUri(link)
+//                        context.showCustomTab(link)
 //                }
 //        },
 //            style = MaterialTheme.typography.headlineSmall.copy(textAlign = TextAlign.Center),

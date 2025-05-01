@@ -51,17 +51,13 @@ interface MainRepo {
         failed: (msg:String) -> Unit
     )
     suspend fun updateRegCourseInfo(
-        id: String,
-        accessToken: String,
-        regCourseInfoList: List<CourseInfo>,
+        userProfile: UserProfile,
         success: (List<CourseInfo>) -> Unit,
         failed: (msg:String) -> Unit
     )
 
     suspend fun updateLiveResultInfo(
-        id: String,
-        accessToken: String,
-        liveResultInfoList: List<LiveResultInfo>,
+        userProfile: UserProfile,
         success: (List<LiveResultInfo>) -> Unit,
         failed: (msg:String) -> Unit
     )

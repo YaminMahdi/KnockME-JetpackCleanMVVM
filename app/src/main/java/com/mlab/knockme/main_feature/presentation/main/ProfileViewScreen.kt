@@ -3,10 +3,7 @@ package com.mlab.knockme.main_feature.presentation.main
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
-import android.os.Looper
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
@@ -25,12 +22,9 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -38,12 +32,14 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import coil.compose.AsyncImagePainter
-import coil.compose.SubcomposeAsyncImage
-import coil.compose.SubcomposeAsyncImageContent
+import coil3.compose.AsyncImagePainter
+import coil3.compose.SubcomposeAsyncImage
+import coil3.compose.SubcomposeAsyncImageContent
 import com.himanshoe.charty.combined.CombinedBarChart
 import com.himanshoe.charty.combined.config.CombinedBarConfig
 import com.himanshoe.charty.combined.model.CombinedBarData
@@ -51,9 +47,7 @@ import com.himanshoe.charty.common.axis.AxisConfig
 import com.himanshoe.charty.common.dimens.ChartDimens
 import com.mlab.knockme.R
 import com.mlab.knockme.auth_feature.domain.model.PublicInfo
-import com.mlab.knockme.core.util.bounceClick
-import com.mlab.knockme.core.util.hasAlphabet
-import com.mlab.knockme.core.util.toDayPassed
+import com.mlab.knockme.core.util.*
 import com.mlab.knockme.main_feature.domain.model.Msg
 import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
 import com.mlab.knockme.main_feature.presentation.InnerScreens
@@ -69,25 +63,24 @@ fun ProfileViewScreen(
     id: String="",
     navController: NavHostController,
     viewModel: MainViewModel = hiltViewModel()
-
 ) {
-    val userBasicInfo by viewModel.userBasicInfo.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val hasPrivateInfo by viewModel.hasPrivateInfo.collectAsState()
-    val loading by viewModel.isResultLoading.collectAsState()
-    val loadingTxt by viewModel.resultLoadingTxt.collectAsState()
+    val userBasicInfo by viewModel.userBasicInfo.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val hasPrivateInfo by viewModel.hasPrivateInfo.collectAsStateWithLifecycle()
+    val loading by viewModel.isResultLoading.collectAsStateWithLifecycle()
+    val loadingTxt by viewModel.resultLoadingTxt.collectAsStateWithLifecycle()
 
     val context: Context =LocalContext.current
     val sharedPreferences = context.getSharedPreferences(
         context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
     )
     //val preferencesEditor = sharedPreferences.edit()
-    val myId = sharedPreferences.getString("studentId","0")!!
-//    val isLoading by viewModel.isLoading.collectAsState()
-//    val hasPrivateInfo  by viewModel.hasPrivateInfo.collectAsState()
-//    val userBasicInfo  by viewModel.userBasicInfo.collectAsState()
+    val myId = sharedPreferences.getString("studentId","")!!
+//    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+//    val hasPrivateInfo  by viewModel.hasPrivateInfo.collectAsStateWithLifecycle()
+//    val userBasicInfo  by viewModel.userBasicInfo.collectAsStateWithLifecycle()
 
-    LaunchedEffect(key1 = "1"){
+    LaunchedEffect(Unit){
         //if(isLoading)
         viewModel.getUserBasicInfo(id){
             if(!id.hasAlphabet()){
@@ -251,7 +244,6 @@ fun Profile(
             .width(300.dp),
         contentAlignment = Alignment.Center
     ) {
-        val clipboardManager = LocalClipboardManager.current
         val haptic = LocalHapticFeedback.current
         val context = LocalContext.current
         Column(
@@ -267,8 +259,8 @@ fun Profile(
                     .clip(RoundedCornerShape(100.dp))
                     .background(DarkerButtonBlue)
             ) {
-
-                when (painter.state) {
+                val state by painter.state.collectAsStateWithLifecycle()
+                when (state) {
                     is AsyncImagePainter.State.Loading -> {
                         CircularProgressIndicator(
                             color = AquaBlue,
@@ -290,16 +282,15 @@ fun Profile(
                 }
             }
             Text(
-                text = if(!publicInfo?.nm.isNullOrEmpty()) publicInfo?.nm!! else "",
+                text = if(!publicInfo?.nm.isNullOrEmpty()) publicInfo.nm else "",
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.headlineLarge,
                 modifier = Modifier
                     .combinedClickable(
                         onClick = {},
                         onLongClick = {
-                            clipboardManager.setText(AnnotatedString(publicInfo?.nm!!))
+                            context.setClipBoardData(publicInfo?.nm)
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            Toast.makeText(context, "Data Copied", Toast.LENGTH_SHORT).show()
                         },
                         onDoubleClick = {}
                     )
@@ -314,9 +305,8 @@ fun Profile(
                         onClick = {},
                         onLongClick = {
                             val text = if(!publicInfo.cgpa.isNaN()) "CGPA: ${publicInfo.cgpa}" else "CGPA: 0.0"
-                            clipboardManager.setText(AnnotatedString(text))
+                            context.setClipBoardData(text)
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            Toast.makeText(context, "Data Copied", Toast.LENGTH_SHORT).show()
                         },
                         onDoubleClick = {}
                     ),
@@ -346,7 +336,7 @@ fun CgpaToast(modifier: Modifier, pb: PublicInfo, isLoading: Boolean, onClick: (
         ), label = ""
     )
 //    val context = LocalContext.current
-//    val clipboardManager = LocalClipboardManager.current
+//    val clipboardManager = LocalClipboard.current
 
     Box(
         modifier = modifier
@@ -371,7 +361,7 @@ fun CgpaToast(modifier: Modifier, pb: PublicInfo, isLoading: Boolean, onClick: (
 //                        Uri.parse("https://play.google.com/store/apps/details?id=net.startbit.diucgpa")
 //                    context.startActivity(intent)
 //                }
-//                Toast.makeText(context, "Student ID copied, paste it in DIU CGPA App.", Toast.LENGTH_LONG).show()
+//                context.toast("Student ID copied, paste it in DIU CGPA App.")
 
             }
     ) {
@@ -398,7 +388,7 @@ fun SocialLink(
     id: String,
     myId: String
 ) {
-    val myBasicInfo by viewModel.myBasicInfo.collectAsState()
+    val myBasicInfo by viewModel.myBasicInfo.collectAsStateWithLifecycle()
     val mutableInteractionSource by remember { mutableStateOf(MutableInteractionSource()) }
 
     Row(
@@ -409,7 +399,6 @@ fun SocialLink(
             .padding(vertical = 30.dp)
 
     ) {
-        val uriHandler = LocalUriHandler.current
         val context = LocalContext.current
         Button(
             modifier = Modifier
@@ -430,9 +419,7 @@ fun SocialLink(
                     )
                     viewModel.refreshProfileInChats(myPath, tarProfile) {
                         Log.d("TAG", "ChatPersonalScreen: $it")
-                        Looper.prepare()
-                        Toast.makeText(context, "Couldn't send message", Toast.LENGTH_SHORT).show()
-                        Looper.loop()
+                        context.toast("Couldn't send message")
                     }
                     val myProfile = Msg(
                         id = myBasicInfo.publicInfo.id,
@@ -443,9 +430,7 @@ fun SocialLink(
                     )
                     viewModel.refreshProfileInChats(tarPath, myProfile) {
                         Log.d("TAG", "ChatPersonalScreen: $it")
-                        Looper.prepare()
-                        Toast.makeText(context, "Couldn't send message", Toast.LENGTH_SHORT).show()
-                        Looper.loop()
+                        context.toast("Couldn't send message")
                     }
                     navController.navigate(InnerScreens.Conversation(path, id))
                 }
@@ -493,11 +478,9 @@ fun SocialLink(
                         indication = ripple(color = Color.White),
                         onClick = {
                             if (!userBasicInfo.privateInfo.fbLink.isNullOrEmpty())
-                                uriHandler.openUri(userBasicInfo.privateInfo.fbLink!!)
+                                context.showCustomTab(userBasicInfo.privateInfo.fbLink!!)
                             else
-                                Toast
-                                    .makeText(context, "Link Not Valid", Toast.LENGTH_SHORT)
-                                    .show()
+                                context.toast("Invalid link")
                         }
                     )
                     .background(DeepBlueLess)
@@ -526,23 +509,15 @@ fun SocialLink(
                                     val intent = Intent(Intent.ACTION_VIEW)
                                     val body = "Hey, I found your email in KnockME.\n"
                                     val data =
-                                        Uri.parse("mailto:${userBasicInfo.privateInfo.email}?subject=Wanna be friend!&body=$body")
+                                        "mailto:${userBasicInfo.privateInfo.email}?subject=Wanna be friend!&body=$body".toUri()
                                     intent.data = data
                                     context.startActivity(intent)
 
-                                } catch (e: Exception) {
-                                    Toast
-                                        .makeText(
-                                            context,
-                                            "No Mailing App Found",
-                                            Toast.LENGTH_SHORT
-                                        )
-                                        .show()
+                                } catch (_: Exception) {
+                                    context.toast("No Mailing App Found")
                                 }
                             } else
-                                Toast
-                                    .makeText(context, "No Email Found", Toast.LENGTH_SHORT)
-                                    .show()
+                                context.toast("No Email Found")
                         }
                     )
                     .background(DeepBlueLess)
@@ -646,7 +621,6 @@ fun BarChart(barDataList: List<CombinedBarData>, pb: PublicInfo, navController: 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun Details(userBasicInfo: UserBasicInfo, hasPrivateInfo: Boolean) {
-//    val clipboardManager = LocalClipboardManager.current
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "Details:",
@@ -687,7 +661,6 @@ fun Address(userBasicInfo: UserBasicInfo) {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DetailsItems(data: String, color: Color) {
-    val clipboardManager = LocalClipboardManager.current
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
     Box(
@@ -698,9 +671,8 @@ fun DetailsItems(data: String, color: Color) {
             .combinedClickable(
                 onClick = {},
                 onLongClick = {
-                    clipboardManager.setText(AnnotatedString(data.split(": ")[1]))
+                    context.setClipBoardData(data.split(": ")[1])
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    Toast.makeText(context, "Data Copied", Toast.LENGTH_SHORT).show()
                 },
                 onDoubleClick = {}
             )

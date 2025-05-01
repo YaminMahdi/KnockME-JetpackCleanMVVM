@@ -1,28 +1,15 @@
 package com.mlab.knockme.main_feature.presentation.profile
 
 import android.content.Context
-import android.os.Looper
-import android.widget.Toast
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,11 +19,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -47,51 +32,29 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.mlab.knockme.R
 import com.mlab.knockme.core.util.bounceClick
+import com.mlab.knockme.core.util.setClipBoardData
 import com.mlab.knockme.core.util.toDayPassed
+import com.mlab.knockme.core.util.toast
 import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.main.TopBar
 import com.mlab.knockme.main_feature.util.standardQuadFromTo
-import com.mlab.knockme.ui.theme.Beige1
-import com.mlab.knockme.ui.theme.Beige2
-import com.mlab.knockme.ui.theme.Beige3
-import com.mlab.knockme.ui.theme.BlueViolet1
-import com.mlab.knockme.ui.theme.BlueViolet2
-import com.mlab.knockme.ui.theme.BlueViolet3
-import com.mlab.knockme.ui.theme.DeepBlue
-import com.mlab.knockme.ui.theme.KnockMETheme
-import com.mlab.knockme.ui.theme.LightGreen1
-import com.mlab.knockme.ui.theme.LightGreen2
-import com.mlab.knockme.ui.theme.LightGreen3
-import com.mlab.knockme.ui.theme.Limerick1
-import com.mlab.knockme.ui.theme.Limerick2
-import com.mlab.knockme.ui.theme.Limerick3
-import com.mlab.knockme.ui.theme.TextWhite
+import com.mlab.knockme.ui.theme.*
 
 @Composable
 fun DueViewScreen(navController: NavHostController, viewModel: MainViewModel= hiltViewModel()) {
     val context: Context = LocalContext.current
-    val sharedPreferences = context.getSharedPreferences(
-        context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
-    )
-    val myId = sharedPreferences.getString("studentId",null)!!
-    val myFullProfile by viewModel.userFullProfileInfo.collectAsState()
+    val myFullProfile by viewModel.userFullProfileInfo.collectAsStateWithLifecycle()
+    val myId = myFullProfile.publicInfo.id
 
-    LaunchedEffect(key1 = ""){
-        viewModel.getUserFullProfileInfo(myId,{
-            viewModel.updateUserPaymentInfo(
-                id = myId,
-                accessToken = it.token,
-                paymentInfo = it.paymentInfo
-            ){msg->
-                Looper.prepare()
-                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                Looper.loop()
-            }
-        },{
-            Looper.prepare()
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            Looper.loop()
-        })
+    LaunchedEffect(myId){
+        if(myId.isEmpty()) return@LaunchedEffect
+        viewModel.updateUserPaymentInfo(
+            id = myId,
+            accessToken = myFullProfile.token,
+            paymentInfo = myFullProfile.paymentInfo
+        ){msg->
+            context.toast(msg)
+        }
     }
     Scaffold(topBar = {
         TopBar(navController){
@@ -100,9 +63,7 @@ fun DueViewScreen(navController: NavHostController, viewModel: MainViewModel= hi
                 accessToken = myFullProfile.token,
                 paymentInfo = myFullProfile.paymentInfo
             ) {
-                Looper.prepare()
-                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-                Looper.loop()
+                context.toast(it)
             }
         }
     }) {
@@ -160,7 +121,6 @@ fun PaymentInfoItem(
     mediumColor: Color,
     darkColor: Color
 ) {
-    val clipboardManager = LocalClipboardManager.current
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
     BoxWithConstraints(
@@ -173,16 +133,15 @@ fun PaymentInfoItem(
                 onClick = {},
                 onLongClick = {
                     val text = "$type:\n৳$taha"
-                    clipboardManager.setText(AnnotatedString(text))
+                    context.setClipBoardData(text)
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    Toast.makeText(context, "Data Copied", Toast.LENGTH_SHORT).show()
                 },
                 onDoubleClick = {}
             )
             .background(darkColor)
     ) {
-        val width = constraints.maxWidth
-        val height = constraints.maxHeight
+        val width = this.constraints.maxWidth
+        val height = this.constraints.maxHeight
 
         // Medium colored path
         val mediumColoredPoint1 = Offset(0f, height * 0.3f)

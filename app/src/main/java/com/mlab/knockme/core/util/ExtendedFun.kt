@@ -1,5 +1,11 @@
 package com.mlab.knockme.core.util
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.util.Log
+import android.widget.Toast
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -13,9 +19,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.core.net.toUri
 import com.ibm.icu.text.RuleBasedNumberFormat
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 enum class ButtonState { Pressed, Idle }
@@ -84,7 +93,7 @@ fun String.toShortSemester(): String{
 
 fun Int.toWords(): String {
     val formatter = RuleBasedNumberFormat(
-        Locale("en", "US"),
+        Locale.US,
         RuleBasedNumberFormat.SPELLOUT
     )
 
@@ -124,6 +133,53 @@ fun String.isNotEmpty(block: (String) -> Unit) {
         block.invoke(this)
 }
 
+fun Context?.getClipBoardData(): String {
+    this ?: return ""
+    val clipBoardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    var data = ""
+    if (clipBoardManager.primaryClip?.description?.hasMimeType("text/*") == true) {
+        clipBoardManager.primaryClip?.itemCount?.let {
+            for (i in 0 until it) {
+                data += clipBoardManager.primaryClip?.getItemAt(i)?.text ?: ""
+            }
+        }
+    }
+    data.log("getClipBoardData")
+    return data
+}
 
+fun Context.setClipBoardData(data: String?) {
+    data ?: return
+    val clipBoardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    val clip = ClipData.newPlainText(data, data)
+    clipBoardManager.setPrimaryClip(clip)
+    toast("Data Copied!")
+}
+
+fun Context?.toast(msg: String?) {
+    if (msg.isNullOrEmpty()) return
+    MainScope().launch {
+        Toast.makeText(this@toast, msg, Toast.LENGTH_SHORT).show()
+    }
+}
+
+fun Any?.log(tag: String = "TAG"): Any? {
+    Log.i("log> '$tag'", "$tag - $this : ${this?.javaClass?.name?.split('.')?.lastOrNull() ?: ""}")
+    return this
+}
+
+inline fun <T> tryGet(data: () -> T): T? =
+    try {
+        data()
+    } catch (e: Exception) {
+        null
+    }
+
+fun Context?.showCustomTab(url: String?) {
+    runCatching { if (this != null && !url.isNullOrEmpty()) {
+        val intent = CustomTabsIntent.Builder().build()
+        intent.launchUrl(this, url.toUri())
+    } }
+}
 
 

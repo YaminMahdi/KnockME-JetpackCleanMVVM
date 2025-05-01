@@ -1,11 +1,9 @@
 package com.mlab.knockme.auth_feature.presentation.login
 
-import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -14,12 +12,13 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.content.edit
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -28,8 +27,8 @@ import com.facebook.AccessToken
 import com.facebook.CallbackManager
 import com.facebook.login.widget.LoginButton
 import com.google.android.gms.common.SignInButton
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 import com.mlab.knockme.R
 import com.mlab.knockme.auth_feature.domain.model.FBResponse
 import com.mlab.knockme.auth_feature.presentation.login.components.LoadingScreen
@@ -37,15 +36,13 @@ import com.mlab.knockme.auth_feature.presentation.login.components.LoginPortalSc
 import com.mlab.knockme.auth_feature.presentation.login.components.LoginScreen
 import com.mlab.knockme.core.components.InAppUpdate
 import com.mlab.knockme.core.util.Resource
+import com.mlab.knockme.core.util.toast
 import com.mlab.knockme.main_feature.presentation.MainActivity
+import com.mlab.knockme.pref
 import com.mlab.knockme.ui.theme.DeepBlue
 import com.mlab.knockme.ui.theme.KnockMETheme
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 
 
 @AndroidEntryPoint
@@ -54,7 +51,7 @@ class LoginActivity : ComponentActivity() {
     private val callbackManager = CallbackManager.Factory.create()
     private val inAppUpdate = InAppUpdate(this)
     private val sharedPreferences by lazy {
-        getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE)
+        getSharedPreferences(getString(R.string.preference_file_key), MODE_PRIVATE)
     }
     @OptIn(DelicateCoroutinesApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,13 +65,10 @@ class LoginActivity : ComponentActivity() {
                    this@LoginActivity.finish()
                }
             }
-            keepSplash = false
+            else keepSplash = false
         }
         super.onCreate(savedInstanceState)
-        val sharedPreferences = this.getSharedPreferences(
-            getString(R.string.preference_file_key), Context.MODE_PRIVATE
-        )
-        val preferencesEditor = sharedPreferences.edit()
+
 
         setContent {
             KnockMETheme {
@@ -111,7 +105,7 @@ class LoginActivity : ComponentActivity() {
 //                        }
 //                    }
 
-                val loadingState by loginViewModel.loadingState.collectAsState()
+                val loadingState by loginViewModel.loadingState.collectAsStateWithLifecycle()
                 NavHost(navController = navController,
                     modifier = Modifier
                         .background(DeepBlue)
@@ -129,9 +123,11 @@ class LoginActivity : ComponentActivity() {
                                 callbackManager,
                                 {data->
                                     loginViewModel.activeLoading()
-                                    preferencesEditor.putString("fbId", data.fbId).apply()
-                                    preferencesEditor.putString("fbLink", data.fbLink).apply()
-                                    preferencesEditor.putString("pic", data.pic).apply()
+                                    pref.edit {
+                                        putString("fbId", data.fbId)
+                                        putString("fbLink", data.fbLink)
+                                        putString("pic", data.pic)
+                                    }
                                     //navController.navigate(AuthScreens.LoadingInfoScreen.route)
                                     loginViewModel.signInFirebase(AccessToken.getCurrentAccessToken()!!, {
                                         loginViewModel.deactivateLoading()
@@ -146,19 +142,21 @@ class LoginActivity : ComponentActivity() {
                                     success = { credential ->
                                         if(credential != null){
                                             //google sign in success
-                                            preferencesEditor.putString("fbId", credential.id).apply()
-                                            preferencesEditor.putString("fbLink", "").apply()
                                             val photoUrl = credential
                                                 .profilePictureUri?.toString()
                                                 ?.replace("s96-c","s480-c")
                                             Log.d("TAG", "onCreate: $photoUrl")
-                                            preferencesEditor.putString("pic", photoUrl).apply()
+                                            pref.edit {
+                                                putString("fbId", credential.id)
+                                                putString("fbLink", "")
+                                                putString("pic", photoUrl)
+                                            }
                                         }
                                         else // facebook sign in success
                                             navController.navigate(AuthScreens.LoginScreenPortal)
 
                                     }, failed = {
-                                        Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                                        context.toast(it)
                                     }
                                 )
                             }
@@ -168,12 +166,12 @@ class LoginActivity : ComponentActivity() {
                             LoadingScreen(data = loadingState.loadingText)
                     }
                     composable<AuthScreens.LoginScreenPortal>{
-                        val cont = LocalContext.current
+                        val context = LocalContext.current
                         val fbInfo= FBResponse(
-                            AccessToken.getCurrentAccessToken(),
-                            sharedPreferences.getString("fbId","") ?: "",
-                            sharedPreferences.getString("fbLink","") ?: "",
-                            sharedPreferences.getString("pic","") ?: ""
+                            accessToken = AccessToken.getCurrentAccessToken(),
+                            fbId = sharedPreferences.getString("fbId","") ?: "",
+                            fbLink = sharedPreferences.getString("fbLink","") ?: "",
+                            pic = sharedPreferences.getString("pic","") ?: ""
                         )
                         val scope = rememberCoroutineScope { Dispatchers.Main }
                         LoginPortalScreen{ id, pass ->
@@ -186,7 +184,9 @@ class LoginActivity : ComponentActivity() {
                                             Log.d("TAG", "onCreate Success: ${it.message}")
                                             val intent =
                                                 Intent(this@LoginActivity, MainActivity::class.java)
-                                            preferencesEditor.putString("studentId", id).apply()
+                                            pref.edit {
+                                                putString("studentId", id)
+                                            }
                                             //intent.putExtra("id",id)
                                             startActivity(intent)
                                             finish()
@@ -201,7 +201,7 @@ class LoginActivity : ComponentActivity() {
                                             Log.d("TAG", "onCreate Error: ${it.message}")
                                             if(once){
                                                 once = false
-                                                Toast.makeText(cont, it.message, Toast.LENGTH_SHORT).show()
+                                                context.toast(it.message)
                                             }
                                         }
                                     }

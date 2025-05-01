@@ -1,9 +1,10 @@
 package com.mlab.knockme.main_feature.presentation.profile
 
 import android.content.Context
-import android.os.Looper
-import android.widget.Toast
-import androidx.compose.foundation.*
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,7 +13,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,19 +22,18 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.mlab.knockme.R
 import com.mlab.knockme.auth_feature.domain.model.CourseInfo
 import com.mlab.knockme.core.util.bounceClick
+import com.mlab.knockme.core.util.setClipBoardData
 import com.mlab.knockme.core.util.toTeacherInitial
+import com.mlab.knockme.core.util.toast
 import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.main.TopBar
 import com.mlab.knockme.main_feature.util.standardQuadFromTo
@@ -42,28 +42,14 @@ import com.mlab.knockme.ui.theme.*
 @Composable
 fun RegCourseViewScreen(navController: NavHostController, viewModel: MainViewModel = hiltViewModel()) {
     val context: Context = LocalContext.current
-    val sharedPreferences = context.getSharedPreferences(
-        context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
-    )
-    val myId = sharedPreferences.getString("studentId",null)!!
-    val myFullProfile by viewModel.userFullProfileInfo.collectAsState()
+    val myFullProfile by viewModel.userFullProfileInfo.collectAsStateWithLifecycle()
+    val myId = myFullProfile.publicInfo.id
 
-    LaunchedEffect(key1 = ""){
-        viewModel.getUserFullProfileInfo(myId,{
-            viewModel.updateUserRegCourseInfo(
-                id = myId,
-                accessToken = it.token,
-                it.regCourseInfo
-            ){msg->
-                Looper.prepare()
-                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                Looper.loop()
-            }
-        },{
-            Looper.prepare()
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            Looper.loop()
-        })
+    LaunchedEffect(myId){
+        if(myId.isEmpty()) return@LaunchedEffect
+        viewModel.updateUserRegCourseInfo(myFullProfile){ msg ->
+            context.toast(msg)
+        }
     }
 //    val lst = listOf(
 //        CourseInfo(
@@ -135,14 +121,9 @@ fun RegCourseViewScreen(navController: NavHostController, viewModel: MainViewMod
 //    )
     Scaffold(topBar = {
         TopBar(navController){
-            viewModel.updateUserRegCourseInfo(
-                id = myId,
-                accessToken = myFullProfile.token,
-                myFullProfile.regCourseInfo
-            ){
-                Looper.prepare()
-                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-                Looper.loop()            }
+            viewModel.updateUserRegCourseInfo(myFullProfile){
+                context.toast(it)
+            }
         }
     }) {
         Column(modifier = Modifier
@@ -164,7 +145,7 @@ fun RegCourseViewScreen(navController: NavHostController, viewModel: MainViewMod
                     .padding(vertical = 10.dp)
             ) {
                 Text(
-                    text = if(myFullProfile.regCourseInfo.size>0) myFullProfile.regCourseInfo[0].toShortSemName() else "",
+                    text = if(myFullProfile.regCourseInfo.isNotEmpty()) myFullProfile.regCourseInfo[0].toShortSemName() else "",
                     style = MaterialTheme.typography.headlineMedium
                 )
                 Text(
@@ -196,7 +177,6 @@ fun RegCourseItem(
     mediumColor: Color=BlueViolet2,
     darkColor: Color=BlueViolet3
 ) {
-    val clipboardManager = LocalClipboardManager.current
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
     BoxWithConstraints(
@@ -210,15 +190,14 @@ fun RegCourseItem(
                 onClick = {},
                 onLongClick = {
                     val text = "${courseInfo.courseTitle} (${courseInfo.customCourseId})\nCredit: ${courseInfo.totalCredit?.toInt()}\nBy ${courseInfo.employeeName}"
-                    clipboardManager.setText(AnnotatedString(text))
+                    context.setClipBoardData(text)
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    Toast.makeText(context, "Data Copied", Toast.LENGTH_SHORT).show()
                 },
                 onDoubleClick = {}
             )
             .background(darkColor)
     ) {
-        val width = constraints.maxWidth
+        val width = this.constraints.maxWidth
         val height = 340
 
         // Medium colored path

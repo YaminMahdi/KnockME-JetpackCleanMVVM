@@ -1,10 +1,11 @@
 package com.mlab.knockme.main_feature.presentation.profile
 
 import android.content.Context
-import android.os.Looper
-import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.*
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -12,13 +13,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,18 +22,19 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.mlab.knockme.auth_feature.domain.model.SemesterInfo
 import com.mlab.knockme.core.util.bounceClick
+import com.mlab.knockme.core.util.setClipBoardData
+import com.mlab.knockme.core.util.toast
 import com.mlab.knockme.main_feature.presentation.MainScreens
 import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.chats.CustomToast
@@ -54,11 +51,10 @@ import kotlin.time.Duration.Companion.seconds
 @Composable
 fun CgpaViewScreen(id: String, navController: NavHostController, viewModel: MainViewModel = hiltViewModel()) {
     val context: Context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
     val haptic = LocalHapticFeedback.current
-    val myFullProfile by viewModel.userFullProfileInfo.collectAsState()
-    val loading by viewModel.isResultLoading.collectAsState()
-    val loadingTxt by viewModel.resultLoadingTxt.collectAsState()
+    val myFullProfile by viewModel.userFullProfileInfo.collectAsStateWithLifecycle()
+    val loading by viewModel.isResultLoading.collectAsStateWithLifecycle()
+    val loadingTxt by viewModel.resultLoadingTxt.collectAsStateWithLifecycle()
 
     val semesterInfoList = myFullProfile.fullResultInfo.map { it.semesterInfo }
     val semesterCount = semesterInfoList.count { it.sgpa != 0.0 }
@@ -66,15 +62,13 @@ fun CgpaViewScreen(id: String, navController: NavHostController, viewModel: Main
     if(isMsgNeeded != null)
         isMsgNeeded = semesterCount > 5
 
-    LaunchedEffect(key1 = ""){
+    LaunchedEffect(Unit){
         viewModel.getUserFullProfileInfo(id,{
             viewModel.updateUserFullResultInfo(
                 publicInfo = it.publicInfo,
                 fullResultInfoList = it.fullResultInfo)
         },{
-            Looper.prepare()
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            Looper.loop()
+            context.toast(it)
         })
     }
 
@@ -131,11 +125,8 @@ fun CgpaViewScreen(id: String, navController: NavHostController, viewModel: Main
                         onClick = {},
                         onLongClick = {
                             val text = "CGPA: ${myFullProfile.publicInfo.cgpa}"
-                            clipboardManager.setText(AnnotatedString(text))
+                            context.setClipBoardData(text)
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            Toast
-                                .makeText(context, "Data Copied", Toast.LENGTH_SHORT)
-                                .show()
                         },
                         onDoubleClick = {}
                     )
@@ -175,7 +166,7 @@ fun CgpaViewScreen(id: String, navController: NavHostController, viewModel: Main
                     .padding(horizontal = 14.dp, vertical = 5.dp),
                 //textAlign = TextAlign.End
             )
-            AnimatedVisibility(visible = isMsgNeeded ?: false) {
+            AnimatedVisibility(visible = isMsgNeeded == true) {
                 Text(
                     textAlign = TextAlign.Center,
                     text = "N.B : CGPA is calculated without the Final defense result",
@@ -237,7 +228,6 @@ fun SemesterInfoItem(
     darkColor: Color = Limerick3,
     onClick: (Int) -> Unit
 ) {
-    val clipboardManager = LocalClipboardManager.current
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
     BoxWithConstraints(
@@ -253,18 +243,15 @@ fun SemesterInfoItem(
                 onLongClick = {
                     val text =
                         "Semester: ${semesterInfo.toShortSemName()}\nSGPA: ${semesterInfo.sgpa}\nCredits: ${semesterInfo.creditTaken.toInt()}"
-                    clipboardManager.setText(AnnotatedString(text))
+                    context.setClipBoardData(text)
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    Toast
-                        .makeText(context, "Data Copied", Toast.LENGTH_SHORT)
-                        .show()
                 },
                 onDoubleClick = {}
             )
             .background(darkColor)
     ) {
-        val width = constraints.maxWidth
-        val height = constraints.maxHeight+50
+        val width = this.constraints.maxWidth
+        val height = this.constraints.maxHeight+50
 
         // Medium colored path
         val mediumColoredPoint1 = Offset(0f, height * 0.3f)

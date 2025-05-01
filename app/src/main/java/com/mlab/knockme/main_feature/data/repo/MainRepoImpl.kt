@@ -4,8 +4,7 @@ import android.util.Log
 import com.google.firebase.database.*
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
+import com.google.firebase.firestore.toObject
 import com.mlab.knockme.auth_feature.data.data_source.PortalApi
 import com.mlab.knockme.auth_feature.data.data_source.dto.DailyHadithDto
 import com.mlab.knockme.auth_feature.domain.model.*
@@ -15,7 +14,10 @@ import com.mlab.knockme.core.util.notEqualsIgnoreOrder
 import com.mlab.knockme.main_feature.domain.model.Msg
 import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
 import com.mlab.knockme.main_feature.domain.repo.MainRepo
-import kotlinx.coroutines.*
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.EOFException
 import java.io.IOException
@@ -27,9 +29,6 @@ class MainRepoImpl @Inject constructor(
     private val api: PortalApi
 ) : MainRepo {
 
-    private val mapper: Gson by lazy { GsonBuilder().serializeNulls().create() }
-//    private var searchJob: Job? =null
-//    private val searchData= mutableListOf<Msg>()
     override fun getMessages(
         path: String,
         success: (msgList: List<Msg>) -> Unit,
@@ -133,11 +132,8 @@ class MainRepoImpl @Inject constructor(
         val docRef = firestore.collection("userProfile").document(id)
         docRef.get()
             .addOnSuccessListener { document ->
-                if (document != null && document.exists()) {
-
-                    val userBasicInfo = mapper
-                        .fromJson(mapper.toJson(document.data), UserProfile::class.java)
-                        .toUserBasicInfo()
+                val userBasicInfo = document.toObject<UserProfile>()?.toUserBasicInfo()
+                if (userBasicInfo != null) {
                     Log.d("getUserBasicInfo", "DocumentSnapshot data: ${userBasicInfo.publicInfo}")
 
                     success.invoke(userBasicInfo)
@@ -167,7 +163,7 @@ class MainRepoImpl @Inject constructor(
             .addOnSuccessListener { document ->
                 if (document != null && document.exists()) {
                     Log.d("getOrCreateUserProfileInfo", "DocumentSnapshot data: ${document.data}")
-                    val profile = mapper.fromJson(mapper.toJson(document.data), UserProfile::class.java)
+                    val profile = document.toObject<UserProfile>() ?: UserProfile()
                     success.invoke(profile)
                 } else { failed.invoke("User Doesn't Exist") }
             }
@@ -190,7 +186,7 @@ class MainRepoImpl @Inject constructor(
             .addOnSuccessListener { document ->
                 if (document != null && document.exists()) {
                     Log.d("getOrCreateUserProfileInfo", "DocumentSnapshot data: ${document.data}")
-                    val profile = mapper.fromJson(mapper.toJson(document.data), UserProfile::class.java)
+                    val profile = document.toObject<UserProfile>() ?: UserProfile()
                     val msgDis: String
                     if(profile.publicInfo.cgpa == 0.0) {
                         msgDis = "ID: ${profile.publicInfo.id}"
@@ -229,7 +225,7 @@ class MainRepoImpl @Inject constructor(
                                     loading = {
                                     when (it) {
                                         -1 -> failed.invoke("Oops, Something Went Wrong.")
-                                        -2 -> failed.invoke("Couldn't Reach Server.")
+//                                        -2 -> failed.invoke("Couldn't Reach Server.")
                                         else -> loading.invoke("Getting SGPA For $id. loading Done For Semester $it .")
                                     } },
                                     success = { cgpa,totalCompletedCredit, fullResultInfo ->
@@ -337,19 +333,21 @@ class MainRepoImpl @Inject constructor(
     }
 
     override suspend fun updateRegCourseInfo(
-        id: String,
-        accessToken: String,
-        regCourseInfoList: List<CourseInfo>,
+        userProfile: UserProfile,
         success: (List<CourseInfo>) -> Unit,
         failed: (msg: String) -> Unit
     ) {
-        val docRef = firestore.collection("userProfile").document(id)
+        val docRef = firestore.collection("userProfile").document(userProfile.publicInfo.id)
         try {
-            val semInfo =api.getAllSemesterInfo(accessToken)
+//            val semInfo =api.getAllSemesterInfo(accessToken)
+            val semInfo = if(userProfile.clearanceInfo.isEmpty())
+                api.getClearanceInfo(userProfile.token).orEmpty().map { it.toClearanceInfo() }.reversed()
+            else
+                userProfile.clearanceInfo.reversed()
             var regCourseInfoNew = emptyList<CourseInfo>()
             run lit@{
-                semInfo?.forEach {lsInfo ->
-                    val result = api.getRegisteredCourse(lsInfo.semesterId, accessToken)?.map { it.toCourseInfo() }
+                semInfo.forEach {lsInfo ->
+                    val result = api.getRegisteredCourse(lsInfo.semesterId, userProfile.token).body()?.map { it.toCourseInfo() }
                     result?.let {
                         regCourseInfoNew = result
                     }
@@ -358,7 +356,7 @@ class MainRepoImpl @Inject constructor(
                 }
             }
             Log.d("getStudentInfo", "registeredCourse: $regCourseInfoNew")
-            if (regCourseInfoList notEqualsIgnoreOrder regCourseInfoNew && regCourseInfoNew.isNotEmpty()){
+            if (userProfile.regCourseInfo notEqualsIgnoreOrder regCourseInfoNew && regCourseInfoNew.isNotEmpty()){
                 success.invoke(regCourseInfoNew)
                 docRef.update("regCourseInfo" , regCourseInfoNew)
                 docRef.update("lastUpdatedRegCourseInfo" , System.currentTimeMillis())
@@ -380,20 +378,21 @@ class MainRepoImpl @Inject constructor(
     }
 
     override suspend fun updateLiveResultInfo(
-        id: String,
-        accessToken: String,
-        liveResultInfoList: List<LiveResultInfo>,
+        userProfile: UserProfile,
         success: (List<LiveResultInfo>) -> Unit,
         failed: (msg: String) -> Unit
     ) {
-        val docRef = firestore.collection("userProfile").document(id)
+        val docRef = firestore.collection("userProfile").document(userProfile.publicInfo.id)
         val liveResultInfoListNew = mutableListOf<LiveResultInfo>()
         try {
-            val semInfo =api.getAllSemesterInfo(accessToken)
+            val semInfo = if(userProfile.clearanceInfo.isEmpty())
+                api.getClearanceInfo(userProfile.token).orEmpty().map { it.toClearanceInfo() }.reversed()
+            else
+                userProfile.clearanceInfo.reversed()
             var registeredCourse = emptyList<CourseInfo>()
             run lit@{
-                semInfo?.forEach {lsInfo ->
-                    val result = api.getRegisteredCourse(lsInfo.semesterId, accessToken)?.map { it.toCourseInfo() }
+                semInfo.forEach {lsInfo ->
+                    val result = api.getRegisteredCourse(lsInfo.semesterId, userProfile.token).body()?.map { it.toCourseInfo() }
                     result?.let {
                         registeredCourse = result
                     }
@@ -403,14 +402,14 @@ class MainRepoImpl @Inject constructor(
             }
             Log.d("getStudentInfo", "registeredCourse: $registeredCourse")
             registeredCourse.forEach {
-                val result = api.getLiveResult(it.courseSectionId!!, accessToken)
+                val result = api.getLiveResult(it.courseSectionId!!, userProfile.token)
                 val data = result.body()
                 if(result.isSuccessful && data != null)
                     liveResultInfoListNew.add(
                         data.toLiveResultInfo(it.customCourseId!!, it.courseTitle!!, it.toShortSemName())
                     )
             }
-            if(liveResultInfoList notEqualsIgnoreOrder liveResultInfoListNew && liveResultInfoListNew.isNotEmpty()){
+            if(userProfile.liveResultInfo notEqualsIgnoreOrder liveResultInfoListNew && liveResultInfoListNew.isNotEmpty()){
                 success.invoke(liveResultInfoListNew)
                 docRef.update("liveResultInfo" , liveResultInfoListNew)
                 docRef.update("lastUpdatedLiveResultInfo" , System.currentTimeMillis())
@@ -437,28 +436,32 @@ class MainRepoImpl @Inject constructor(
         loading: (msg: String) -> Unit,
         failed: (msg: String) -> Unit
     ) {
-        val docRef = firestore.collection("userProfile").document(publicInfo.id!!)
-        getCgpa(publicInfo.id!!,api,getSemesterList(publicInfo.firstSemId),{
-            when (it) {
-                -1 -> failed.invoke("Oops, something went wrong.")
-                -2 -> failed.invoke("Couldn't reach server.")
-                else -> loading.invoke("Semester $it result loaded.")
-            }
-        },{cgpa,totalCompletedCredit, fullResultInfoListNew ->
-            Log.d("TAG", "updateFullResultInfo: $cgpa")
-
-            if(fullResultInfoListNew.size >= fullResultInfoList.size){
-                if((fullResultInfoList notEqualsIgnoreOrder fullResultInfoListNew && fullResultInfoListNew.isNotEmpty()) || (publicInfo.cgpa!=cgpa && cgpa!=0.0)){
-                    success.invoke(fullResultInfoListNew, cgpa, totalCompletedCredit)
-                    docRef.update("fullResultInfo" , fullResultInfoListNew)
-                    docRef.update("publicInfo" , publicInfo.copy(cgpa = cgpa, totalCompletedCredit = totalCompletedCredit))
-                    docRef.update("lastUpdatedResultInfo" , System.currentTimeMillis())
+        if(publicInfo.id.isEmpty()) return
+        val docRef = firestore.collection("userProfile").document(publicInfo.id)
+        getCgpa(
+            id = publicInfo.id,
+            api = api,
+            semesterList = getSemesterList(publicInfo.firstSemId),
+            loading = {
+                when (it) {
+                    -1 -> failed.invoke("Oops, something went wrong.")
+//                    -2 -> failed.invoke("Couldn't reach server.")
+                    else -> loading.invoke("Semester $it result loaded.")
                 }
-                else failed.invoke("No new data found.")
-            }
-            else failed.invoke("No new data found.")
+            },
+            success = { cgpa, totalCompletedCredit, fullResultInfoListNew ->
+                Log.d("TAG", "updateFullResultInfo: $cgpa")
 
-        })
+                if(fullResultInfoListNew.size >= fullResultInfoList.size){
+                    if((fullResultInfoList notEqualsIgnoreOrder fullResultInfoListNew && fullResultInfoListNew.isNotEmpty()) || (publicInfo.cgpa!=cgpa && cgpa!=0.0)){
+                        success.invoke(fullResultInfoListNew, cgpa, totalCompletedCredit)
+                        docRef.update("fullResultInfo" , fullResultInfoListNew)
+                        docRef.update("publicInfo" , publicInfo.copy(cgpa = cgpa, totalCompletedCredit = totalCompletedCredit))
+                        docRef.update("lastUpdatedResultInfo" , System.currentTimeMillis())
+                    } else failed.invoke("No new data found.")
+                } else failed.invoke("No new data found.")
+
+            })
     }
 
     override suspend fun updateClearanceInfo(

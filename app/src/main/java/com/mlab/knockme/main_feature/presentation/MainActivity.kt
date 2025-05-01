@@ -9,8 +9,8 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
@@ -22,14 +22,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.compose.*
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.auth.auth
+import com.google.firebase.Firebase
 import com.mlab.knockme.R
 import com.mlab.knockme.auth_feature.presentation.login.LoginActivity
 import com.mlab.knockme.core.components.InAppUpdate
-import com.mlab.knockme.main_feature.presentation.chats.*
+import com.mlab.knockme.main_feature.presentation.chats.ChatBusInfoScreen
+import com.mlab.knockme.main_feature.presentation.chats.ChatPersonalScreen
+import com.mlab.knockme.main_feature.presentation.chats.ChatPlacewiseScreen
 import com.mlab.knockme.main_feature.presentation.main.ProfileViewScreen
 import com.mlab.knockme.main_feature.presentation.main.components.BottomMenuItem
 import com.mlab.knockme.main_feature.presentation.main.components.BottomNav
@@ -57,12 +62,13 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
     override fun onStart() {
         super.onStart()
         val sharedPreferences = this.getSharedPreferences(
             getString(R.string.preference_file_key), Context.MODE_PRIVATE
         )
-        if(Firebase.auth.currentUser == null) {
+        if (Firebase.auth.currentUser == null) {
             sharedPreferences.edit().remove("StudentId").apply()
             startActivity(Intent(this, LoginActivity::class.java))
             this.finish()
@@ -93,8 +99,8 @@ fun Main(viewModel: MainViewModel, inAppUpdate: InAppUpdate? = null) {
                 visible = navVisibility,
                 enter = slideInVertically(initialOffsetY = { it }),
                 exit = slideOutVertically(targetOffsetY = { it }),
-            ){
-                BottomNav{
+            ) {
+                BottomNav {
                     NavItems.entries.forEach { screenMenuItem ->
                         BottomMenuItem(
                             item = screenMenuItem,
@@ -129,18 +135,18 @@ fun Main(viewModel: MainViewModel, inAppUpdate: InAppUpdate? = null) {
             composable<MainScreens.ChatPersonal> {
                 //ChatMainMsgNav(1, navController)
                 inAppUpdate?.checkForUpdate()
-                ChatPersonalScreen(navController,viewModel)
+                ChatPersonalScreen(navController, viewModel)
             }
             composable<MainScreens.ChatPlaceWise> {
                 //ChatMainMsgNav(2, navController)
-                ChatPlacewiseScreen(navController)
+                ChatPlacewiseScreen(navController ,viewModel)
             }
             composable<MainScreens.ChatBusInfo> {
                 //ChatMainMsgNav(3, navController)
-                ChatBusInfoScreen(navController)
+                ChatBusInfoScreen(navController ,viewModel)
             }
-            composable<MainScreens.Profile>{
-                ProfileScreen(navController)
+            composable<MainScreens.Profile> {
+                ProfileScreen(navController ,viewModel)
             }
             composable<InnerScreens.UserProfile>(
 //                InnerScreens.UserProfileScreen.route+"{id}",
@@ -149,9 +155,12 @@ fun Main(viewModel: MainViewModel, inAppUpdate: InAppUpdate? = null) {
                 },
                 exitTransition = {
                     fadeOut() + slideOutVertically(animationSpec = tween(1000))
-                }){
+                }) {
                 // ProfileViewScreen(navController, it.arguments?.getString("id"))
-                ProfileViewScreen(it.toRoute<InnerScreens.UserProfile>().studentId,navController,viewModel)
+                ProfileViewScreen(
+                    id = it.toRoute<InnerScreens.UserProfile>().studentId,
+                    navController = navController,
+                )
             }
             composable<InnerScreens.Conversation>(
 //                InnerScreens.MsgScreen.route+"path={path}&id={id}",
@@ -161,12 +170,13 @@ fun Main(viewModel: MainViewModel, inAppUpdate: InAppUpdate? = null) {
                 exitTransition = {
                     fadeOut() + slideOutVertically(animationSpec = tween(1000))
                 }
-            ){
+            ) {
                 val data = it.toRoute<InnerScreens.Conversation>()
                 MsgViewScreen(
-                    data.path,
-                    data.studentId,
-                    navController,viewModel
+                    path = data.path,
+                    id = data.studentId,
+                    navController = navController,
+                    viewModel = viewModel
                 )
             }
             composable<MainScreens.Profile.Cgpa>(
@@ -177,14 +187,14 @@ fun Main(viewModel: MainViewModel, inAppUpdate: InAppUpdate? = null) {
                 exitTransition = {
                     fadeOut() + slideOutVertically(animationSpec = tween(1000))
                 }
-            ){
-                CgpaViewScreen(it.toRoute<MainScreens.Profile.Cgpa>().studentId,navController)
+            ) {
+                CgpaViewScreen(it.toRoute<MainScreens.Profile.Cgpa>().studentId, navController)
             }
             composable<MainScreens.Profile.CgpaInner>
 //                MainScreens.Profile.CgpaInnerScreen.route+"{id}/{index}",
 //                arguments = listOf(navArgument("index") { type = NavType.IntType })
             {
-                it.toRoute<MainScreens.Profile.CgpaInner>().also { data->
+                it.toRoute<MainScreens.Profile.CgpaInner>().also { data ->
                     CgpaDetailsScreen(data.studentId, data.index, navController)
                 }
             }
@@ -196,8 +206,8 @@ fun Main(viewModel: MainViewModel, inAppUpdate: InAppUpdate? = null) {
                 exitTransition = {
                     fadeOut() + slideOutVertically(animationSpec = tween(1000))
                 }
-            ){
-                DueViewScreen(navController)
+            ) {
+                DueViewScreen(navController ,viewModel)
             }
             composable<MainScreens.Profile.RegisterdCourse>(
 //                MainScreens.Profile.RegCourseScreen.route,
@@ -206,8 +216,8 @@ fun Main(viewModel: MainViewModel, inAppUpdate: InAppUpdate? = null) {
                 },
                 exitTransition = {
                     fadeOut() + slideOutVertically(animationSpec = tween(1000))
-                }){
-                RegCourseViewScreen(navController)
+                }) {
+                RegCourseViewScreen(navController ,viewModel)
             }
             composable<MainScreens.Profile.LiveResult>(
 //                MainScreens.Profile.LiveResultScreen.route,
@@ -216,8 +226,8 @@ fun Main(viewModel: MainViewModel, inAppUpdate: InAppUpdate? = null) {
                 },
                 exitTransition = {
                     fadeOut() + slideOutVertically(animationSpec = tween(1000))
-                }){
-                LiveResultViewScreen(navController)
+                }) {
+                LiveResultViewScreen(navController ,viewModel)
             }
             composable<MainScreens.Profile.Clearance>(
 //                MainScreens.Profile.ClearanceScreen.route,
@@ -226,8 +236,8 @@ fun Main(viewModel: MainViewModel, inAppUpdate: InAppUpdate? = null) {
                 },
                 exitTransition = {
                     fadeOut() + slideOutVertically(animationSpec = tween(1000))
-                }){
-                ClearanceViewScreen(navController)
+                }) {
+                ClearanceViewScreen(navController ,viewModel)
             }
         }
     }

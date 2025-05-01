@@ -1,19 +1,20 @@
 package com.mlab.knockme.main_feature.presentation.profile
 
 import android.content.Context
-import android.os.Looper
-import android.widget.Toast
-import androidx.compose.foundation.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Done
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,9 +31,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.mlab.knockme.R
 import com.mlab.knockme.auth_feature.domain.model.ClearanceInfo
 import com.mlab.knockme.core.util.toShortSemester
+import com.mlab.knockme.core.util.toast
 import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.main.TopBar
 import com.mlab.knockme.ui.theme.*
@@ -40,28 +41,18 @@ import com.mlab.knockme.ui.theme.*
 @Composable
 fun ClearanceViewScreen(navController: NavHostController, viewModel: MainViewModel = hiltViewModel()) {
     val context: Context = LocalContext.current
-    val sharedPreferences = context.getSharedPreferences(
-        context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
-    )
-    val myId = sharedPreferences.getString("studentId",null)!!
-    val myFullProfile by viewModel.userFullProfileInfo.collectAsState()
+    val myFullProfile by viewModel.userFullProfileInfo.collectAsStateWithLifecycle()
+    val myId = myFullProfile.publicInfo.id
 
-    LaunchedEffect(key1 = ""){
-        viewModel.getUserFullProfileInfo(myId,{
-            viewModel.updateClearanceInfo(
-                id = myId,
-                accessToken = it.token,
-                clearanceInfoList = it.clearanceInfo
-            ){msg ->
-                Looper.prepare()
-                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                Looper.loop()
-            }
-        },{
-            Looper.prepare()
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            Looper.loop()
-        })
+    LaunchedEffect(myId){
+        if(myId.isEmpty()) return@LaunchedEffect
+        viewModel.updateClearanceInfo(
+            id = myId,
+            accessToken = myFullProfile.token,
+            clearanceInfoList = myFullProfile.clearanceInfo
+        ){msg ->
+            context.toast(msg)
+        }
     }
 //    val lst = listOf(
 //        ClearanceInfo(
@@ -100,9 +91,7 @@ fun ClearanceViewScreen(navController: NavHostController, viewModel: MainViewMod
                 accessToken = myFullProfile.token,
                 clearanceInfoList = myFullProfile.clearanceInfo
             ){
-                Looper.prepare()
-                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-                Looper.loop()
+                context.toast(it)
             }
         }
     }) {

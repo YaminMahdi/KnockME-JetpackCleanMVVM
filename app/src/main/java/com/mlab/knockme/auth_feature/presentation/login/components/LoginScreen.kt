@@ -19,9 +19,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.google.android.gms.common.SignInButton
 import com.mlab.knockme.R
+import com.mlab.knockme.core.util.Constants
 import com.mlab.knockme.main_feature.presentation.profile.ReportProblem
-import com.mlab.knockme.ui.theme.*
+import com.mlab.knockme.ui.theme.DeepBlue
 import com.mlab.knockme.ui.theme.KnockMETheme
+import com.mlab.knockme.ui.theme.TextBlue
 
 @SuppressLint("InflateParams")
 @Composable
@@ -111,17 +113,26 @@ fun LoginScreen(fbUpdate: (View) -> Unit, googleUpdate: (View) -> Unit) {
             //Spacer(modifier = Modifier.padding(10.dp))
             //NbNote(text = "FB Login is needed to save Portal info in the backup server")
             NbNote(
-                text = "By signing in you are agreeing with our ",
-                linkText = "Terms and Condition",
-                link = "https://knock-me.github.io/terms.htm"
+                modifier = Modifier.padding(top = 70.dp),
+                text = "The application is secure because it's open source on ",
+                linkText = "GitHub",
+                link = Constants.KNOCK_ME_GIT_URL
+            )
+            ReportProblem(
+                context = context,
+                myId = "xxx-xx-xxxx",
+                modifier= Modifier
+                    .padding(20.dp)
+                    .padding(bottom = 40.dp),
+                color = TextBlue.copy(.7f)
             )
         }
-        ReportProblem(
-            context = context,
-            myId = "xxx-xx-xxxx",
-            modifier= Modifier.wrapContentSize(Alignment.BottomCenter).padding(20.dp),
-            color = TextBlue.copy(.7f)
-        )
+//        ReportProblem(
+//            context = context,
+//            myId = "xxx-xx-xxxx",
+//            modifier= Modifier.wrapContentSize(Alignment.BottomCenter).padding(20.dp),
+//            color = TextBlue.copy(.7f)
+//        )
 
     }
 }

@@ -1,6 +1,7 @@
 package com.mlab.knockme.auth_feature.data.data_source
 
 import com.mlab.knockme.auth_feature.data.data_source.dto.*
+import com.mlab.knockme.core.util.Constants
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.*
@@ -10,6 +11,7 @@ data class LoginInformation (
     var username: String,
     var password: String
 )
+
 interface PortalApi {
 
     //public id info
@@ -19,14 +21,11 @@ interface PortalApi {
     ) : Response<StudentInfoDto>
 
     //authentication
-    @Headers(
-        "Accept: */*",
-        "Content-Type: application/json"
-    )
+//    @Headers("Accept: */*", "Content-Type: application/json")
     @POST("/login")
     suspend fun getAuthInfo(
         @Body loginInformation : LoginInformation
-    ) : LoginInfoDto?
+    ) : Response<LoginInfoDto>
 
     //private id info
     @GET("/profile/studentInfo")
@@ -40,11 +39,16 @@ interface PortalApi {
     suspend fun getResultInfo(
         @Query("semesterId") semesterId : String,
         @Query("studentId") studentId : String
-    ) : List<ResultInfoDto>?
+    ) : Response<List<ResultInfoDto>>
 
 
     //completed semester list
-    @GET("/registeredCourse/semesterList")
+    @GET("/dashboard/studentSGPAGraph")
+    suspend fun getSGPAGraph(
+        @Header("accessToken") accessToken : String
+    ) : List<SGPAGraphDto>?  //[0].semesterId
+
+     @GET("/registeredCourse/semesterList")
     suspend fun getAllSemesterInfo(
         @Header("accessToken") accessToken : String
     ) : List<SemesterInfoDto>?  //[0].semesterId
@@ -55,7 +59,7 @@ interface PortalApi {
     suspend fun getRegisteredCourse(
         @Query("semesterId") semesterId : String,
         @Header("accessToken") accessToken : String
-    ) : List<CourseInfoDto>?  //courseSectionId
+    ) : Response<List<CourseInfoDto>>  //courseSectionId
 
     //live result by courseSectionId
     @GET("/liveResult")
@@ -78,9 +82,8 @@ interface PortalApi {
     ) : List<ClearanceInfoDto>?
 
     //ip info without base url
-    @GET("http://ip-api.com/json")
+    @GET(Constants.IP_URL)
     suspend fun getLocationInfo(
-        //@Url url : String="http://ip-api.com/json/",
         @Query("fields") fields : String="status,country,countryCode,regionName,city,district,query"
     ): LocationInfoDto?
 
@@ -90,7 +93,7 @@ interface PortalApi {
     @GET
     suspend fun getImgByteStream(@Url url: String): ResponseBody
 
-    @GET("https://knock-me.github.io/dailyHadith.json")
+    @GET(Constants.HADITH_URL)
     suspend fun getDailyHadith(): List<DailyHadithDto>?
 
 //    @Query("fields") fields : List<String> =
@@ -98,9 +101,4 @@ interface PortalApi {
 //    "status","country","countryCode",
 //    "regionName","city","district","query"
 //    )
-
-
-    companion object{
-        const val BASE_URL="http://software.diu.edu.bd:8006/"
-    }
 }
