@@ -1,10 +1,9 @@
 package com.mlab.knockme.auth_feature.domain.model
 
-import android.os.Parcel
 import android.os.Parcelable
 import com.himanshoe.charty.combined.model.CombinedBarData
 import kotlinx.parcelize.Parcelize
-import java.util.ArrayList
+
 @Parcelize
 data class FullResultInfo(
     var semesterInfo: SemesterInfo = SemesterInfo(),

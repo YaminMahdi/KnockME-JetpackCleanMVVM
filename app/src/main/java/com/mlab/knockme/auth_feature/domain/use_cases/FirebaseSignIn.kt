@@ -1,6 +1,5 @@
 package com.mlab.knockme.auth_feature.domain.use_cases
 
-import com.facebook.AccessToken
 import com.mlab.knockme.auth_feature.domain.repo.AuthRepo
 import javax.inject.Inject
 

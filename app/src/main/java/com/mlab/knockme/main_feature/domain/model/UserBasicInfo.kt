@@ -5,7 +5,7 @@ import com.mlab.knockme.auth_feature.domain.model.FullResultInfo
 import com.mlab.knockme.auth_feature.domain.model.PrivateInfoExtended
 import com.mlab.knockme.auth_feature.domain.model.PublicInfo
 import kotlinx.parcelize.Parcelize
-import java.util.ArrayList
+
 @Parcelize
 data class UserBasicInfo(
     val lastUpdatedResultInfo: Long=0,

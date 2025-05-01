@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.content.edit
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -27,8 +28,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.google.firebase.auth.auth
 import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 import com.mlab.knockme.R
 import com.mlab.knockme.auth_feature.presentation.login.LoginActivity
 import com.mlab.knockme.core.components.InAppUpdate
@@ -40,6 +41,7 @@ import com.mlab.knockme.main_feature.presentation.main.components.BottomMenuItem
 import com.mlab.knockme.main_feature.presentation.main.components.BottomNav
 import com.mlab.knockme.main_feature.presentation.messages.MsgViewScreen
 import com.mlab.knockme.main_feature.presentation.profile.*
+import com.mlab.knockme.pref
 import com.mlab.knockme.ui.theme.DeepBlue
 import com.mlab.knockme.ui.theme.KnockMETheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -69,7 +71,7 @@ class MainActivity : ComponentActivity() {
             getString(R.string.preference_file_key), Context.MODE_PRIVATE
         )
         if (Firebase.auth.currentUser == null) {
-            sharedPreferences.edit().remove("StudentId").apply()
+            pref.edit { clear() }
             startActivity(Intent(this, LoginActivity::class.java))
             this.finish()
         }

@@ -257,18 +257,6 @@ class AuthRepoImpl @Inject constructor(
                                     val clearanceInfo = tryGet { api.getClearanceInfo(authInfo.accessToken)?.map { it.toClearanceInfo() } }
                                     Log.d("getStudentInfo", "clearanceInfo: $clearanceInfo")
                                     send(Resource.Loading("Getting lastSemester Info.."))
-//                                        val lastResult = api.getSGPAGraph(authInfo.accessToken)
-//                                            ?.lastOrNull()?.semester
-//                                            ?.split(", ")
-//                                        val lastResultYear= lastResult
-//                                            ?.lastOrNull()
-//                                            ?.toIntOrNull()
-//                                        val lastResultSemNm= lastResult
-//                                            ?.firstOrNull()
-//                                        var index = semInfo?.indexOfFirst {
-//                                            it.semesterYear == lastResultYear && it.semesterName == lastResultSemNm
-//                                        } ?: 0
-//                                        if(index > 1) index -= 2 else index = 0
                                     val semInfo = clearanceInfo.orEmpty().reversed()
                                     var registeredCourse = emptyList<CourseInfo>()
                                     run lit@{
@@ -424,18 +412,6 @@ class AuthRepoImpl @Inject constructor(
                         val clearanceInfo = tryGet { api.getClearanceInfo(authInfo.accessToken)?.map { it.toClearanceInfo() } }
                         Log.d("getStudentInfo", "clearanceInfo: $clearanceInfo")
                         send(Resource.Loading("Getting lastSemester Info.."))
-//                            val lastResult = api.getSGPAGraph(authInfo.accessToken)
-//                                ?.lastOrNull()?.semester
-//                                ?.split(", ")
-//                            val lastResultYear= lastResult
-//                                ?.lastOrNull()
-//                                ?.toIntOrNull()
-//                            val lastResultSemNm= lastResult
-//                                ?.firstOrNull()
-//                            var index = semInfo?.indexOfFirst {
-//                                it.semesterYear == lastResultYear && it.semesterName == lastResultSemNm
-//                            } ?: 0
-//                            if(index > 1) index -= 2 else index = 0
                         val semInfo = clearanceInfo.orEmpty().reversed()
                         var registeredCourse = emptyList<CourseInfo>()
                         run lit@{

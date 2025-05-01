@@ -1,6 +1,5 @@
 package com.mlab.knockme.auth_feature.domain.model
 
-import android.os.Parcel
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 

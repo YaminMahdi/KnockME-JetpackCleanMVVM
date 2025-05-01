@@ -350,9 +350,7 @@ fun InfoDialog(
                             ),
                             shape = RoundedCornerShape(10.dp),
                             onClick = {
-                                pref.edit {
-                                    clear()
-                                }
+                                pref.edit { clear() }
                                 Firebase.auth.signOut()
                                 context.startActivity(Intent(context, LoginActivity::class.java))
                             }

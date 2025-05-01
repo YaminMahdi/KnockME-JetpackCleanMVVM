@@ -87,7 +87,7 @@ fun CircularProgressbar3(
 
     // It remembers the number value
     var numberR by remember {
-        mutableStateOf(0f)
+        mutableFloatStateOf(0f)
     }
 
     // Number Animation
