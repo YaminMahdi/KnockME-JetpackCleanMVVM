@@ -71,8 +71,6 @@ fun ProfileViewScreen(
     val loading by viewModel.isResultLoading.collectAsStateWithLifecycle()
     val loadingTxt by viewModel.resultLoadingTxt.collectAsStateWithLifecycle()
 
-    val context: Context =LocalContext.current
-    //val preferencesEditor = sharedPreferences.edit()
     val myId = pref.getString("studentId","").orEmpty()
 //    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 //    val hasPrivateInfo  by viewModel.hasPrivateInfo.collectAsStateWithLifecycle()

@@ -136,19 +136,4 @@ class LoginViewModel @Inject constructor(
             savedStateHandle["isLoadingActive"] = false
         }
     }
-
-    fun signOut() {
-        viewModelScope.launch{
-            Firebase.auth.signOut()
-        }
-    }
-
-    fun getAuthState() {
-        viewModelScope.launch(Dispatchers.IO) {
-            authUseCases.firebaseAuthState().collect {
-                _authState.value = it
-            }
-        }
-    }
-
 }

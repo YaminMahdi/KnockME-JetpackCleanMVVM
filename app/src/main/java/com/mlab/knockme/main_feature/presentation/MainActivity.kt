@@ -1,6 +1,5 @@
 package com.mlab.knockme.main_feature.presentation
 
-import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
@@ -30,7 +29,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
-import com.mlab.knockme.R
 import com.mlab.knockme.auth_feature.presentation.login.LoginActivity
 import com.mlab.knockme.core.components.InAppUpdate
 import com.mlab.knockme.main_feature.presentation.chats.ChatBusInfoScreen
@@ -67,9 +65,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        val sharedPreferences = this.getSharedPreferences(
-            getString(R.string.preference_file_key), Context.MODE_PRIVATE
-        )
         if (Firebase.auth.currentUser == null) {
             pref.edit { clear() }
             startActivity(Intent(this, LoginActivity::class.java))
