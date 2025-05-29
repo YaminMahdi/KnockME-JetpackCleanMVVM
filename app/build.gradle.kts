@@ -27,7 +27,7 @@ android {
         applicationId = "com.mlab.knockme"
         minSdk = 23
         targetSdk = 36
-        versionCode = 165
+        versionCode = 16
         versionName = "2.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -40,6 +40,13 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+    applicationVariants.all {
+        outputs.forEach {
+            val output = it as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+            output.outputFileName = "${rootProject.name.replace(' ', '_')}_v"
+            output.outputFileName += "$versionName-$name.apk"
         }
     }
     kotlin {
