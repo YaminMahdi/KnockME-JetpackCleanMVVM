@@ -485,7 +485,7 @@ fun FeatureSection(navController: NavHostController,id: String, features: List<F
                     when (it) {
                         0 -> navController.navigate(MainScreens.Profile.Cgpa(id))
                         1 -> navController.navigate(MainScreens.Profile.Due)
-                        2 -> navController.navigate(MainScreens.Profile.RegisterdCourse)
+                        2 -> navController.navigate(MainScreens.Profile.RegisteredCourse)
                         3 -> navController.navigate(MainScreens.Profile.LiveResult)
                         4 -> navController.navigate(MainScreens.Profile.Clearance)
                     }

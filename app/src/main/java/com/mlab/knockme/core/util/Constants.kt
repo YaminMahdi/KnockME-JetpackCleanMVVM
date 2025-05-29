@@ -9,5 +9,6 @@ object Constants {
     const val KNOCK_ME_GIT_URL = "https://github.com/YaminMahdi/KnockME-JetpackCleanMVVM"
     const val TAP_LINK_URL = "https://taplink.cc/yk_mahdi"
     const val TERMS_URL = "https://knock-me.github.io/terms.htm"
+    const val ADMISSION_URL = "https://admissionapi.daffodilvarsity.edu.bd/api/admission/applicant/portal/admission/circular/active"
 
 }

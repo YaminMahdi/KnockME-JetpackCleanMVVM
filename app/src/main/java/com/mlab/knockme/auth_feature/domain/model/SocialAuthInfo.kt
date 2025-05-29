@@ -2,9 +2,9 @@ package com.mlab.knockme.auth_feature.domain.model
 
 import com.facebook.AccessToken
 
-data class FBResponse(
+data class SocialAuthInfo(
     val accessToken: AccessToken?,
-    var fbId: String = "",
+    var userId: String = "",
     var fbLink: String = "",
     var pic: String = ""
 )

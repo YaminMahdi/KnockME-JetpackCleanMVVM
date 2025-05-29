@@ -55,6 +55,7 @@ import com.mlab.knockme.main_feature.presentation.MainScreens
 import com.mlab.knockme.main_feature.presentation.MainViewModel
 import com.mlab.knockme.main_feature.presentation.chats.CustomToast
 import com.mlab.knockme.main_feature.presentation.profile.Ic
+import com.mlab.knockme.pref
 import com.mlab.knockme.ui.theme.*
 
 
@@ -71,11 +72,8 @@ fun ProfileViewScreen(
     val loadingTxt by viewModel.resultLoadingTxt.collectAsStateWithLifecycle()
 
     val context: Context =LocalContext.current
-    val sharedPreferences = context.getSharedPreferences(
-        context.getString(R.string.preference_file_key), Context.MODE_PRIVATE
-    )
     //val preferencesEditor = sharedPreferences.edit()
-    val myId = sharedPreferences.getString("studentId","")!!
+    val myId = pref.getString("studentId","").orEmpty()
 //    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 //    val hasPrivateInfo  by viewModel.hasPrivateInfo.collectAsStateWithLifecycle()
 //    val userBasicInfo  by viewModel.userBasicInfo.collectAsStateWithLifecycle()

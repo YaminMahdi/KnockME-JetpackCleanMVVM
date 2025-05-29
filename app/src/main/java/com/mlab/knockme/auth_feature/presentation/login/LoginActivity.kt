@@ -30,7 +30,7 @@ import com.google.android.gms.common.SignInButton
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.mlab.knockme.R
-import com.mlab.knockme.auth_feature.domain.model.FBResponse
+import com.mlab.knockme.auth_feature.domain.model.SocialAuthInfo
 import com.mlab.knockme.auth_feature.presentation.login.components.LoadingScreen
 import com.mlab.knockme.auth_feature.presentation.login.components.LoginPortalScreen
 import com.mlab.knockme.auth_feature.presentation.login.components.LoginScreen
@@ -50,16 +50,13 @@ class LoginActivity : ComponentActivity() {
     private val loginViewModel: LoginViewModel by viewModels()
     private val callbackManager = CallbackManager.Factory.create()
     private val inAppUpdate = InAppUpdate(this)
-    private val sharedPreferences by lazy {
-        getSharedPreferences(getString(R.string.preference_file_key), MODE_PRIVATE)
-    }
     @OptIn(DelicateCoroutinesApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         var keepSplash = true
         installSplashScreen().setKeepOnScreenCondition{ keepSplash }
         enableEdgeToEdge(navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT))
         GlobalScope.launch(Dispatchers.IO){
-            if(sharedPreferences.getString("studentId",null) != null && Firebase.auth.currentUser != null) {
+            if(pref.getString("studentId",null) != null && Firebase.auth.currentUser != null) {
                withContext(Dispatchers.Main.immediate){
                    startActivity(Intent(this@LoginActivity, MainActivity::class.java))
                    this@LoginActivity.finish()
@@ -86,7 +83,7 @@ class LoginActivity : ComponentActivity() {
 //                                val task: Task<GoogleSignInAccount> =
 //                                    GoogleSignIn.getSignedInAccountFromIntent(intent)
 //
-//                                preferencesEditor.putString("fbId", task.result.email!!).apply()
+//                                preferencesEditor.putString("userId", task.result.email!!).apply()
 //                                preferencesEditor.putString("fbLink", "").apply()
 //                                var photoUrl = task.result.photoUrl.toString()
 //                                photoUrl= photoUrl.replace("s96-c","s480-c")
@@ -121,13 +118,8 @@ class LoginActivity : ComponentActivity() {
                             loginViewModel.signInFB(
                                 buttonFacebookLogin,
                                 callbackManager,
-                                {data->
+                                { data ->
                                     loginViewModel.activeLoading()
-                                    pref.edit {
-                                        putString("fbId", data.fbId)
-                                        putString("fbLink", data.fbLink)
-                                        putString("pic", data.pic)
-                                    }
                                     //navController.navigate(AuthScreens.LoadingInfoScreen.route)
                                     loginViewModel.signInFirebase(AccessToken.getCurrentAccessToken()!!, {
                                         loginViewModel.deactivateLoading()
@@ -139,22 +131,8 @@ class LoginActivity : ComponentActivity() {
                             val btnGoogleLogin = view.findViewById<SignInButton>(R.id.sign_in_button)
                             btnGoogleLogin.setOnClickListener {
                                 loginViewModel.signInGoogle(this@LoginActivity,
-                                    success = { credential ->
-                                        if(credential != null){
-                                            //google sign in success
-                                            val photoUrl = credential
-                                                .profilePictureUri?.toString()
-                                                ?.replace("s96-c","s480-c")
-                                            Log.d("TAG", "onCreate: $photoUrl")
-                                            pref.edit {
-                                                putString("fbId", credential.id)
-                                                putString("fbLink", "")
-                                                putString("pic", photoUrl)
-                                            }
-                                        }
-                                        else // facebook sign in success
-                                            navController.navigate(AuthScreens.LoginScreenPortal)
-
+                                    success = {
+                                        navController.navigate(AuthScreens.LoginScreenPortal)
                                     }, failed = {
                                         context.toast(it)
                                     }
@@ -167,16 +145,16 @@ class LoginActivity : ComponentActivity() {
                     }
                     composable<AuthScreens.LoginScreenPortal>{
                         val context = LocalContext.current
-                        val fbInfo= FBResponse(
+                        val socialAuthInfo= SocialAuthInfo(
                             accessToken = AccessToken.getCurrentAccessToken(),
-                            fbId = sharedPreferences.getString("fbId","") ?: "",
-                            fbLink = sharedPreferences.getString("fbLink","") ?: "",
-                            pic = sharedPreferences.getString("pic","") ?: ""
+                            userId = pref.getString("userId","") ?: "",
+                            fbLink = pref.getString("fbLink","") ?: "",
+                            pic = pref.getString("pic","") ?: ""
                         )
                         val scope = rememberCoroutineScope { Dispatchers.Main }
                         LoginPortalScreen{ id, pass ->
                             var once = true
-                            loginViewModel.getStudentInfo(id, pass, fbInfo)
+                            loginViewModel.getStudentInfo(id, pass, socialAuthInfo)
                             scope.launch{
                                 loginViewModel.infoState.collect {
                                     when (it) {
@@ -184,9 +162,6 @@ class LoginActivity : ComponentActivity() {
                                             Log.d("TAG", "onCreate Success: ${it.message}")
                                             val intent =
                                                 Intent(this@LoginActivity, MainActivity::class.java)
-                                            pref.edit {
-                                                putString("studentId", id)
-                                            }
                                             //intent.putExtra("id",id)
                                             startActivity(intent)
                                             finish()

@@ -9,16 +9,16 @@ import java.util.Calendar
 import kotlin.math.roundToInt
 
 @OptIn(DelicateCoroutinesApi::class)
-fun getCgpa(
+suspend fun getCgpa(
     id: String,
     api: PortalApi,
     semesterList: List<String>,
-    loading: (index: Int) -> Unit,
-    success: (cgpa: Double, totalCompletedCredit: Double, fullResultInfo: List<FullResultInfo>) -> Unit,
+    loading: suspend (index: Int) -> Unit,
+    success: suspend (cgpa: Double, totalCompletedCredit: Double, fullResultInfo: List<FullResultInfo>) -> Unit,
     useSuccessOnly: Boolean = false
 ) {
     if(semesterList.isEmpty()){
-        success.invoke(0.0,0.0, emptyList())
+        success.invoke(0.0, 0.0, emptyList())
     }
     var totalCompletedCredit =0.0
     var weightedCgpa = 0.0

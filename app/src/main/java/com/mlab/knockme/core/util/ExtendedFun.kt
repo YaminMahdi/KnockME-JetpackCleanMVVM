@@ -21,16 +21,20 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.core.net.toUri
 import com.ibm.icu.text.RuleBasedNumberFormat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import kotlin.math.pow
+import kotlin.math.round
 
 enum class ButtonState { Pressed, Idle }
 fun Modifier.bounceClick() = composed {
     var buttonState by remember { mutableStateOf(ButtonState.Idle) }
-    val scale by animateFloatAsState(if (buttonState == ButtonState.Pressed) 0.85f else 1f,
+    val scale by animateFloatAsState(if (buttonState == ButtonState.Pressed) 0.90f else 1f,
         label = ""
     )
 
@@ -181,5 +185,64 @@ fun Context?.showCustomTab(url: String?) {
         intent.launchUrl(this, url.toUri())
     } }
 }
+
+
+fun <T> T.isNull() = this == null
+fun <T> T.isNotNull() = this != null
+
+inline fun <T> T?.isNull(next: () -> Unit): T? {
+    if (this == null) next()
+    return this
+}
+
+inline fun <T> T?.isNotNull(next: (T) -> Unit): T? {
+    if (this != null) next(this)
+    return this
+}
+
+fun Int?.isNullOrZero() = this == null || this == 0
+fun Double?.toOneIfZero() = if (this == 0.0 || this == null) 1.0 else this
+fun String?.toNAifEmpty() =
+    if (isNullOrEmpty() || isBlank() || (this == "0" || this == "0.0")) "N/A" else this
+
+fun String?.toNullifEmpty() =
+    if (isNullOrEmpty() || isBlank() || (this == "0" || this == "0.0")) null else this
+
+fun String?.toDoubleOrZero() =
+    this?.replace("[^\\d.]".toRegex(), "")?.toDoubleOrNull().orZero().roundTo(2)
+
+fun Int?.orMinusOne() = this ?: -1
+fun Int?.orZero() = this ?: 0
+fun Long?.orZero() = this ?: 0L
+fun Double?.orZero() = this ?: 0.0
+fun Float?.orZero() = this ?: 0.0F
+fun String?.orZero() = this?.toIntOrNull() ?: 0
+fun String?.orZeroD() = this?.toDoubleOrNull() ?: 0.0
+fun Boolean?.orFalse() = this == true
+fun Boolean.orNull() = if (!this) null else true
+
+fun Int?.isZero() = this == null || this == 0
+fun Int?.isMinusOne() = this == null || this == -1
+fun Long?.isZero() = this == null || this == 0L
+fun Double?.isZero() = this == null || this == 0.0
+fun Float?.isZero() = this == null || this == 0.0F
+fun Float?.isMinusOne() = this == null || this == -1.0F
+fun Float?.isZeroOrMinusOne() = this == null || this == 0.0F || this == -1.0F
+fun String?.isZero() = this == null || this.toIntOrNull() == 0
+fun String?.isZeroD() = this == null || this.toDoubleOrNull() == 0.0
+
+fun Number.roundTo(decimals: Int): Double {
+    val factor = 10.0.pow(decimals)
+    return round(toDouble() * factor) / factor
+}
+
+inline fun <T> tryInMain(crossinline data: suspend CoroutineScope.() -> T) =
+    CoroutineScope(Dispatchers.Main.immediate).launch {
+        try {
+            data()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
 

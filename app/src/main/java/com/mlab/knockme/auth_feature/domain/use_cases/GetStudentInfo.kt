@@ -1,6 +1,6 @@
 package com.mlab.knockme.auth_feature.domain.use_cases
 
-import com.mlab.knockme.auth_feature.domain.model.FBResponse
+import com.mlab.knockme.auth_feature.domain.model.SocialAuthInfo
 import com.mlab.knockme.auth_feature.domain.repo.AuthRepo
 import com.mlab.knockme.core.util.Resource
 import kotlinx.coroutines.flow.flow
@@ -12,10 +12,10 @@ class GetStudentInfo @Inject constructor(
     operator fun invoke(
         id: String,
         pass: String,
-        fbInfo: FBResponse
+        socialAuthInfo: SocialAuthInfo
     ) =
         if (id.isBlank())
             flow{ emit(Resource.Error("Student ID can't be blank")) }
         else
-            repo.getStudentInfo(id, pass, fbInfo)
+            repo.getStudentInfo(id, pass, socialAuthInfo)
 }

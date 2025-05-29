@@ -4,7 +4,7 @@ import android.app.Activity
 import com.facebook.CallbackManager
 import com.facebook.login.widget.LoginButton
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import com.mlab.knockme.auth_feature.domain.model.FBResponse
+import com.mlab.knockme.auth_feature.domain.model.SocialAuthInfo
 import com.mlab.knockme.auth_feature.domain.model.StudentInfo
 import com.mlab.knockme.auth_feature.domain.model.UserProfile
 import com.mlab.knockme.core.util.Resource
@@ -21,12 +21,12 @@ interface AuthRepo {
 
     fun fbLogin(buttonFacebookLogin: LoginButton,
                 callbackManager: CallbackManager,
-                success:(data: FBResponse)->Unit,
+                success:(data: SocialAuthInfo)->Unit,
                 failed:()->Unit
     )
 
     fun getStudentIdInfo(id: String) :Flow<Resource<StudentInfo>>
 
-    fun getStudentInfo(id:String,pass:String,fbInfo: FBResponse) :Flow<Resource<UserProfile>>
+    fun getStudentInfo(id:String,pass:String,socialAuthInfo: SocialAuthInfo) :Flow<Resource<UserProfile>>
 
 }

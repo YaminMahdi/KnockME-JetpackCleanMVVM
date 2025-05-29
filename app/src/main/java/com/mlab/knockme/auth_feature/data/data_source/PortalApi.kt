@@ -96,6 +96,9 @@ interface PortalApi {
     @GET(Constants.HADITH_URL)
     suspend fun getDailyHadith(): List<DailyHadithDto>?
 
+    @GET(Constants.ADMISSION_URL)
+    suspend fun getAdmissionInfo(): Response<AdmissionDto>
+
 //    @Query("fields") fields : List<String> =
 //    listOf(
 //    "status","country","countryCode",

@@ -211,7 +211,7 @@ fun Main(viewModel: MainViewModel, inAppUpdate: InAppUpdate? = null) {
             ) {
                 DueViewScreen(navController ,viewModel)
             }
-            composable<MainScreens.Profile.RegisterdCourse>(
+            composable<MainScreens.Profile.RegisteredCourse>(
 //                MainScreens.Profile.RegCourseScreen.route,
                 enterTransition = {
                     fadeIn() + slideInVertically(animationSpec = tween(1000))

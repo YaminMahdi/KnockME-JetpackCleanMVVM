@@ -8,10 +8,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.facebook.CallbackManager
 import com.facebook.login.widget.LoginButton
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
-import com.mlab.knockme.auth_feature.domain.model.FBResponse
+import com.mlab.knockme.auth_feature.domain.model.SocialAuthInfo
 import com.mlab.knockme.auth_feature.domain.model.UserProfile
 import com.mlab.knockme.auth_feature.domain.use_cases.AuthUseCases
 import com.mlab.knockme.core.util.Resource
@@ -49,11 +48,11 @@ class LoginViewModel @Inject constructor(
     fun getStudentInfo(
         id: String,
         pass: String,
-        fbInfo: FBResponse
+        socialAuthInfo: SocialAuthInfo
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             activeLoading()
-            authUseCases.getStudentInfo(id, pass, fbInfo)
+            authUseCases.getStudentInfo(id, pass, socialAuthInfo)
                 .collect {
                     _infoState.emit(it)
                     //savedStateHandle["loadingText"] = it.message
@@ -87,7 +86,7 @@ class LoginViewModel @Inject constructor(
     fun signInFB(
         buttonFacebookLogin: LoginButton,
         callbackManager: CallbackManager,
-        success: (data: FBResponse) -> Unit,
+        success: (data: SocialAuthInfo) -> Unit,
         failed: () -> Unit
     ) {
         authUseCases.facebookLogin(
@@ -98,18 +97,17 @@ class LoginViewModel @Inject constructor(
 
     fun signInGoogle(
         activity: Activity,
-        success: (GoogleIdTokenCredential?) -> Unit,
+        success: () -> Unit,
         failed: (String) -> Unit
     ){
         activeLoading()
         viewModelScope.launch(Dispatchers.IO) {
             when(val result= authUseCases.googleSignIn(activity)){
                 is Resource.Success -> {
-                    success(result.data!!)
-                    authUseCases.firebaseSignIn(result.data,
+                    authUseCases.firebaseSignIn(result.data!!,
                         success = {
                             deactivateLoading()
-                            success(null)
+                            success()
                         }, failed = { deactivateLoading()
                             viewModelScope.launch(Dispatchers.Main){
                                 failed("Firebase sign in failed")
