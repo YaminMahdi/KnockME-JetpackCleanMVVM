@@ -112,8 +112,10 @@ class AuthRepoImpl @Inject constructor(
                         ?.replace("s96-c", "s480-c")
                     pref.edit {
                         putString("userId", googleCredential.id)
+                        putString("name", googleCredential.displayName.orEmpty())
                         putString("fbLink", "")
                         putString("pic", photoUrl)
+
                     }
                     Resource.Success(googleCredential)
                 } else
@@ -148,6 +150,7 @@ class AuthRepoImpl @Inject constructor(
                     Log.d("fbLink.", "facebook:onSuccess:${data.userId} ${data.fbLink}")
                     pref.edit {
                         putString("userId", data.userId)
+                        putString("name", data.name)
                         putString("fbLink", data.fbLink)
                         putString("pic", data.pic)
                     }
@@ -286,15 +289,15 @@ class AuthRepoImpl @Inject constructor(
                                 lastUpdatedLiveResultInfo = time,
                                 lastUpdatedResultInfo = time,
                                 lastUpdatedClearanceInfo = time,
-                                publicInfo = PublicInfo(
-                                    id = id,
-                                    nm = publicInfo.studentName!!,
-                                    progShortName = publicInfo.progShortName!!,
-                                    batchNo = publicInfo.batchNo!!,
-//                                        cgpa = cgpa,
-//                                        totalCompletedCredit = totalCompletedCredit,
-                                    firstSemId = publicInfo.firstSemId!!.toInt()
-                                ),
+//                                publicInfo = PublicInfo(
+//                                    id = id,
+//                                    nm = publicInfo.studentName!!,
+//                                    progShortName = publicInfo.progShortName!!,
+//                                    batchNo = publicInfo.batchNo!!,
+//                                    cgpa = cgpa,
+//                                    totalCompletedCredit = totalCompletedCredit,
+//                                    firstSemId = publicInfo.firstSemId!!.toInt()
+//                                ),
                                 privateInfo = PrivateInfoExtended(
                                     fbId = socialAuthInfo.userId,
                                     fbLink = socialAuthInfo.fbLink,
@@ -308,7 +311,7 @@ class AuthRepoImpl @Inject constructor(
                                 paymentInfo = paymentInfo ?: PaymentInfo(),
                                 regCourseInfo = registeredCourse,
                                 liveResultInfo = liveResultInfoList,
-//                                    fullResultInfo = fullResultInfo,
+//                                fullResultInfo = fullResultInfo,
                                 clearanceInfo = clearanceInfo.orEmpty()
                             )
 
@@ -367,7 +370,19 @@ class AuthRepoImpl @Inject constructor(
                                         send(Resource.Loading("Server Error, CGPA can't be calculated"))
                                     else
                                         send(Resource.Loading("ID: $id, CGPA: $cgpa"))
-                                    myRef.set(userProfile).addOnCompleteListener {
+                                    myRef.set(userProfile.copy(
+                                        publicInfo = publicInfo.toPublicInfo(
+                                            cgpa = cgpa,
+                                            totalCompletedCredit = totalCompletedCredit
+                                        ).apply {
+                                            if (nm.isEmpty())
+                                                nm = userProfile.privateInfo.name ?: socialAuthInfo.name
+                                            if (this.id.isEmpty())
+                                                this.id = userProfile.privateInfo.email?.toStudentRealIdFromEmail()?.split("-")?.firstOrNull().orEmpty()
+                                        },
+                                        fullResultInfo = fullResultInfo
+
+                                    )).addOnCompleteListener {
                                         GlobalScope.launch(Dispatchers.IO) {
                                             if (it.isSuccessful) {
                                                 firestore
@@ -380,12 +395,7 @@ class AuthRepoImpl @Inject constructor(
                                                 }
                                                 send(Resource.Success(userProfile))
                                             } else
-                                                send(
-                                                    Resource.Error(
-                                                        "Firebase Server Error.",
-                                                        userProfile
-                                                    )
-                                                )
+                                                send(Resource.Error("Firebase Server Error.", userProfile))
                                         }
                                     }
                                 })
@@ -651,8 +661,9 @@ class AuthRepoImpl @Inject constructor(
                 "/me?fields=id,link"
             ) {
                 Log.d("req1", "facebook:onSuccess:${it.jsonObject}")
-                data.userId = it.jsonObject?.getString("id").toString()
-                data.fbLink = it.jsonObject?.getString("link").toString()
+                data.userId = it.jsonObject?.getString("id").orEmpty()
+                data.fbLink = it.jsonObject?.getString("link").orEmpty()
+                data.name = it.jsonObject?.getString("name").orEmpty()
             },
             GraphRequest.newGraphPathRequest(
                 data.accessToken,

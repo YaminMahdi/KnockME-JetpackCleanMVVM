@@ -8,6 +8,7 @@ data class PrivateInfoExtended(
     var fbId: String? ="",
     var fbLink: String? ="",
     var pic: String? ="",
+    var name: String?="",
     var bloodGroup: String?="",
     var email: String?="",
     var permanentHouse: String?="",

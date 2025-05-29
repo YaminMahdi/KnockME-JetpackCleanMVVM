@@ -1,6 +1,8 @@
 package com.mlab.knockme.auth_feature.domain.model
 
 data class PrivateInfo(
+    val firstName: String? = "",
+    val lastName: String? = "",
     val bloodGroup: String? = "",
     val email: String? = "",
     val presentHouse: String? = "",
@@ -23,6 +25,7 @@ fun PrivateInfo?.toPrivateInfoExtended(
     ip: String? = "",
     loc: String? = "",
 ) = PrivateInfoExtended(
+    name = (this?.firstName.orEmpty() + " " + this?.lastName.orEmpty()).trim(),
     bloodGroup = this?.bloodGroup,
     email = this?.email,
     presentHouse = this?.presentHouse,

@@ -18,7 +18,7 @@ data class PrivateInfoDto(
     val firstName: String,
     val hostelAddress: Any,
     val im: Any,
-    val lastName: Any,
+    val lastName: String?,
     val localGuardianAddress: Any,
     val localGuardianEmail: Any,
     val localGuardianMobile: String,
@@ -78,6 +78,8 @@ data class PrivateInfoDto(
 ){
     fun toPrivateInfo()=
         PrivateInfo(
+            firstName = firstName,
+            lastName = lastName,
             bloodGroup = bloodGroup,
             email = email,
             permanentHouse = permanentHouse,

@@ -5,6 +5,7 @@ import com.facebook.AccessToken
 data class SocialAuthInfo(
     val accessToken: AccessToken?,
     var userId: String = "",
+    var name: String = "",
     var fbLink: String = "",
     var pic: String = ""
 )
