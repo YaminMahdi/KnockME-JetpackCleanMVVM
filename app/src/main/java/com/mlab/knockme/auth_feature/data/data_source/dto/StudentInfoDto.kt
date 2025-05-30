@@ -25,9 +25,11 @@ data class StudentInfoDto(
 ) {
     fun toStudentInfo() = StudentInfo(
         batchNo = batchNo ?: 0, // Example: default to 0 if null
+        programName = programName ?: "", // Example: default to empty string
         progShortName = progShortName ?: "", // Example: default to empty string
         studentId = studentId ?: "",
         studentName = studentName ?: "",
-        firstSemId = semesterId ?: ""
+        firstSemId = semesterId ?: "",
+        programId = programId ?: "",
     )
 }

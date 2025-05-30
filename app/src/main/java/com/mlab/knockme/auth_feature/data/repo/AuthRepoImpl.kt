@@ -200,7 +200,7 @@ class AuthRepoImpl @Inject constructor(
             if (user != null && (user.privateInfo.fbId == socialAuthInfo.userId || user.privateInfo.fbId == id)) {
                 Log.d("OnSuccessListener", "Login Success for: ${document.data}")
                 GlobalScope.launch(Dispatchers.IO) {
-                    if (user.publicInfo.nm.isEmpty()){
+                    if (user.publicInfo.programId.isEmpty()){
                         var info = tryGet { api.getStudentIdInfo(id).body() }
                         if ((info == null || info.studentId.isNullOrEmpty()) && user.privateInfo.email != null) {
                             val realStudentId = user.privateInfo.email!!.toStudentRealIdFromEmail()
@@ -209,6 +209,7 @@ class AuthRepoImpl @Inject constructor(
                         }
                         if (info != null && info.studentId != null) {
                             publicInfo = info.toStudentInfo()
+                            firestore.addMyProgram(publicInfo.toPublicInfo())
                             user.publicInfo = publicInfo.toPublicInfo(
                                 cgpa = user.publicInfo.cgpa,
                                 totalCompletedCredit = user.publicInfo.totalCompletedCredit
@@ -352,6 +353,7 @@ class AuthRepoImpl @Inject constructor(
                             }
                             if (info != null && info.studentId != null) {
                                 publicInfo = info.toStudentInfo()
+                                firestore.addMyProgram(publicInfo.toPublicInfo())
                             } else {
                                 send(Resource.Error("Invalid Student ID"))
                                 Log.d("TAG", "getStudentIdInfo: Invalid Student ID")
@@ -379,13 +381,13 @@ class AuthRepoImpl @Inject constructor(
                         pref.edit {
                             putString("studentId", publicInfo.studentId.ifEmpty { id })
                         }
-                        if (!publicInfo.firstSemId.isNullOrEmpty()) {
+                        if (publicInfo.firstSemId.isNotEmpty()) {
                             send(Resource.Loading("Getting CGPA Info.."))
                             getCgpa(
                                 id = publicInfo.studentId.ifEmpty { id },
                                 api = api,
                                 semesterList = getSemesterList(
-                                    publicInfo.firstSemId?.toIntOrNull() ?: 0
+                                    publicInfo.firstSemId.toIntOrNull() ?: 0
                                 ),
                                 useSuccessOnly = true,
                                 loading = {
@@ -678,7 +680,7 @@ class AuthRepoImpl @Inject constructor(
     }
 
 
-    fun getData(data: SocialAuthInfo, success: (data: SocialAuthInfo) -> Unit) {
+    private fun getData(data: SocialAuthInfo, success: (data: SocialAuthInfo) -> Unit) {
         val graphRequests = GraphRequestBatch(
             GraphRequest.newGraphPathRequest(
                 data.accessToken,

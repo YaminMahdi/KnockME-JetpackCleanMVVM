@@ -16,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -246,7 +247,7 @@ fun InfoDialog(
 ) {
     val dialogVisibility by viewModel.infoDialogVisibility.collectAsStateWithLifecycle()
     val manager = ReviewManagerFactory.create(context)
-
+    val scope = rememberCoroutineScope()
     if (dialogVisibility) {
         val request = manager.requestReviewFlow()
         request.addOnCompleteListener { task ->
@@ -350,8 +351,10 @@ fun InfoDialog(
                             ),
                             shape = RoundedCornerShape(10.dp),
                             onClick = {
-                                pref.edit { clear() }
-                                Firebase.auth.signOut()
+                                scope.launch(Dispatchers.IO) {
+                                    pref.edit { clear() }
+                                    Firebase.auth.signOut()
+                                }
                                 context.startActivity(Intent(context, LoginActivity::class.java))
                             }
                         ) {

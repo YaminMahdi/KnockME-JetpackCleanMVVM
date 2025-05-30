@@ -21,6 +21,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.content.edit
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -43,6 +44,8 @@ import com.mlab.knockme.pref
 import com.mlab.knockme.ui.theme.DeepBlue
 import com.mlab.knockme.ui.theme.KnockMETheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -66,7 +69,9 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         if (Firebase.auth.currentUser == null) {
-            pref.edit { clear() }
+            lifecycleScope.launch(Dispatchers.IO) {
+                pref.edit { clear() }
+            }
             startActivity(Intent(this, LoginActivity::class.java))
             this.finish()
         }

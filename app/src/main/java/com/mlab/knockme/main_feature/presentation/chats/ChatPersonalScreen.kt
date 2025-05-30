@@ -146,18 +146,10 @@ fun CustomToast(isLoading: Boolean, loadingText: String) {
 @Composable
 fun SearchBox(state: ChatListState, viewModel: MainViewModel) {
     var data by rememberSaveable { mutableStateOf(state.searchText) }
-    var programId: String? by rememberSaveable { mutableStateOf(null) }
     val mutableInteractionSource by remember { mutableStateOf(MutableInteractionSource()) }
     val fm = LocalFocusManager.current
-    val programs: List<ProgramInfo> = listOf(
-        ProgramInfo(name = "CSE"),
-        ProgramInfo(name = "CSE"),
-        ProgramInfo(name = "CSE"),
-        ProgramInfo(name = "CSE"),
-        ProgramInfo(name = "CSE"),
-    )
     var expanded by remember { mutableStateOf(false) }
-    var selectedItem by remember { mutableStateOf(ProgramInfo(name = "Select Program")) }
+    var selectedItem: ProgramInfo? by remember { mutableStateOf(null) }
 
     Column(
         modifier = Modifier
@@ -213,8 +205,9 @@ fun SearchBox(state: ChatListState, viewModel: MainViewModel) {
                         .fillMaxWidth(.7f)
                 ) {
                     TextField(
-                        value = selectedItem.name,
+                        value = selectedItem?.shortName.orEmpty(),
                         onValueChange = { },
+                        placeholder = { Text("Select Program") },
                         readOnly = true,
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                         shape = RoundedCornerShape(16.dp),
@@ -227,9 +220,9 @@ fun SearchBox(state: ChatListState, viewModel: MainViewModel) {
                         shape = RoundedCornerShape(16.dp),
                         containerColor = LessBlue
                     ) {
-                        programs.forEach { program ->
+                        state.programs.forEach { program ->
                             DropdownMenuItem(
-                                text = { Text(program.name, style = MaterialTheme.typography.bodyLarge) },
+                                text = { Text(program.shortName, style = MaterialTheme.typography.bodyLarge) },
                                 onClick = {
                                     selectedItem = program
                                     expanded = false
@@ -242,7 +235,7 @@ fun SearchBox(state: ChatListState, viewModel: MainViewModel) {
                 }
                 Button(
                     onClick = {
-                        viewModel.searchUser(data, programId)
+                        viewModel.searchUser(data, selectedItem?.programId)
                     },
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = ButtonBlue),

@@ -17,8 +17,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.content.edit
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -55,13 +57,19 @@ class LoginActivity : ComponentActivity() {
         installSplashScreen().setKeepOnScreenCondition{ keepSplash }
         enableEdgeToEdge(navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT))
         GlobalScope.launch(Dispatchers.IO){
-            if(pref.getString("studentId",null) != null && Firebase.auth.currentUser != null) {
+            val id = pref.getString("studentId",null)
+            if(!id.isNullOrEmpty() && Firebase.auth.currentUser != null) {
                withContext(Dispatchers.Main.immediate){
                    startActivity(Intent(this@LoginActivity, MainActivity::class.java))
                    this@LoginActivity.finish()
                }
             }
-            else keepSplash = false
+            else {
+                keepSplash = false
+                lifecycleScope.launch(Dispatchers.IO) {
+                    pref.edit { clear() }
+                }
+            }
         }
         super.onCreate(savedInstanceState)
 

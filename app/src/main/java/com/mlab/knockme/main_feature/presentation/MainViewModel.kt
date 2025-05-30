@@ -6,7 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mlab.knockme.auth_feature.data.data_source.dto.DailyHadithDto
 import com.mlab.knockme.auth_feature.domain.model.*
+import com.mlab.knockme.core.util.PrefKeys
 import com.mlab.knockme.core.util.combine6
+import com.mlab.knockme.core.util.readObject
 import com.mlab.knockme.main_feature.domain.model.ChatListState
 import com.mlab.knockme.main_feature.domain.model.Msg
 import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
@@ -65,7 +67,19 @@ class MainViewModel @Inject constructor(
     private var getChatsProfileJob: Job? =null
     private var searchJob: Job? =null
 
+    init {
+        syncPrograms()
+    }
 
+    fun syncPrograms(isOffline: Boolean = true){
+        viewModelScope.launch(Dispatchers.IO) {
+            if(!isOffline)
+                savedStateHandle["programs"] = mainUseCases.syncPrograms()
+            else
+                savedStateHandle["programs"] =
+                    pref.readObject<List<ProgramInfo>>(PrefKeys.PROGRAM_LIST).orEmpty()
+        }
+    }
     fun getMeg(
         path: String,
         failed: (msg: String) -> Unit
@@ -290,6 +304,7 @@ class MainViewModel @Inject constructor(
         mainUseCases.getUserFullProfile(id,{
             savedStateHandle["userFullProfileInfo"]=it
             success.invoke(it)
+            syncPrograms()
         },failed)
     }
 

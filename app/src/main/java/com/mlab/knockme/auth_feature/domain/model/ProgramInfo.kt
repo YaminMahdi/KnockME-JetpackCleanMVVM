@@ -12,3 +12,7 @@ data class ProgramInfo(
     val typeId: Int = 0, // 2
     val typeName: String = "" // MASTERS
 ): Parcelable
+
+data class ProgramList(
+    val list: List<ProgramInfo> = listOf()
+)

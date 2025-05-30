@@ -7,11 +7,9 @@ import javax.inject.Inject
 class GetStudentIdInfo @Inject constructor(
     private val repo: AuthRepo
 ) {
-    operator fun invoke(
-        id : String
-    ) =
+    operator fun invoke(id: String) =
         if (id.isBlank())
-            flow{}
+            flow {}
         else
             repo.getStudentIdInfo(id)
 }

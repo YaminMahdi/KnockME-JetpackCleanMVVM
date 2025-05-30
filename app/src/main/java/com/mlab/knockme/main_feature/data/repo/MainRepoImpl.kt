@@ -15,6 +15,7 @@ import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
 import com.mlab.knockme.main_feature.domain.repo.MainRepo
 import com.mlab.knockme.pref
 import kotlinx.coroutines.*
+import kotlinx.coroutines.tasks.await
 import retrofit2.HttpException
 import java.io.EOFException
 import java.io.IOException
@@ -162,7 +163,7 @@ class MainRepoImpl @Inject constructor(
                     Log.d("getOrCreateUserProfileInfo", "DocumentSnapshot data: ${document.data}")
                     val user = document.toObject<UserProfile>() ?: UserProfile()
                     CoroutineScope(Dispatchers.IO).launch {
-                        if (user.publicInfo.nm.isEmpty()){
+                        if (user.publicInfo.programId.isEmpty()){
                             var info = tryGet { api.getStudentIdInfo(id).body() }
                             if ((info == null || info.studentId.isNullOrEmpty()) && user.privateInfo.email != null) {
                                 val realStudentId = user.privateInfo.email!!.toStudentRealIdFromEmail()
@@ -174,6 +175,7 @@ class MainRepoImpl @Inject constructor(
                                     cgpa = user.publicInfo.cgpa,
                                     totalCompletedCredit = user.publicInfo.totalCompletedCredit
                                 )
+                                firestore.addMyProgram(user.publicInfo)
                                 if(user.publicInfo.nm.isNotEmpty())
                                     docRef.update("publicInfo", user.publicInfo)
                             }
@@ -247,14 +249,15 @@ class MainRepoImpl @Inject constructor(
 //                    searchJob =
                     GlobalScope.launch(Dispatchers.IO){
                         try {
-                            var result = api.getStudentIdInfo(id).body()
-                            if(result?.progShortName.isNullOrEmpty()){
-                                result = tryGet { api.getStudentIdInfo(id).body() }
+                            var info = api.getStudentIdInfo(id).body()
+                            if(info?.progShortName.isNullOrEmpty()){
+                                info = tryGet { api.getStudentIdInfo(id).body() }
                             }
-                            val studentInfo = result?.toStudentInfo()
+                            val studentInfo = info?.toStudentInfo()
                             Log.d("getStudentInfo", "publicInfo: $studentInfo")
-                            if(studentInfo != null && !result.semesterId.isNullOrEmpty())
+                            if(studentInfo != null && !info.semesterId.isNullOrEmpty())
                             {
+                                firestore.addMyProgram(studentInfo.toPublicInfo())
                                 loading.invoke("ID- $id Is Valid. Getting CGPA Info..")
                                 getCgpa(
                                     id = id,
@@ -555,6 +558,30 @@ class MainRepoImpl @Inject constructor(
         } catch (e: IOException) {
             failed.invoke("Couldn't reach server.")
             Log.d("TAG", "getRandomHadith: ${e.message} ${e.localizedMessage}")
+        }
+    }
+
+    override suspend fun syncPrograms(): List<ProgramInfo> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val programRef = firestore.collection("program").document("list")
+
+                val newList = tryGet { api.getAdmissionInfo() }?.body()?.data?.flatMap { data ->
+                    data.admissionCircularPrograms.map { it.toProgramInfo() }
+                }.orEmpty()
+                val oldList = tryGet { programRef.get().await() }
+                    ?.toObject<ProgramList>()?.list
+                    ?: pref.readObject<List<ProgramInfo>>(PrefKeys.PROGRAM_LIST).orEmpty()
+                val combinedList  = (newList + oldList).distinctBy { it.programId }.sortedBy { it.shortName }
+                if(combinedList .size > oldList.size){
+                    programRef.set(ProgramList(combinedList )).await()
+                    pref.saveObject(PrefKeys.PROGRAM_LIST, combinedList )
+                    combinedList
+                } else oldList
+            }catch (e: Exception) {
+                e.log("syncPrograms")
+                pref.readObject<List<ProgramInfo>>(PrefKeys.PROGRAM_LIST).orEmpty()
+            }
         }
     }
 }

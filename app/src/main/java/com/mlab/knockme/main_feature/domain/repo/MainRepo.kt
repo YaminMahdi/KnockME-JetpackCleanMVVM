@@ -42,8 +42,6 @@ interface MainRepo {
         failed: (msg:String) -> Unit
     )
 
-
-
     suspend fun updatePaymentInfo(
         id: String,
         accessToken: String,
@@ -51,6 +49,7 @@ interface MainRepo {
         success: (PaymentInfo) -> Unit,
         failed: (msg:String) -> Unit
     )
+
     suspend fun updateRegCourseInfo(
         userProfile: UserProfile,
         success: (List<CourseInfo>) -> Unit,
@@ -83,5 +82,7 @@ interface MainRepo {
         success: (DailyHadithDto) -> Unit,
         failed: (msg:String) -> Unit
     )
+
+    suspend fun syncPrograms() : List<ProgramInfo>
 
 }
