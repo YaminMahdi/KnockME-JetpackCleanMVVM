@@ -1,7 +1,6 @@
 package com.mlab.knockme.main_feature.presentation.main
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.compose.animation.core.Spring
@@ -21,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -40,11 +40,12 @@ import androidx.navigation.compose.rememberNavController
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
-import com.himanshoe.charty.combined.CombinedBarChart
-import com.himanshoe.charty.combined.config.CombinedBarConfig
-import com.himanshoe.charty.combined.model.CombinedBarData
-import com.himanshoe.charty.common.axis.AxisConfig
-import com.himanshoe.charty.common.dimens.ChartDimens
+import com.himanshoe.charty.bar.BarChart
+import com.himanshoe.charty.bar.config.BarChartColorConfig
+import com.himanshoe.charty.bar.config.BarChartConfig
+import com.himanshoe.charty.bar.model.BarData
+import com.himanshoe.charty.common.ChartColor
+import com.himanshoe.charty.common.LabelConfig
 import com.mlab.knockme.R
 import com.mlab.knockme.auth_feature.domain.model.PublicInfo
 import com.mlab.knockme.core.util.*
@@ -119,10 +120,10 @@ fun ProfileViewScreen(
 
                 ) {
                     if(!isLoading&&userBasicInfo.fullResultInfo.isNotEmpty())
-                        BarChart(
-                            userBasicInfo.fullResultInfo.map { data -> data.toCombinedBarData() },
-                            userBasicInfo.publicInfo,
-                            navController
+                        CGBarChart(
+                            barDataList = userBasicInfo.toBarData(),
+                            pb = userBasicInfo.publicInfo,
+                            navController = navController
                         )
                     //                listOf(
 //                    CombinedBarData("F-19", 3.33F, 3.33F),
@@ -474,7 +475,7 @@ fun SocialLink(
                         indication = ripple(color = Color.White),
                         onClick = {
                             if (!userBasicInfo.privateInfo.fbLink.isNullOrEmpty())
-                                context.showCustomTab(userBasicInfo.privateInfo.fbLink!!)
+                                context.showCustomTab(userBasicInfo.privateInfo.fbLink)
                             else
                                 context.toast("Invalid link")
                         }
@@ -534,11 +535,8 @@ fun SocialLink(
 }
 
 @Composable
-fun BarChart(barDataList: List<CombinedBarData>, pb: PublicInfo, navController: NavHostController) {
-    Column(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-
+fun CGBarChart(barDataList: List<BarData>, pb: PublicInfo, navController: NavHostController) {
+    Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "SGPA Graph:",
             style = MaterialTheme.typography.headlineSmall
@@ -548,71 +546,116 @@ fun BarChart(barDataList: List<CombinedBarData>, pb: PublicInfo, navController: 
                 .fillMaxWidth()
                 .padding(5.dp)
                 .padding(top = 10.dp)
-                .bounceClick()
+                .bounceClick {
+                    navController.navigate(MainScreens.Profile.Cgpa(pb.id))
+                }
                 .clip(RoundedCornerShape(10.dp))
                 .background(DeepBlueLess)
-
         ) {
-            CombinedBarChart(
+            Box(
                 modifier = Modifier
-                    .padding(horizontal = 20.dp, vertical = 40.dp)
-                    .fillMaxWidth()
-                    .height(100.dp),
-
-                onClick = {},// returns CombinedBarData}
-                barColors = listOf(Beige1, LightRed, BlueViolet1),
-                lineColors = listOf(Color.Transparent, Color.Transparent),
-                combinedBarData = barDataList,
-                combinedBarConfig = CombinedBarConfig(
-                    hasRoundedCorner = true,
-                    hasLineLabel = true,
-                    lineLabelColor = Color.Transparent to Color.White
-                ),
-                axisConfig = AxisConfig(
-                    xAxisColor = Color.LightGray,
-                    showAxis = true,
-                    isAxisDashed = false,
-                    showUnitLabels = false,
-                    showXLabels = true,
-                    yAxisColor = Color.LightGray,
-                    textColor = Color.White
-                ),
-                chartDimens = ChartDimens(
-                    if (barDataList.size < 2)
-                        150.dp
-                    else if (barDataList.size < 3)
-                        100.dp
-                    else if (barDataList.size < 5)
-                        50.dp
-                    else if (barDataList.size < 7)
-                        20.dp
-                    else if (barDataList.size < 9)
-                        10.dp
-                    else
-                        30.dp
+                    .padding(end = when(barDataList.size){
+                        in 1..3 -> 200.dp
+                        in 4..6 -> 150.dp
+                        in 7..9 -> 100.dp
+                        else -> 0.dp
+                    })
+            ) {
+                BarChart(
+                    data = { barDataList },
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp, vertical = 40.dp)
+                        .fillMaxWidth()
+                        .height(100.dp),
+                    barChartConfig = BarChartConfig(
+                        showAxisLines = true,
+                        showGridLines = false,
+                        drawNegativeValueChart = false,
+                        showCurvedBar = true,
+                        minimumBarCount = barDataList.size.coerceAtLeast(1)
+                    ),
+                    barChartColorConfig = BarChartColorConfig(
+                        fillGradientColors = ChartColor.Solid(Beige1),
+                        negativeGradientBarColors = ChartColor.Solid(LightRed),
+                        barBackgroundColor = ChartColor.Solid(Color.Transparent),
+                        gridLineColor = ChartColor.Solid(Color.LightGray),
+                        axisLineColor = ChartColor.Solid(Color.LightGray)
+                    ),
+                    labelConfig = LabelConfig(
+                        textColor = ChartColor.Solid(Color.White),
+                        showXLabel = false,
+                        showYLabel = false
+                    )
                 )
-            )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    barDataList.forEach { barData ->
+                        Text(
+                            text = barData.yValue.toString(),
+                            color = Color.White,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .weight(1f, fill = true)
+                                .offset(y = 12.dp)
+                                .wrapContentWidth(Alignment.CenterHorizontally)
+                                .graphicsLayer {
+                                    rotationZ = -45f
+                                }
+                        )
+
+                    }
+                }
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    barDataList.forEach { barData ->
+                        Text(
+                            text = barData.xValue.toString(),
+                            color = Color.White,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .weight(1f, fill = true)
+                                .offset(y = (-12).dp)
+                                .wrapContentWidth(Alignment.CenterHorizontally)
+                                .graphicsLayer {
+                                    rotationZ = -45f
+                                }
+                        )
+
+                    }
+                }
+            }
         }
         Text(
             text = "Details CGPA View >",
             style = TextStyle(textDecoration = TextDecoration.Underline),
             color = TextWhite,
-            fontSize = 14.sp,
+            fontSize = 13.sp,
             fontFamily = ubuntu,
             fontWeight = FontWeight.Bold,
             modifier = Modifier
                 .offset(x = (-5).dp)
                 .clip(RoundedCornerShape(5.dp))
-                .bounceClick()
                 .clickable {
                     navController.navigate(MainScreens.Profile.Cgpa(pb.id))
                 }
                 .padding(5.dp),
             textAlign = TextAlign.Center
-        )    }
-
-
+        )
+    }
 }
+
+
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

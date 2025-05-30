@@ -34,7 +34,7 @@ import kotlin.math.pow
 import kotlin.math.round
 
 enum class ButtonState { Pressed, Idle }
-fun Modifier.bounceClick() = composed {
+fun Modifier.bounceClick(onClick : () -> Unit = {}) = composed {
     var buttonState by remember { mutableStateOf(ButtonState.Idle) }
     val scale by animateFloatAsState(if (buttonState == ButtonState.Pressed) 0.90f else 1f,
         label = ""
@@ -48,7 +48,7 @@ fun Modifier.bounceClick() = composed {
         .clickable(
             interactionSource = remember { MutableInteractionSource() },
             indication = null,
-            onClick = { }
+            onClick = onClick
         )
         .pointerInput(buttonState) {
             awaitPointerEventScope {

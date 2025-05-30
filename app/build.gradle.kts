@@ -25,7 +25,7 @@ android {
 
     defaultConfig {
         applicationId = "com.mlab.knockme"
-        minSdk = 23
+        minSdk = 24
         targetSdk = 36
         versionCode = 16
         versionName = "2.6"
@@ -114,16 +114,15 @@ dependencies {
     // Retrofit
     implementation("com.squareup.retrofit2:retrofit:3.0.0")
     implementation("com.squareup.retrofit2:converter-gson:3.0.0")
-    implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.14")
-    implementation("com.squareup.okhttp3:logging-interceptor:5.0.0-alpha.14")
+    implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.15")
+    implementation("com.squareup.okhttp3:logging-interceptor:5.0.0-alpha.15")
 
     // Chucker
     debugImplementation("com.github.chuckerteam.chucker:library:4.1.0")
     releaseImplementation("com.github.chuckerteam.chucker:library-no-op:4.1.0")
 
     // Bar chart
-    //noinspection NewerVersionAvailable
-    implementation("com.himanshoe:charty:1.0.1") //don't upgrade from 1.0.1
+    implementation("com.himanshoe:charty:2.0.1") //don't upgrade from 1.0.1
     implementation("com.ibm.icu:icu4j:77.1") {
         exclude(group = "com.ibm.icu", module = "util")
         exclude(group = "com.ibm.icu", module = "impl")
