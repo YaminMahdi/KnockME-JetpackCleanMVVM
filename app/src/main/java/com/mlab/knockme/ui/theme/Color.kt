@@ -45,6 +45,7 @@ val BlueViolet0 = Color(0xFFC0C5FF)
 val BlueViolet1 = Color(0xffaeb4fd)
 val BlueViolet2 = Color(0xff9fa5fe)
 val BlueViolet3 = Color(0xff8f98fd)
+val BlueViolet4 = Color(0xff7f8afb)
 
 
 

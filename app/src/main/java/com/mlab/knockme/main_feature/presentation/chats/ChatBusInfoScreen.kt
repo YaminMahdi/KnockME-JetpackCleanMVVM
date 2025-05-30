@@ -16,7 +16,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.mlab.knockme.core.util.toast
 import com.mlab.knockme.main_feature.presentation.MainViewModel
-import com.mlab.knockme.main_feature.presentation.profile.InfoDialog
+import com.mlab.knockme.main_feature.presentation.profile.InfoBottomSheet
 import com.mlab.knockme.main_feature.presentation.profile.TitleInfo
 import com.mlab.knockme.ui.theme.DeepBlue
 import com.mlab.knockme.ui.theme.KnockMETheme
@@ -38,7 +38,7 @@ fun ChatBusInfoScreen(
             context.toast("Chat couldn't be loaded")
         }
     }
-    InfoDialog(viewModel, context, myId, navController)
+    InfoBottomSheet(viewModel, context, myId, navController)
     Column(
         modifier = Modifier
             .background(DeepBlue)

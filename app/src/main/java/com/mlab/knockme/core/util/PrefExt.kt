@@ -24,4 +24,5 @@ inline fun <reified T> SharedPreferences.readObject(key: String): T? {
 object PrefKeys {
     const val USER_INFO = "user_info"
     const val PROGRAM_LIST = "programs"
+    const val SHOW_HADITH = "show_hadith"
 }

@@ -8,8 +8,13 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Logout
+import androidx.compose.material.icons.automirrored.rounded.MenuBook
+import androidx.compose.material.icons.rounded.Link
+import androidx.compose.material.icons.rounded.Report
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.twotone.Info
 import androidx.compose.material3.*
@@ -21,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -35,7 +41,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -126,7 +131,7 @@ fun ProfileScreen(
         })
     }
 
-    InfoDialog(viewModel,context,myId,navController)
+    InfoBottomSheet(viewModel,context,myId,navController)
     Column(
         modifier = Modifier
             .background(DeepBlue)
@@ -238,8 +243,9 @@ fun Ic(
 
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun InfoDialog(
+fun InfoBottomSheet(
     viewModel: MainViewModel,
     context: Context,
     myId: String,
@@ -248,122 +254,321 @@ fun InfoDialog(
     val dialogVisibility by viewModel.infoDialogVisibility.collectAsStateWithLifecycle()
     val manager = ReviewManagerFactory.create(context)
     val scope = rememberCoroutineScope()
+    val bottomSheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
+
     if (dialogVisibility) {
         val request = manager.requestReviewFlow()
         request.addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                // We got the ReviewInfo object
                 val reviewInfo = task.result
                 val flow = manager.launchReviewFlow(context as Activity, reviewInfo)
                 flow.addOnCompleteListener {
                     Log.d("TAG", "ReviewManagerFactory: ${it.result}")
                 }
             } else {
-                // There was some problem, log or handle the error code.
                 Log.d("TAG", "ReviewManagerFactory: ${task.exception}")
             }
         }
-        Dialog(
-            onDismissRequest = { viewModel.setInfoDialogVisibility(false) }
+
+        ModalBottomSheet(
+            onDismissRequest = {
+                viewModel.setInfoDialogVisibility(false)
+            },
+            sheetState = bottomSheetState,
+            containerColor = BlueViolet0,
+            contentColor = Neutral30,
+            dragHandle = {
+                Box(
+                    modifier = Modifier
+                        .padding(vertical = 12.dp)
+                        .width(32.dp)
+                        .height(4.dp)
+                        .background(
+                            color = Neutral30.copy(alpha = 0.3f),
+                            shape = RoundedCornerShape(2.dp)
+                        )
+                )
+            }
         ) {
-            Box(
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .wrapContentHeight()
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(BlueViolet0)
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 40.dp)
             ) {
+                // Header Section
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp)
-                        .padding(top = 20.dp)
+                    modifier = Modifier.padding(bottom = 20.dp, top = 10.dp)
                 ) {
                     Text(
-                        text = "Made With Love \uD83D\uDC95",
-                        style = MaterialTheme.typography.headlineLarge,
+                        text = "Made With Love 💕",
+                        style = MaterialTheme.typography.headlineMedium,
                         color = LightRed,
-                        modifier = Modifier
-                            .padding(bottom = 10.dp)
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(bottom = 4.dp)
                     )
                     Text(
                         text = "By",
                         fontFamily = ubuntu,
-                        color = LightRed,
-                        fontSize = 16.sp,
-                        modifier = Modifier
-                            .padding(bottom = 15.dp)
+                        color = Neutral30.copy(alpha = 0.7f),
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center
                     )
+                }
+
+                // Developer Info Card
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .clickable {
+                            viewModel.setInfoDialogVisibility(false)
+                            navController.navigate(InnerScreens.UserProfile("193-15-1071"))
+                        },
+                    colors = CardDefaults.cardColors(
+                        containerColor = BlueViolet3.copy(alpha = 0.15f)
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .clickable {
-                                viewModel.setInfoDialogVisibility(false)
-                                navController.navigate(InnerScreens.UserProfile("193-15-1071"))
-                            }
-                            .padding(10.dp)
-                            .padding(horizontal = 10.dp)
-
+                            .fillMaxWidth()
+                            .padding(20.dp)
                     ) {
+                        // Profile Avatar Placeholder
+                        Box(
+                            modifier = Modifier
+                                .size(60.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    brush = Brush.linearGradient(
+                                        colors = listOf(BlueViolet3, Limerick3)
+                                    )
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "AM",
+                                color = Color.White,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
                         Text(
                             text = "Ahmad Umar Mahdi",
                             fontFamily = ubuntu,
                             fontWeight = FontWeight.Bold,
                             color = Neutral30,
-                            fontSize = 20.sp,
-                            modifier = Modifier
-                                .padding(vertical = 5.dp)
+                            fontSize = 18.sp,
+                            textAlign = TextAlign.Center
                         )
+
                         Text(
                             text = "193-15-1071",
                             fontFamily = ubuntu,
                             color = Limerick3,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(top = 4.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.size(5.dp))
-                    Text(
-                        text = "taplink.cc/yk_mahdi",
-                        fontFamily = ubuntu,
-                        color = BlueViolet3,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(5.dp))
-                            .clickable {
-                                context.showCustomTab(Constants.TAP_LINK_URL)
-                            }
-                            .padding(5.dp)
-                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Social Link
+                Card(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable {
+                            context.showCustomTab(Constants.TAP_LINK_URL)
+                        },
+                    colors = CardDefaults.cardColors(
+                        containerColor = BlueViolet3.copy(alpha = 0.15f)
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 40.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
-                    ){
-                        ReportProblem(context, myId)
-                        Button(
-                            modifier = Modifier.bounceClick(),
-                            colors = ButtonDefaults.buttonColors().copy(
-                                containerColor = LessRed
-                            ),
-                            shape = RoundedCornerShape(10.dp),
-                            onClick = {
-                                scope.launch(Dispatchers.IO) {
-                                    pref.edit { clear() }
-                                    Firebase.auth.signOut()
-                                }
-                                context.startActivity(Intent(context, LoginActivity::class.java))
-                            }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Link,
+                            contentDescription = "Link",
+                            tint = BlueViolet3,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "taplink.cc/yk_mahdi",
+                            fontFamily = ubuntu,
+                            color = BlueViolet4,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Settings Section
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = BlueViolet3.copy(alpha = 0.15f)
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp)
+                    ) {
+                        Text(
+                            text = "Settings",
+                            fontFamily = ubuntu,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Neutral30,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+
+                        // Show Hadith Toggle
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Logout", color = TextWhite)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Rounded.MenuBook,
+                                    contentDescription = "Hadith",
+                                    tint = BlueViolet3,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = "Show Hadith",
+                                        fontFamily = ubuntu,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Neutral30
+                                    )
+                                    Text(
+                                        text = "Display daily Hadith content",
+                                        fontFamily = ubuntu,
+                                        fontSize = 12.sp,
+                                        color = Neutral30.copy(alpha = 0.7f)
+                                    )
+                                }
+                            }
+
+                            val showHadith by viewModel.showHadith.collectAsStateWithLifecycle()
+                            Switch(
+                                checked = showHadith,
+                                onCheckedChange = { viewModel.setShowHadith(it) },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = BlueViolet3,
+                                    uncheckedThumbColor = Color.White,
+                                    uncheckedTrackColor = BlueViolet3.copy(alpha = 0.2f),
+                                    uncheckedBorderColor = BlueViolet3.copy(alpha = 0.3f)
+                                )
+                            )
                         }
                     }
                 }
-            }
 
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Action Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Report Problem Button
+
+                    OutlinedButton(
+                        onClick = {
+                            try {
+                                val intent = Intent(Intent.ACTION_VIEW)
+                                val body = "My Student ID is $myId. The issue is.."
+                                val data =
+                                    "mailto:ahmad15-1071@diu.edu.bd?subject=Having Issue&body=$body".toUri()
+                                intent.data = data
+                                context.startActivity(intent)
+                            } catch (_: Exception) {
+                                context.toast("No Mailing App Found")
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp)
+                            .bounceClick(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = LessBlue.copy(alpha = 0.7f),
+                        ),
+                        border = BorderStroke(1.dp, Neutral30.copy(alpha = 0.3f)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Report,
+                            contentDescription = "Report",
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Report",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = LessBlue.copy(alpha = 0.7f)
+                        )
+                    }
+
+                    // Logout Button
+                    Button(
+                        onClick = {
+                            scope.launch(Dispatchers.IO) {
+                                pref.edit { clear() }
+                                Firebase.auth.signOut()
+                            }
+                            context.startActivity(Intent(context, LoginActivity::class.java))
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp)
+                            .bounceClick(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = LessRed
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.Logout,
+                            contentDescription = "Logout",
+                            tint = TextWhite,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Logout",
+                            color = TextWhite,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
         }
     }
 }

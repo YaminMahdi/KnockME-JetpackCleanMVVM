@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.PersonSearch
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -25,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -54,7 +56,7 @@ import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
 import com.mlab.knockme.main_feature.presentation.InnerScreens
 import com.mlab.knockme.main_feature.presentation.MainScreens
 import com.mlab.knockme.main_feature.presentation.MainViewModel
-import com.mlab.knockme.main_feature.presentation.profile.InfoDialog
+import com.mlab.knockme.main_feature.presentation.profile.InfoBottomSheet
 import com.mlab.knockme.main_feature.presentation.profile.TitleInfo
 import com.mlab.knockme.main_feature.presentation.route
 import com.mlab.knockme.ui.theme.*
@@ -70,26 +72,26 @@ fun ChatPersonalScreen(
 //    val myId = sharedPreferences.getString("studentId","")!!
     val user by viewModel.userFullProfileInfo.collectAsStateWithLifecycle()
     val myId = user.publicInfo.id
-    val showHadith by viewModel.showHadith.collectAsStateWithLifecycle()
+//    val showHadith by viewModel.showHadith.collectAsStateWithLifecycle()
     var toMain by remember { mutableStateOf(false) }
-    if (state.chatList.size == 1 && state.isSearchLoading) {
-        LocalFocusManager.current.clearFocus()
-    }
-    LaunchedEffect(state.isSearchActive) {
-        //pop backstack
+//    if (state.chatList.size == 1 && state.isSearchLoading) {
+//        LocalFocusManager.current.clearFocus()
+//    }
+    LaunchedEffect(Unit) {
         if (!state.isSearchActive) {
             viewModel.getChatProfiles("personalMsg/$myId/profiles") {
                 Log.d("TAG", "ChatPersonalScreen: $it")
                 context.toast("Chat couldn't be loaded")
             }
-        }
-        if (showHadith) {
-            viewModel.getRandomHadith {
-                toMain = true
-                context.toast(it)
-            }
-            viewModel.setShowHadith(false)
-        }
+        }else
+            viewModel.setSearchActive(true)
+//        if (showHadith) {
+//            viewModel.getRandomHadith {
+//                toMain = true
+//                context.toast(it)
+//            }
+//            viewModel.setShowHadith(false)
+//        }
     }
     if (toMain)
         navController.navigate(MainScreens.Profile.route)
@@ -98,7 +100,7 @@ fun ChatPersonalScreen(
 //        activity.finish()
 //    }
     HadithDialog(viewModel)
-    InfoDialog(viewModel, context, myId, navController)
+    InfoBottomSheet(viewModel, context, myId, navController)
     Column(
         modifier = Modifier
             .background(DeepBlue)
@@ -235,6 +237,7 @@ fun SearchBox(state: ChatListState, viewModel: MainViewModel) {
                 }
                 Button(
                     onClick = {
+                        fm.clearFocus()
                         viewModel.searchUser(data, selectedItem?.programId)
                     },
                     shape = RoundedCornerShape(16.dp),
@@ -248,7 +251,8 @@ fun SearchBox(state: ChatListState, viewModel: MainViewModel) {
                     Icon(
                         imageVector = Icons.Rounded.PersonSearch,
                         contentDescription = "search",
-                        tint = TextWhite
+                        tint = TextWhite,
+                        modifier = Modifier.size(30.dp)
                     )
                 }
             }
@@ -323,6 +327,11 @@ fun LoadChatList(
         modifier = Modifier
             .fillMaxHeight()
     ) {
+        item {
+            AnimatedVisibility(state.chatList.isEmpty() && state.isSearchActive){
+                NoDataFound(modifier = Modifier.fillParentMaxSize())
+            }
+        }
         items(state.chatList) { proView ->
             ChatView(
                 proView,
@@ -334,33 +343,58 @@ fun LoadChatList(
                 if (!state.isSearchActive) {
                     when (navController.currentDestination?.route) {
                         MainScreens.ChatPersonal.route ->
-                            navController.navigate(
-                                InnerScreens.Conversation(
-                                    "personalMsg/$myId/",
-                                    id
-                                )
-                            )
-
+                            navController.navigate(InnerScreens.Conversation("personalMsg/$myId/", id))
                         MainScreens.ChatPlaceWise.route ->
-                            navController.navigate(
-                                InnerScreens.Conversation(
-                                    "groupMsg/placewise/",
-                                    id
-                                )
-                            )
-
+                            navController.navigate(InnerScreens.Conversation("groupMsg/placewise/", id))
                         MainScreens.ChatBusInfo.route ->
-                            navController.navigate(
-                                InnerScreens.Conversation(
-                                    "groupMsg/busInfo/",
-                                    id
-                                )
-                            )
+                            navController.navigate(InnerScreens.Conversation("groupMsg/busInfo/", id))
                     }
                 } else
                     navController.navigate(InnerScreens.UserProfile(id))
             }
         }
+    }
+}
+
+@Composable
+fun NoDataFound(
+    modifier: Modifier = Modifier,
+    title: String = "No Data Found",
+    subtitle: String = "There's nothing to show here yet",
+    icon: ImageVector = Icons.Rounded.SearchOff
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = 200.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = BlueViolet2.copy(alpha = 0.5f)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            color = BlueViolet2.copy(alpha = 0.8f),
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.Medium
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = subtitle,
+            style = MaterialTheme.typography.bodyMedium,
+            color = BlueViolet2.copy(alpha = 0.6f),
+            textAlign = TextAlign.Center
+        )
     }
 }
 

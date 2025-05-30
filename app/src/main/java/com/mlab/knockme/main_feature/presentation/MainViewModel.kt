@@ -1,6 +1,7 @@
 package com.mlab.knockme.main_feature.presentation
 
 import android.util.Log
+import androidx.core.content.edit
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -44,6 +45,7 @@ class MainViewModel @Inject constructor(
     //val msgList = msgListState.value
 
     private val chatList = savedStateHandle.getStateFlow("chatList", emptyList<Msg>())
+    private val chatListTmp = savedStateHandle.getStateFlow("chatListTmp", emptyList<Msg>())
     private val programs = savedStateHandle.getStateFlow("programs", emptyList<ProgramInfo>())
     //val chatListState = chatList
 
@@ -69,6 +71,7 @@ class MainViewModel @Inject constructor(
 
     init {
         syncPrograms()
+        getRandomHadith()
     }
 
     fun syncPrograms(isOffline: Boolean = true){
@@ -120,9 +123,11 @@ class MainViewModel @Inject constructor(
         path: String,
         failed: (msg:String) -> Unit
     ){
+//        setSearchActive(false)
         getChatsProfileJob?.cancel()
         searchJob?.cancel()
         savedStateHandle["chatList"] = emptyList<Msg>()
+        savedStateHandle["chatListTmp"] = emptyList<Msg>()
         savedStateHandle["searchText"] = ""
 
         getChatsProfileJob= viewModelScope.launch(Dispatchers.IO){
@@ -130,14 +135,17 @@ class MainViewModel @Inject constructor(
                 path, {
                     val x =it.toList()
                     savedStateHandle["chatList"] = x
+                    savedStateHandle["chatListTmp"] = x
                 }, failed)
         }
     }
     fun setSearchActive(visibility: Boolean){
         savedStateHandle["isSearchActive"] = visibility
+        savedStateHandle["chatList"] = emptyList<Msg>()
         if(!visibility) {
             searchJob?.cancel()
             savedStateHandle["isSearchLoading"] = false
+            savedStateHandle["chatList"] = chatListTmp.value
         }
 
     }
@@ -412,15 +420,24 @@ class MainViewModel @Inject constructor(
     val showHadith = savedStateHandle.getStateFlow("showHadith", true)
     val dialogVisibility = savedStateHandle.getStateFlow("dialogVisibility", false)
     val infoDialogVisibility = savedStateHandle.getStateFlow("infoDialogVisibility", false)
-    fun getRandomHadith(failed: (msg:String) -> Unit){
+
+    fun getRandomHadith(){
         viewModelScope.launch(Dispatchers.IO) {
+            val show = pref.getBoolean(PrefKeys.SHOW_HADITH,true)
+            savedStateHandle["showHadith"] = show
+            delay(700L)
+            if(!show) return@launch
             mainUseCases.getRandomHadith({
                 savedStateHandle["hadith"] = it
                 setDialogVisibility(true)
-            },failed)
+            },{ })
         }
     }
+
     fun setShowHadith(visibility: Boolean){
+        pref.edit {
+            putBoolean(PrefKeys.SHOW_HADITH, visibility)
+        }
         savedStateHandle["showHadith"] = visibility
     }
     fun setDialogVisibility(visibility: Boolean){
