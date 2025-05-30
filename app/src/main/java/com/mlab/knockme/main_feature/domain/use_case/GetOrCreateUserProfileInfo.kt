@@ -9,8 +9,9 @@ class GetOrCreateUserProfileInfo @Inject constructor(
 ) {
     operator fun invoke(
         id: String,
-        Success: (profileList: Msg) -> Unit,
-        Loading: (msg: String) -> Unit,
-        Failed: (msg:String) -> Unit
-    )= repo.getOrCreateUserProfileInfo(id, Success, Loading, Failed)
+        programId: String?,
+        success: (profileList: Msg) -> Unit,
+        loading: (msg: String) -> Unit,
+        failed: (msg:String) -> Unit
+    )= repo.getOrCreateUserProfileInfo(id, programId, success, loading, failed)
 }

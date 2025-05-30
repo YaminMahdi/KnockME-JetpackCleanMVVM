@@ -11,7 +11,7 @@ class UpdateClearanceInfo @Inject constructor(
         id: String,
         accessToken: String,
         clearanceInfoList: List<ClearanceInfo>,
-        Success: (clearanceInfoList: List<ClearanceInfo>) -> Unit,
-        Failed: (msg:String) -> Unit
-    )= repo.updateClearanceInfo(id, accessToken, clearanceInfoList, Success, Failed)
+        success: (clearanceInfoList: List<ClearanceInfo>) -> Unit,
+        failed: (msg:String) -> Unit
+    )= repo.updateClearanceInfo(id, accessToken, clearanceInfoList, success, failed)
 }

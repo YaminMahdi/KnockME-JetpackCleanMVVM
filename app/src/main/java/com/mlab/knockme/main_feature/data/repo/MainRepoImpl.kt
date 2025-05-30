@@ -1,6 +1,7 @@
 package com.mlab.knockme.main_feature.data.repo
 
 import android.util.Log
+import androidx.core.content.edit
 import com.google.firebase.database.*
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -8,16 +9,12 @@ import com.google.firebase.firestore.toObject
 import com.mlab.knockme.auth_feature.data.data_source.PortalApi
 import com.mlab.knockme.auth_feature.data.data_source.dto.DailyHadithDto
 import com.mlab.knockme.auth_feature.domain.model.*
-import com.mlab.knockme.core.util.getCgpa
-import com.mlab.knockme.core.util.getSemesterList
-import com.mlab.knockme.core.util.notEqualsIgnoreOrder
+import com.mlab.knockme.core.util.*
 import com.mlab.knockme.main_feature.domain.model.Msg
 import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
 import com.mlab.knockme.main_feature.domain.repo.MainRepo
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import com.mlab.knockme.pref
+import kotlinx.coroutines.*
 import retrofit2.HttpException
 import java.io.EOFException
 import java.io.IOException
@@ -139,7 +136,7 @@ class MainRepoImpl @Inject constructor(
                     success.invoke(userBasicInfo)
                 } else {
                     Log.d("getUserBasicInfo", "No Such User")
-                    getOrCreateUserProfileInfo(id,{
+                    getOrCreateUserProfileInfo(id, null,{
                         if(!it.id.isNullOrEmpty())
                             getUserBasicInfo(it.id!!,success, failed)
                     },{},failed)
@@ -163,8 +160,45 @@ class MainRepoImpl @Inject constructor(
             .addOnSuccessListener { document ->
                 if (document != null && document.exists()) {
                     Log.d("getOrCreateUserProfileInfo", "DocumentSnapshot data: ${document.data}")
-                    val profile = document.toObject<UserProfile>() ?: UserProfile()
-                    success.invoke(profile)
+                    val user = document.toObject<UserProfile>() ?: UserProfile()
+                    CoroutineScope(Dispatchers.IO).launch {
+                        if (user.publicInfo.nm.isEmpty()){
+                            var info = tryGet { api.getStudentIdInfo(id).body() }
+                            if ((info == null || info.studentId.isNullOrEmpty()) && user.privateInfo.email != null) {
+                                val realStudentId = user.privateInfo.email!!.toStudentRealIdFromEmail()
+                                if (realStudentId != null)
+                                    info = tryGet { api.getStudentIdInfo(realStudentId).body() }
+                            }
+                            if (info != null && info.studentId != null) {
+                                user.publicInfo = info.toStudentInfo().toPublicInfo(
+                                    cgpa = user.publicInfo.cgpa,
+                                    totalCompletedCredit = user.publicInfo.totalCompletedCredit
+                                )
+                                if(user.publicInfo.nm.isNotEmpty())
+                                    docRef.update("publicInfo", user.publicInfo)
+                            }
+                        }
+                        if(user.privateInfo.sex.isNullOrEmpty()) {
+                            val newPrivateInfo = tryGet {
+                                api.getPrivateInfo(user.token).body()?.toPrivateInfo()
+                            }?.toPrivateInfoExtended(
+                                fbId = user.privateInfo.fbId,
+                                fbLink = user.privateInfo.fbLink,
+                                pic = user.privateInfo.pic,
+                                ip = user.privateInfo.ip,
+                                loc = user.privateInfo.loc
+                            )
+                            newPrivateInfo?.let {
+                                user.privateInfo = it
+                                docRef.update("privateInfo", newPrivateInfo)
+                            }
+                            pref.edit {
+                                putString("nm", user.publicInfo.nm)
+                                putString("proShortName", user.publicInfo.progShortName)
+                            }
+                        }
+                        success.invoke(user)
+                    }
                 } else { failed.invoke("User Doesn't Exist") }
             }
             .addOnFailureListener {
@@ -175,6 +209,7 @@ class MainRepoImpl @Inject constructor(
     @OptIn(DelicateCoroutinesApi::class)
     override fun getOrCreateUserProfileInfo(
         id: String,
+        programId: String?,
         success: (Msg) -> Unit,
         loading: (msg: String) -> Unit,
         failed: (msg: String) -> Unit,
@@ -184,9 +219,9 @@ class MainRepoImpl @Inject constructor(
         var loadFromPortal=true
         docRef.get()
             .addOnSuccessListener { document ->
-                if (document != null && document.exists()) {
+                val profile = document.toObject<UserProfile>()
+                if (profile != null) {
                     Log.d("getOrCreateUserProfileInfo", "DocumentSnapshot data: ${document.data}")
-                    val profile = document.toObject<UserProfile>() ?: UserProfile()
                     val msgDis: String
                     if(profile.publicInfo.cgpa == 0.0) {
                         msgDis = "ID: ${profile.publicInfo.id}"
@@ -212,23 +247,26 @@ class MainRepoImpl @Inject constructor(
 //                    searchJob =
                     GlobalScope.launch(Dispatchers.IO){
                         try {
-                            val result = api.getStudentIdInfo(id)
-                            val studentInfo = result.body()?.toStudentInfo()
+                            var result = api.getStudentIdInfo(id).body()
+                            if(result?.progShortName.isNullOrEmpty()){
+                                result = tryGet { api.getStudentIdInfo(id).body() }
+                            }
+                            val studentInfo = result?.toStudentInfo()
                             Log.d("getStudentInfo", "publicInfo: $studentInfo")
-                            if(result.isSuccessful && studentInfo != null && studentInfo.firstSemId != null)
+                            if(studentInfo != null && !result.semesterId.isNullOrEmpty())
                             {
                                 loading.invoke("ID- $id Is Valid. Getting CGPA Info..")
                                 getCgpa(
                                     id = id,
-                                    api,
+                                    api = api,
                                     semesterList = getSemesterList(studentInfo.firstSemId.toInt()),
                                     loading = {
-                                    when (it) {
-                                        -1 -> failed.invoke("Oops, Something Went Wrong.")
-//                                        -2 -> failed.invoke("Couldn't Reach Server.")
-                                        else -> loading.invoke("Getting SGPA For $id. loading Done For Semester $it .")
-                                    } },
-                                    success = { cgpa,totalCompletedCredit, fullResultInfo ->
+                                        when (it) {
+                                            -1 -> failed.invoke("Oops, Something Went Wrong.")
+//                                            -2 -> failed.invoke("Couldn't Reach Server.")
+                                            else -> loading.invoke("Getting SGPA For $id. loading Done For Semester $it .")
+                                        } },
+                                    success = { cgpa, totalCompletedCredit, fullResultInfo ->
                                         val msgDis: String
                                         if(cgpa!=0.0) {
                                             msgDis = "ID: ${studentInfo.studentId}      CGPA: $cgpa"
@@ -238,9 +276,9 @@ class MainRepoImpl @Inject constructor(
                                         }
                                         val publicInfo = PublicInfo(
                                             id = id,
-                                            nm = studentInfo.studentName!!,
-                                            progShortName = studentInfo.progShortName!!,
-                                            batchNo = studentInfo.batchNo!!,
+                                            nm = studentInfo.studentName,
+                                            progShortName = studentInfo.progShortName,
+                                            batchNo = studentInfo.batchNo,
                                             cgpa = cgpa,
                                             totalCompletedCredit =totalCompletedCredit,
                                             firstSemId = studentInfo.firstSemId.toInt()

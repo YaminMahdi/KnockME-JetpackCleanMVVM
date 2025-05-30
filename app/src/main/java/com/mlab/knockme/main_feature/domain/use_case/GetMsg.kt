@@ -9,7 +9,7 @@ class GetMsg @Inject constructor(
 ) {
     operator fun invoke(
         path: String,
-        Success: (msgList: List<Msg>) -> Unit,
-        Failed: (msg:String) -> Unit
-    )= repo.getMessages(path,Success,Failed)
+        success: (msgList: List<Msg>) -> Unit,
+        failed: (msg:String) -> Unit
+    )= repo.getMessages(path,success,failed)
 }

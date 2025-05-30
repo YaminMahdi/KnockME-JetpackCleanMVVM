@@ -155,7 +155,7 @@ fun TitlePortal() {
 }
 @Composable
 fun textFieldColors() =
-    TextFieldDefaults.colors().copy(
+    TextFieldDefaults.colors(
         focusedTextColor = TextWhite,
         focusedLabelColor = BlueViolet3,
         unfocusedLabelColor= BlueViolet3,

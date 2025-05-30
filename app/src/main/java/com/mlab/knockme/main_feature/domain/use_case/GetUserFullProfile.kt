@@ -9,7 +9,7 @@ class GetUserFullProfile @Inject constructor(
 ) {
     operator fun invoke(
         id: String,
-        Success: (userProfile: UserProfile) -> Unit,
-        Failed: (msg:String) -> Unit
-    )= repo.getUserFullProfile(id, Success, Failed)
+        success: (userProfile: UserProfile) -> Unit,
+        failed: (msg:String) -> Unit
+    )= repo.getUserFullProfile(id, success, failed)
 }

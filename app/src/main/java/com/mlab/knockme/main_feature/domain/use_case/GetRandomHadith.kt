@@ -8,7 +8,7 @@ class GetRandomHadith @Inject constructor(
     private val repo: MainRepo
 ) {
     suspend operator fun invoke(
-        Success: (hadith: DailyHadithDto) -> Unit,
-        Failed: (msg:String) -> Unit
-    )= repo.getRandomHadith(Success,Failed)
+        success: (hadith: DailyHadithDto) -> Unit,
+        failed: (msg:String) -> Unit
+    )= repo.getRandomHadith(success,failed)
 }

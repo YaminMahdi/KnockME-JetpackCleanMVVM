@@ -10,8 +10,8 @@ class SendMsg@Inject constructor(
     operator fun invoke(
         path: String,
         msg: Msg,
-        Failed: (msg:String) -> Unit
+        failed: (msg:String) -> Unit
     ){
-        repo.sendMessages(path,msg,Failed)
+        repo.sendMessages(path,msg,failed)
     }
 }

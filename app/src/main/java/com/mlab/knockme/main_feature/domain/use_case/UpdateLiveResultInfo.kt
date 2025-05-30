@@ -10,7 +10,7 @@ class UpdateLiveResultInfo @Inject constructor(
 ) {
     suspend operator fun invoke(
         userProfile: UserProfile,
-        Success: (liveResultInfoList: List<LiveResultInfo>) -> Unit,
-        Failed: (msg:String) -> Unit
-    )= repo.updateLiveResultInfo(userProfile, Success, Failed)
+        success: (liveResultInfoList: List<LiveResultInfo>) -> Unit,
+        failed: (msg:String) -> Unit
+    )= repo.updateLiveResultInfo(userProfile, success, failed)
 }

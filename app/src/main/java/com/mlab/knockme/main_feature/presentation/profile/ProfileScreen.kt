@@ -222,7 +222,7 @@ fun Ic(
             .clickable {
                 onClick?.invoke()
             }
-            .background(DarkerButtonBlue)
+            .background(LessBlue.copy(.7f))
             .padding(8.dp)
 
 

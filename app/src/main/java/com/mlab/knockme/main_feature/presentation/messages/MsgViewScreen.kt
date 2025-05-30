@@ -408,7 +408,7 @@ fun SendMsgBar(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
             shape = RoundedCornerShape(30.dp),
             textStyle = TextStyle(lineHeight=16.sp, fontFamily = ubuntu),
-            colors= searchFieldColors(),
+            colors= msgFieldColors(),
             modifier = Modifier
                 .weight(1f)
                 .padding(7.dp),
@@ -468,8 +468,10 @@ fun SendMsgBar(
     }
 }
 
+
+
 @Composable
-fun searchFieldColors() =
+fun msgFieldColors() =
     TextFieldDefaults.colors().copy(
         focusedTextColor = TextWhite,
         focusedLabelColor = BlueViolet3,

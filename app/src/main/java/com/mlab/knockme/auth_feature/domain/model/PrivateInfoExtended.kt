@@ -5,12 +5,12 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 data class PrivateInfoExtended(
-    var fbId: String? ="",
-    var fbLink: String? ="",
-    var pic: String? ="",
-    var name: String?="",
-    var bloodGroup: String?="",
-    var email: String?="",
+    val fbId: String? ="",
+    val fbLink: String? ="",
+    val pic: String? ="",
+    val name: String?="",
+    val bloodGroup: String?="",
+    val email: String?="",
     var permanentHouse: String?="",
     val presentHouse: String?="",
     val sex: String?="",

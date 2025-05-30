@@ -31,8 +31,7 @@ interface PortalApi {
     @GET("/profile/studentInfo")
     suspend fun getPrivateInfo(
         @Header("accessToken") accessToken : String
-    ) : PrivateInfoDto?
-
+    ) : Response<PrivateInfoDto>
 
     //result by semester
     @GET("/result")

@@ -9,7 +9,7 @@ class GetUserBasicInfo @Inject constructor(
 ) {
     operator fun invoke(
         id: String,
-        Success: (userBasicInfo: UserBasicInfo) -> Unit,
-        Failed: (msg:String) -> Unit
-    )= repo.getUserBasicInfo(id, Success, Failed)
+        success: (userBasicInfo: UserBasicInfo) -> Unit,
+        failed: (msg:String) -> Unit
+    )= repo.getUserBasicInfo(id, success, failed)
 }

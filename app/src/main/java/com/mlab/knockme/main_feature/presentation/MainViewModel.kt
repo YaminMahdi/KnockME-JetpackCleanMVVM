@@ -4,17 +4,22 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.android.play.integrity.internal.u
 import com.mlab.knockme.auth_feature.data.data_source.dto.DailyHadithDto
 import com.mlab.knockme.auth_feature.domain.model.*
-import com.mlab.knockme.main_feature.domain.model.*
+import com.mlab.knockme.core.util.combine6
+import com.mlab.knockme.main_feature.domain.model.ChatListState
+import com.mlab.knockme.main_feature.domain.model.Msg
+import com.mlab.knockme.main_feature.domain.model.UserBasicInfo
 import com.mlab.knockme.main_feature.domain.use_case.MainUseCases
 import com.mlab.knockme.pref
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -23,7 +28,6 @@ class MainViewModel @Inject constructor(
     private val mainUseCases: MainUseCases,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
-
 
     private val loadingText = savedStateHandle.getStateFlow("loadingText", "Loading..")
     private val _msg= MutableStateFlow<List<Msg>>(emptyList())
@@ -38,17 +42,24 @@ class MainViewModel @Inject constructor(
     //val msgList = msgListState.value
 
     private val chatList = savedStateHandle.getStateFlow("chatList", emptyList<Msg>())
+    private val programs = savedStateHandle.getStateFlow("programs", emptyList<ProgramInfo>())
     //val chatListState = chatList
 
     private val searchText = savedStateHandle.getStateFlow("searchText", "")
     private val isSearchActive = savedStateHandle.getStateFlow("isSearchActive", false)
     private val isSearchLoading = savedStateHandle.getStateFlow("isSearchLoading", false)
 
-    val state = combine(chatList,searchText,isSearchActive,isSearchLoading,loadingText)
-    {chatList,searchText,isSearchActive,isSearchLoading,loadingText ->
-        ChatListState(chatList, searchText, isSearchActive,isSearchLoading,loadingText) //1 searchNotes.execute(notes, searchText) ,
+    val state = combine6(chatList, programs, searchText, isSearchActive, isSearchLoading, loadingText)
+    { chatList, programs, searchText, isSearchActive, isSearchLoading, loadingText ->
+        ChatListState(
+            chatList = chatList,
+            programs = programs,
+            searchText = searchText,
+            isSearchActive = isSearchActive,
+            isSearchLoading = isSearchLoading,
+            loadingText = loadingText
+        ) //1 searchNotes.execute(notes, searchText) ,
     }.stateIn(viewModelScope, SharingStarted.Eagerly , ChatListState())
-
 
     private var getMsgJob: Job? =null
     private var getChatsProfileJob: Job? =null
@@ -117,19 +128,17 @@ class MainViewModel @Inject constructor(
     }
 
     fun searchUser(
-        id: String
+        id: String,
+        programId: String?
     ){
         var searchList= mutableListOf<Msg>()
         savedStateHandle["chatList"] = emptyList<Msg>()
         savedStateHandle["searchText"] = id
 
-        if(id.isEmpty()) {
-            savedStateHandle["isSearchActive"] = false
-            savedStateHandle["isSearchLoading"] = false
-        }
-        else if(id.isNotEmpty()){
-            savedStateHandle["isSearchActive"] = true
-        }
+        if(id.isEmpty())
+            setSearchActive(false)
+        else if(id.isNotEmpty())
+            setSearchActive(true)
         if (id.length>9){
             var userCount=10
             var done=0
@@ -146,7 +155,7 @@ class MainViewModel @Inject constructor(
                         if(i!=0)
                             delay(i*250L+700L)
                         mainUseCases.getOrCreateUserProfileInfo(
-                            id, {user ->
+                            id = id, programId = programId, success = { user ->
                                 Log.d("TAG69", "searchUser: $user")
                                 if(user.id==id)
                                     searchList.add(0,user)
@@ -160,9 +169,9 @@ class MainViewModel @Inject constructor(
                                 Log.d("countX", "searchUser: $done $userCount")
                                 if(done>=userCount-1)
                                     lateSearchDeactivate()
-                            }, {
+                            }, loading = {
                                 savedStateHandle["loadingText"] = it
-                            } ,{
+                            }, failed = {
                                 savedStateHandle["loadingText"] = it
                                 userCount--
                                 if(done>=userCount-1)

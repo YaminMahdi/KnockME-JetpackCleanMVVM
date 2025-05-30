@@ -10,7 +10,7 @@ class UpdateRegCourseInfo @Inject constructor(
 ) {
     suspend operator fun invoke(
         UserProfile: UserProfile,
-        Success: (regCourseInfoList: List<CourseInfo>) -> Unit,
-        Failed: (msg:String) -> Unit
-    )= repo.updateRegCourseInfo(UserProfile, Success, Failed)
+        success: (regCourseInfoList: List<CourseInfo>) -> Unit,
+        failed: (msg:String) -> Unit
+    )= repo.updateRegCourseInfo(UserProfile, success, failed)
 }

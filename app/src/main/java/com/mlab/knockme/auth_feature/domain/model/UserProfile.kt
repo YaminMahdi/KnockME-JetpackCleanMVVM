@@ -6,20 +6,19 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 data class UserProfile(
-    var token: String ="",
+    val token: String ="",
     val lastUpdatedPaymentInfo: Long=0,
     val lastUpdatedRegCourseInfo: Long=0,
     val lastUpdatedLiveResultInfo: Long=0,
     val lastUpdatedClearanceInfo: Long=0,
     val lastUpdatedResultInfo: Long=0,
-    val publicInfo: PublicInfo = PublicInfo(), //aida ase
-    val privateInfo: PrivateInfoExtended = PrivateInfoExtended(),
+    var publicInfo: PublicInfo = PublicInfo(), //aida ase
+    var privateInfo: PrivateInfoExtended = PrivateInfoExtended(),
     val paymentInfo: PaymentInfo = PaymentInfo(),
     val regCourseInfo: List<CourseInfo> = emptyList(),
     val liveResultInfo: List<LiveResultInfo> = emptyList(),
     val fullResultInfo: List<FullResultInfo> = emptyList(),
     val clearanceInfo: List<ClearanceInfo> = emptyList()
-
 ) : Parcelable {
     fun toUserBasicInfo() =
         UserBasicInfo(

@@ -11,7 +11,7 @@ class UpdatePaymentInfo @Inject constructor(
         id: String,
         accessToken: String,
         paymentInfo: PaymentInfo,
-        Success: (paymentInfo: PaymentInfo) -> Unit,
-        Failed: (msg:String) -> Unit
-    )= repo.updatePaymentInfo(id, accessToken, paymentInfo, Success, Failed)
+        success: (paymentInfo: PaymentInfo) -> Unit,
+        failed: (msg:String) -> Unit
+    )= repo.updatePaymentInfo(id, accessToken, paymentInfo, success, failed)
 }

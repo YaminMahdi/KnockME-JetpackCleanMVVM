@@ -13,13 +13,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.ArrowBackIosNew
+import androidx.compose.material.icons.rounded.PersonSearch
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
@@ -43,6 +46,7 @@ import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import com.mlab.knockme.R
+import com.mlab.knockme.auth_feature.domain.model.ProgramInfo
 import com.mlab.knockme.core.util.*
 import com.mlab.knockme.main_feature.domain.model.ChatListState
 import com.mlab.knockme.main_feature.domain.model.Msg
@@ -100,17 +104,17 @@ fun ChatPersonalScreen(
             .background(DeepBlue)
             .fillMaxSize()
     ) {
-        TitleInfo(title = "Personal") {
-            viewModel.setInfoDialogVisibility(true)
+        AnimatedVisibility(!state.isSearchActive) {
+            TitleInfo(title = "Personal", onClick = {
+                viewModel.setInfoDialogVisibility(true)
+            })
         }
         SearchBox(state, viewModel)
         if (state.isSearchLoading)
             ProgressBar()
-        else {
+        else
             Spacer(modifier = Modifier.size(17.dp))
-        }
         LoadChatList(state, navController, myId, viewModel)
-
     }
     CustomToast(state.isSearchLoading, state.loadingText)
 }
@@ -138,71 +142,161 @@ fun CustomToast(isLoading: Boolean, loadingText: String) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchBox(state: ChatListState, viewModel: MainViewModel) {
-    var data by remember { mutableStateOf(state.searchText) }
+    var data by rememberSaveable { mutableStateOf(state.searchText) }
+    var programId: String? by rememberSaveable { mutableStateOf(null) }
     val mutableInteractionSource by remember { mutableStateOf(MutableInteractionSource()) }
+    val fm = LocalFocusManager.current
+    val programs: List<ProgramInfo> = listOf(
+        ProgramInfo(name = "CSE"),
+        ProgramInfo(name = "CSE"),
+        ProgramInfo(name = "CSE"),
+        ProgramInfo(name = "CSE"),
+        ProgramInfo(name = "CSE"),
+    )
+    var expanded by remember { mutableStateOf(false) }
+    var selectedItem by remember { mutableStateOf(ProgramInfo(name = "Select Program")) }
 
-    Row {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .padding(top = 10.dp)
+    ) {
         OutlinedTextField(
             value = data,
             placeholder = { Text("Type Student ID.") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             leadingIcon = {
-                Icon(
-                    imageVector = Icons.Rounded.Search,
-                    contentDescription = "search",
-                    modifier = Modifier.padding(start = 15.dp)
-                )
+                IconButton(
+                    enabled= state.isSearchActive,
+                    onClick = {
+                        fm.clearFocus()
+                        viewModel.setSearchActive(false)
+                        data = ""
+                    }) {
+                        Icon(
+                            imageVector = if(state.isSearchActive ) Icons.Rounded.ArrowBackIosNew else Icons.Rounded.Search,
+                            contentDescription = "leadingIcon",
+                        )
+                    }
             },
-            shape = RoundedCornerShape(30.dp),
+            shape = RoundedCornerShape(16.dp),
             colors = searchFieldColors(),
             singleLine = true,
             modifier = Modifier
-                .weight(1f)
-                .padding(start = 16.dp, end = if (state.isSearchActive) 0.dp else 16.dp),
+                .fillMaxWidth()
+//                .padding(start = 16.dp, end = if (state.isSearchActive) 0.dp else 16.dp)
+                .onFocusChanged {
+                    if(it.isFocused)
+                        viewModel.setSearchActive(true)
+                }
+            ,
             onValueChange = {
                 data = it
-                viewModel.searchUser(data)
             }
         )
-        AnimatedVisibility(visible = state.isSearchActive) {
-            val fm = LocalFocusManager.current
-            Icon(
-                Icons.Rounded.Close,
-                contentDescription = "",
-                tint = Color.White,
+        AnimatedVisibility(state.isSearchActive) {
+            Row(
                 modifier = Modifier
-                    .size(55.dp)
-                    .padding(3.dp)
-                    .bounceClick()
-                    .clip(RoundedCornerShape(30.dp))
-                    .clickable(
-                        interactionSource = mutableInteractionSource,
-                        indication = ripple(color = Color.White),
-                        onClick = {
-                            fm.clearFocus()
-                            viewModel.setSearchActive(false)
-                            data = ""
-                        }
-                    )
-                    .padding(horizontal = 13.dp)
+                    .fillMaxWidth()
+                    .padding(top = 10.dp)
+                    .height(IntrinsicSize.Min)
             )
+            {
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = it },
+                    modifier = Modifier
+                        .fillMaxWidth(.7f)
+                ) {
+                    TextField(
+                        value = selectedItem.name,
+                        onValueChange = { },
+                        readOnly = true,
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = searchFieldColors(),
+                        modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        shape = RoundedCornerShape(16.dp),
+                        containerColor = LessBlue
+                    ) {
+                        programs.forEach { program ->
+                            DropdownMenuItem(
+                                text = { Text(program.name, style = MaterialTheme.typography.bodyLarge) },
+                                onClick = {
+                                    selectedItem = program
+                                    expanded = false
+                                },
+                                contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
+                                colors = MenuDefaults.itemColors(textColor = LessWhite,),
+                            )
+                        }
+                    }
+                }
+                Button(
+                    onClick = {
+                        viewModel.searchUser(data, programId)
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = ButtonBlue),
+                    modifier = Modifier
+                        .padding(start = 14.dp)
+                        .fillMaxWidth(1f)
+                        .fillMaxHeight()
+                        .bounceClick()
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.PersonSearch,
+                        contentDescription = "search",
+                        tint = TextWhite
+                    )
+                }
+            }
         }
+
+//        AnimatedVisibility(visible = state.isSearchActive) {
+//            Icon(
+//                Icons.Rounded.Close,
+//                contentDescription = "",
+//                tint = Color.White,
+//                modifier = Modifier
+//                    .size(55.dp)
+//                    .padding(3.dp)
+//                    .bounceClick()
+//                    .clip(RoundedCornerShape(30.dp))
+//                    .clickable(
+//                        interactionSource = mutableInteractionSource,
+//                        indication = ripple(color = Color.White),
+//                        onClick = {
+//                            fm.clearFocus()
+//                            viewModel.setSearchActive(false)
+//                            data = ""
+//                        }
+//                    )
+//                    .padding(horizontal = 13.dp)
+//            )
+//        }
     }
 
 }
 
 @Composable
 fun searchFieldColors() =
-    TextFieldDefaults.colors().copy(
+    TextFieldDefaults.colors(
         focusedTextColor = TextWhite,
         focusedLabelColor = BlueViolet3,
         unfocusedLabelColor = BlueViolet3,
-        focusedIndicatorColor = BlueViolet3,
-        unfocusedIndicatorColor = BlueViolet3,
-        focusedContainerColor = DeepBlueLess,
-        unfocusedContainerColor = DeepBlueLess,
+        focusedIndicatorColor = DeepBlue,
+        unfocusedIndicatorColor = DeepBlue,
+        focusedContainerColor = LessBlue,
+        unfocusedContainerColor = LessBlue,
         cursorColor = AquaBlue,
         focusedPlaceholderColor = DeepBlueLess,
         focusedLeadingIconColor = TextWhite,

@@ -26,11 +26,7 @@ import com.mlab.knockme.auth_feature.data.data_source.LoginInformation
 import com.mlab.knockme.auth_feature.data.data_source.PortalApi
 import com.mlab.knockme.auth_feature.domain.model.*
 import com.mlab.knockme.auth_feature.domain.repo.AuthRepo
-import com.mlab.knockme.core.util.Resource
-import com.mlab.knockme.core.util.getCgpa
-import com.mlab.knockme.core.util.getSemesterList
-import com.mlab.knockme.core.util.toStudentRealIdFromEmail
-import com.mlab.knockme.core.util.tryGet
+import com.mlab.knockme.core.util.*
 import com.mlab.knockme.pref
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.awaitClose
@@ -204,6 +200,36 @@ class AuthRepoImpl @Inject constructor(
             if (user != null && (user.privateInfo.fbId == socialAuthInfo.userId || user.privateInfo.fbId == id)) {
                 Log.d("OnSuccessListener", "Login Success for: ${document.data}")
                 GlobalScope.launch(Dispatchers.IO) {
+                    if (user.publicInfo.nm.isEmpty()){
+                        var info = tryGet { api.getStudentIdInfo(id).body() }
+                        if ((info == null || info.studentId.isNullOrEmpty()) && user.privateInfo.email != null) {
+                            val realStudentId = user.privateInfo.email!!.toStudentRealIdFromEmail()
+                            if (realStudentId != null)
+                                info = tryGet { api.getStudentIdInfo(realStudentId).body() }
+                        }
+                        if (info != null && info.studentId != null) {
+                            publicInfo = info.toStudentInfo()
+                            user.publicInfo = publicInfo.toPublicInfo(
+                                cgpa = user.publicInfo.cgpa,
+                                totalCompletedCredit = user.publicInfo.totalCompletedCredit
+                            )
+                            if(user.publicInfo.nm.isNotEmpty())
+                                myRef.update("publicInfo", user.publicInfo)
+                        }
+                    }
+                    val newPrivateInfo = tryGet {
+                        api.getPrivateInfo(user.token).body()?.toPrivateInfo()
+                    }?.toPrivateInfoExtended(
+                        fbId = user.privateInfo.fbId,
+                        fbLink = user.privateInfo.fbLink,
+                        pic = user.privateInfo.pic,
+                        ip = user.privateInfo.ip,
+                        loc = user.privateInfo.loc
+                    )
+                    newPrivateInfo?.let {
+                        user.privateInfo = it
+                        myRef.update("privateInfo", newPrivateInfo)
+                    }
                     pref.edit {
                         putString("nm", user.publicInfo.nm)
                         putString("proShortName", user.publicInfo.progShortName)
@@ -227,7 +253,7 @@ class AuthRepoImpl @Inject constructor(
                         Log.d("getStudentInfo", "authInfo: $authInfo")
                         send(Resource.Loading("Getting Program Info.."))
                         val privateInfo =
-                            tryGet { api.getPrivateInfo(authInfo.accessToken)?.toPrivateInfo() }
+                            tryGet { api.getPrivateInfo(authInfo.accessToken).body()?.toPrivateInfo() }
                         Log.d("getStudentInfo", "privateInfo: $privateInfo")
                         send(Resource.Loading("Getting Clearace Info.."))
                         val clearanceInfo = tryGet {
@@ -318,14 +344,13 @@ class AuthRepoImpl @Inject constructor(
                         Log.d("TAG", "getStudentInfoFinal: $userProfile")
 
                         try {
-                            val result = api.getStudentIdInfo(id)
-                            var info = result.body()
+                            var info = tryGet { api.getStudentIdInfo(id).body() }
                             if ((info == null || info.studentId.isNullOrEmpty()) && privateInfo?.email != null) {
                                 val realStudentId = privateInfo.email.toStudentRealIdFromEmail()
                                 if (realStudentId != null)
-                                    info = api.getStudentIdInfo(realStudentId).body()
+                                    info = tryGet { api.getStudentIdInfo(realStudentId).body() }
                             }
-                            if (result.isSuccessful && info != null && info.studentId != null) {
+                            if (info != null && info.studentId != null) {
                                 publicInfo = info.toStudentInfo()
                             } else {
                                 send(Resource.Error("Invalid Student ID"))
@@ -357,7 +382,7 @@ class AuthRepoImpl @Inject constructor(
                         if (!publicInfo.firstSemId.isNullOrEmpty()) {
                             send(Resource.Loading("Getting CGPA Info.."))
                             getCgpa(
-                                id = publicInfo.studentId,
+                                id = publicInfo.studentId.ifEmpty { id },
                                 api = api,
                                 semesterList = getSemesterList(
                                     publicInfo.firstSemId?.toIntOrNull() ?: 0
@@ -378,10 +403,9 @@ class AuthRepoImpl @Inject constructor(
                                             if (nm.isEmpty())
                                                 nm = userProfile.privateInfo.name ?: socialAuthInfo.name
                                             if (this.id.isEmpty())
-                                                this.id = userProfile.privateInfo.email?.toStudentRealIdFromEmail()?.split("-")?.firstOrNull().orEmpty()
+                                                this.id = userProfile.privateInfo.email?.toStudentRealIdFromEmail().orEmpty()
                                         },
                                         fullResultInfo = fullResultInfo
-
                                     )).addOnCompleteListener {
                                         GlobalScope.launch(Dispatchers.IO) {
                                             if (it.isSuccessful) {
@@ -457,7 +481,7 @@ class AuthRepoImpl @Inject constructor(
                         }
                         send(Resource.Loading("Getting Private Info.."))
                         val privateInfo =
-                            tryGet { api.getPrivateInfo(authInfo.accessToken)?.toPrivateInfo() }
+                            tryGet { api.getPrivateInfo(authInfo.accessToken).body()?.toPrivateInfo() }
                         Log.d("getStudentInfo", "privateInfo: $privateInfo")
                         send(Resource.Loading("Getting Clearance Info.."))
                         val clearanceInfo = tryGet {

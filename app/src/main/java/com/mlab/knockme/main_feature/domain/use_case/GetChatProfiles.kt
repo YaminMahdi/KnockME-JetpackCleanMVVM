@@ -9,7 +9,7 @@ class GetChatProfiles @Inject constructor(
 ) {
     operator fun invoke(
         path: String,
-        Success: (profileList: List<Msg>) -> Unit,
-        Failed: (msg:String) -> Unit
-    )= repo.getChatProfiles(path, Success, Failed)
+        success: (profileList: List<Msg>) -> Unit,
+        failed: (msg:String) -> Unit
+    )= repo.getChatProfiles(path, success, failed)
 }
