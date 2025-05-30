@@ -10,7 +10,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -268,7 +271,7 @@ fun ResultItemRGB(
 
 @Composable
 fun ResultItem(resultInfo: ResultInfo) {
-    val mutableInteractionSource by remember { mutableStateOf(MutableInteractionSource()) }
+    
 
     Box(
         modifier = Modifier
@@ -278,7 +281,7 @@ fun ResultItem(resultInfo: ResultInfo) {
             .clip(RoundedCornerShape(10.dp))
             .background(DeepBlueLess)
             .clickable(
-                interactionSource = mutableInteractionSource,
+                interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(color = Color.White),
                 onClick = { }
             )

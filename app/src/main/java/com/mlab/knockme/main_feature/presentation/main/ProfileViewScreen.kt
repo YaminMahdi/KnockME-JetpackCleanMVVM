@@ -14,7 +14,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -207,7 +210,7 @@ fun TopBar(navController: NavHostController,onClick: (() -> Unit)? = null) {
 
 @Composable
 fun BackBtn(navController: NavHostController) {
-    val mutableInteractionSource by remember { mutableStateOf(MutableInteractionSource()) }
+    
 
     Icon(
         Icons.AutoMirrored.Rounded.ArrowBack,
@@ -218,7 +221,7 @@ fun BackBtn(navController: NavHostController) {
             .bounceClick()
             .clip(RoundedCornerShape(30.dp))
             .clickable(
-                interactionSource = mutableInteractionSource,
+                interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(color = Color.White),
                 onClick = {
                     navController.navigateUp()

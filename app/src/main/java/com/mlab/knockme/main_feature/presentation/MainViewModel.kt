@@ -121,13 +121,13 @@ class MainViewModel @Inject constructor(
 
     fun getChatProfiles(
         path: String,
+        saveTemp: Boolean = false,
         failed: (msg:String) -> Unit
     ){
 //        setSearchActive(false)
         getChatsProfileJob?.cancel()
         searchJob?.cancel()
         savedStateHandle["chatList"] = emptyList<Msg>()
-        savedStateHandle["chatListTmp"] = emptyList<Msg>()
         savedStateHandle["searchText"] = ""
 
         getChatsProfileJob= viewModelScope.launch(Dispatchers.IO){
@@ -135,7 +135,7 @@ class MainViewModel @Inject constructor(
                 path, {
                     val x =it.toList()
                     savedStateHandle["chatList"] = x
-                    savedStateHandle["chatListTmp"] = x
+                    if(saveTemp) savedStateHandle["chatListTmp"] = x
                 }, failed)
         }
     }

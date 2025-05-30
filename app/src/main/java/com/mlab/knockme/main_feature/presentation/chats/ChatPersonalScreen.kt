@@ -79,7 +79,7 @@ fun ChatPersonalScreen(
 //    }
     LaunchedEffect(Unit) {
         if (!state.isSearchActive) {
-            viewModel.getChatProfiles("personalMsg/$myId/profiles") {
+            viewModel.getChatProfiles("personalMsg/$myId/profiles", true) {
                 Log.d("TAG", "ChatPersonalScreen: $it")
                 context.toast("Chat couldn't be loaded")
             }
@@ -148,7 +148,6 @@ fun CustomToast(isLoading: Boolean, loadingText: String) {
 @Composable
 fun SearchBox(state: ChatListState, viewModel: MainViewModel) {
     var data by rememberSaveable { mutableStateOf(state.searchText) }
-    val mutableInteractionSource by remember { mutableStateOf(MutableInteractionSource()) }
     val fm = LocalFocusManager.current
     var expanded by remember { mutableStateOf(false) }
     var selectedItem: ProgramInfo? by remember { mutableStateOf(null) }
@@ -269,7 +268,7 @@ fun SearchBox(state: ChatListState, viewModel: MainViewModel) {
 //                    .bounceClick()
 //                    .clip(RoundedCornerShape(30.dp))
 //                    .clickable(
-//                        interactionSource = mutableInteractionSource,
+//                        interactionSource = remember { MutableInteractionSource() },
 //                        indication = ripple(color = Color.White),
 //                        onClick = {
 //                            fm.clearFocus()
@@ -405,7 +404,6 @@ fun ChatView(
     isSearchActive: Boolean,
     onClick: (id: String) -> Unit,
 ) {
-    val mutableInteractionSource by remember { mutableStateOf(MutableInteractionSource()) }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
@@ -418,7 +416,7 @@ fun ChatView(
             .bounceClick()
             .clip(RoundedCornerShape(10.dp))
             .clickable(
-                interactionSource = mutableInteractionSource,
+                interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(color = Color.White),
                 onClick = {
                     onClick.invoke(proView.id!!)

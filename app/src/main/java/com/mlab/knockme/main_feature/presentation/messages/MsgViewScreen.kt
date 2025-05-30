@@ -99,7 +99,7 @@ fun MsgViewScreen(
 
 @Composable
 fun MsgTopBar(navController: NavHostController, id: String, viewModel: MainViewModel) {
-    val mutableInteractionSource by remember { mutableStateOf(MutableInteractionSource()) }
+    
     val tarBasicInfo by viewModel.tarBasicInfo.collectAsStateWithLifecycle()
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -116,7 +116,7 @@ fun MsgTopBar(navController: NavHostController, id: String, viewModel: MainViewM
                 .bounceClick()
                 .clip(RoundedCornerShape(10.dp))
                 .clickable(
-                    interactionSource = mutableInteractionSource,
+                    interactionSource = remember { MutableInteractionSource() },
                     indication = ripple(color = Color.White),
                     onClick = {
                         tarBasicInfo.publicInfo.nm.isNotEmpty {
@@ -384,7 +384,7 @@ fun SendMsgBar(
     var data by remember { mutableStateOf("") }
     val myBasicInfo by viewModel.myBasicInfo.collectAsStateWithLifecycle()
     val tarBasicInfo by viewModel.tarBasicInfo.collectAsStateWithLifecycle()
-    val mutableInteractionSource by remember { mutableStateOf(MutableInteractionSource()) }
+    
     val myPath = path+"chats/$id"
     val myProfilePath = path+"profiles/$id"
     var tarPath : String?= null
@@ -424,7 +424,7 @@ fun SendMsgBar(
                 .bounceClick()
                 .clip(RoundedCornerShape(10.dp))
                 .clickable(
-                    interactionSource = mutableInteractionSource,
+                    interactionSource = remember { MutableInteractionSource() },
                     indication = ripple(color = Color.Transparent),
                     onClick = {
                         val time = System.currentTimeMillis()
