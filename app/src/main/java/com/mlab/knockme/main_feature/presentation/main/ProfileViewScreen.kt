@@ -301,7 +301,8 @@ fun Profile(
                     .combinedClickable(
                         onClick = {},
                         onLongClick = {
-                            val text = if(!publicInfo.cgpa.isNaN()) "CGPA: ${publicInfo.cgpa}" else "CGPA: 0.0"
+                            val text =
+                                if (!publicInfo.cgpa.isNaN()) "CGPA: ${publicInfo.cgpa}" else "CGPA: 0.0"
                             context.setClipBoardData(text)
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         },
@@ -386,7 +387,6 @@ fun SocialLink(
     myId: String
 ) {
     val myBasicInfo by viewModel.myBasicInfo.collectAsStateWithLifecycle()
-    val mutableInteractionSource by remember { mutableStateOf(MutableInteractionSource()) }
 
     Row(
         horizontalArrangement = Arrangement.SpaceEvenly,
@@ -471,11 +471,13 @@ fun SocialLink(
                     .bounceClick()
                     .clip(RoundedCornerShape(10.dp))
                     .clickable(
-                        interactionSource = mutableInteractionSource,
+                        interactionSource = remember { MutableInteractionSource() },
                         indication = ripple(color = Color.White),
                         onClick = {
                             if (!userBasicInfo.privateInfo.fbLink.isNullOrEmpty())
                                 context.showCustomTab(userBasicInfo.privateInfo.fbLink)
+                            else if (!userBasicInfo.privateInfo.socialNetId.isNullOrEmpty())
+                                context.showCustomTab(userBasicInfo.privateInfo.socialNetId)
                             else
                                 context.toast("Invalid link")
                         }
@@ -498,7 +500,7 @@ fun SocialLink(
                     .bounceClick()
                     .clip(RoundedCornerShape(10.dp))
                     .clickable(
-                        interactionSource = mutableInteractionSource,
+                        interactionSource = remember { MutableInteractionSource() },
                         indication = ripple(color = Color.White),
                         onClick = {
                             if (!userBasicInfo.privateInfo.email.isNullOrEmpty()) {
@@ -555,8 +557,9 @@ fun CGBarChart(barDataList: List<BarData>, pb: PublicInfo, navController: NavHos
             Box(
                 modifier = Modifier
                     .padding(end = when(barDataList.size){
-                        in 1..3 -> 200.dp
-                        in 4..6 -> 150.dp
+                        in 1..2 -> 240.dp
+                        in 3..4 -> 200.dp
+                        in 5..6 -> 150.dp
                         in 7..9 -> 100.dp
                         else -> 0.dp
                     })
@@ -668,11 +671,22 @@ fun Details(userBasicInfo: UserBasicInfo, hasPrivateInfo: Boolean) {
         FlowRow(
             modifier = Modifier.padding(5.dp),
         ) {
-            DetailsItems("ID: ${userBasicInfo.publicInfo.id}", LightGreen2)
-            DetailsItems("Batch: ${userBasicInfo.publicInfo.batchNo}", BlueViolet1)
-            if(hasPrivateInfo)
-                DetailsItems("Blood: ${userBasicInfo.privateInfo.bloodGroup}", LightRed)
-            DetailsItems("Prog: ${userBasicInfo.publicInfo.progShortName}", LightBlue)
+            if (userBasicInfo.publicInfo.id.isNotNull())
+                DetailsItems("ID: ${userBasicInfo.publicInfo.id}", LightGreen2)
+            if(userBasicInfo.publicInfo.batchNo !=0)
+                DetailsItems("Batch: ${userBasicInfo.publicInfo.batchNo}", BlueViolet1)
+            if(hasPrivateInfo) {
+                if(userBasicInfo.privateInfo.bloodGroup.isNotNull())
+                    DetailsItems("Blood: ${userBasicInfo.privateInfo.bloodGroup}", LightRed)
+                if(userBasicInfo.privateInfo.mobile.isNotNull())
+                    DetailsItems("Tel: ${userBasicInfo.privateInfo.mobile}",  LightBlue)
+                if(userBasicInfo.privateInfo.sex.isNotNull())
+                    DetailsItems("Gender: ${userBasicInfo.privateInfo.sex}", BlueViolet1)
+                if(userBasicInfo.privateInfo.religion.isNotNull())
+                    DetailsItems("Religion: ${userBasicInfo.privateInfo.religion}", OrangeYellow2)
+            }
+            if(userBasicInfo.publicInfo.progShortName.isNotNull())
+                DetailsItems("Prog: ${userBasicInfo.publicInfo.progShortName}", LightGreen2)
         }
 
     }
@@ -690,8 +704,12 @@ fun Address(userBasicInfo: UserBasicInfo) {
         FlowRow(
             modifier = Modifier.padding(5.dp),
         ) {
-            DetailsItems("Current: ${userBasicInfo.privateInfo.loc}", Beige3)
-            DetailsItems("Home: ${userBasicInfo.privateInfo.permanentHouse}", DarkerButtonBlue)
+            if(userBasicInfo.privateInfo.presentHouse.isNotNull())
+                DetailsItems("Current: ${userBasicInfo.privateInfo.presentHouse}", Beige3)
+            else if(userBasicInfo.privateInfo.loc.isNotNull())
+                DetailsItems("Current: ${userBasicInfo.privateInfo.loc}", Beige3)
+            if(userBasicInfo.privateInfo.permanentHouse.isNotNull())
+                DetailsItems("Home: ${userBasicInfo.privateInfo.permanentHouse}", DarkerButtonBlue)
         }
 
     }

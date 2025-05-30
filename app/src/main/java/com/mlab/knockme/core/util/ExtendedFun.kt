@@ -191,6 +191,8 @@ fun Context?.showCustomTab(url: String?) {
 
 fun <T> T.isNull() = this == null
 fun <T> T.isNotNull() = this != null
+fun String?.isNull(): Boolean = this in setOf("", "null", null)
+fun String?.isNotNull(): Boolean = this !in setOf("", "null", null)
 
 inline fun <T> T?.isNull(next: () -> Unit): T? {
     if (this == null) next()
