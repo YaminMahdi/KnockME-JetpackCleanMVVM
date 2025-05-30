@@ -16,3 +16,23 @@ data class ProgramInfo(
 data class ProgramList(
     val list: List<ProgramInfo> = listOf()
 )
+//{
+//    "studentId": "242-11-188", 0242420004081188
+//    "fkCampus": "C03",
+//    "campusName": "DSC",
+//    "studentName": "Md. Jahinul Islam Bhuiyan Rabbu",
+//    "batchId": "11-67",
+//    "batchNo": 67,
+//    "programCredit": 0,
+//    "programId": "11",
+//    "programName": "Bachelor of Business Administration",
+//    "progShortName": "B.B.A.",
+//    "programType": "BACHELOR",
+//    "deptShortName": "Business Admin",
+//    "departmentName": "Business Administration",
+//    "facultyName": "Faculty of Business & Entrepreneurship",
+//    "facShortName": "FBE",
+//    "semesterId": "243",
+//    "semesterName": "Fall 2024",
+//    "shift": "MORNING"
+//}

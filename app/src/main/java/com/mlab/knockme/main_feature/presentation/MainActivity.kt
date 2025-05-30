@@ -46,6 +46,7 @@ import com.mlab.knockme.ui.theme.KnockMETheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -68,13 +69,22 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        if (Firebase.auth.currentUser == null) {
-            lifecycleScope.launch(Dispatchers.IO) {
-                pref.edit { clear() }
+        lifecycleScope.launch {
+            val currentUser = Firebase.auth.currentUser
+            val studentId = withContext(Dispatchers.IO) {
+                if (currentUser == null) {
+                    pref.edit { clear() }
+                    null
+                } else {
+                    pref.getString("studentId", null)
+                }
             }
-            startActivity(Intent(this, LoginActivity::class.java))
-            this.finish()
+            if (currentUser == null || studentId.isNullOrEmpty()) {
+                startActivity(Intent(this@MainActivity, LoginActivity::class.java))
+                finish()
+            }
         }
+
     }
 
     override fun onResume() {

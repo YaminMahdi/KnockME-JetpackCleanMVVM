@@ -6,22 +6,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.facebook.AccessToken
 import com.facebook.CallbackManager
 import com.facebook.login.widget.LoginButton
-import com.google.firebase.Firebase
-import com.google.firebase.auth.auth
 import com.mlab.knockme.auth_feature.domain.model.SocialAuthInfo
 import com.mlab.knockme.auth_feature.domain.model.UserProfile
 import com.mlab.knockme.auth_feature.domain.use_cases.AuthUseCases
 import com.mlab.knockme.core.util.Resource
+import com.mlab.knockme.pref
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -48,10 +44,15 @@ class LoginViewModel @Inject constructor(
     fun getStudentInfo(
         id: String,
         pass: String,
-        socialAuthInfo: SocialAuthInfo
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             activeLoading()
+            val socialAuthInfo= SocialAuthInfo(
+                accessToken = AccessToken.getCurrentAccessToken(),
+                userId = pref.getString("userId","") ?: "",
+                fbLink = pref.getString("fbLink","") ?: "",
+                pic = pref.getString("pic","") ?: ""
+            )
             authUseCases.getStudentInfo(id, pass, socialAuthInfo)
                 .collect {
                     _infoState.emit(it)

@@ -111,7 +111,6 @@ class AuthRepoImpl @Inject constructor(
                         putString("name", googleCredential.displayName.orEmpty())
                         putString("fbLink", "")
                         putString("pic", photoUrl)
-
                     }
                     Resource.Success(googleCredential)
                 } else
@@ -207,7 +206,7 @@ class AuthRepoImpl @Inject constructor(
                             if (realStudentId != null)
                                 info = tryGet { api.getStudentIdInfo(realStudentId).body() }
                         }
-                        if (info != null && info.studentId != null) {
+                        if (info != null && info.programId != null) {
                             publicInfo = info.toStudentInfo()
                             firestore.addMyProgram(publicInfo.toPublicInfo())
                             user.publicInfo = publicInfo.toPublicInfo(
@@ -234,7 +233,9 @@ class AuthRepoImpl @Inject constructor(
                     pref.edit {
                         putString("nm", user.publicInfo.nm)
                         putString("proShortName", user.publicInfo.progShortName)
+                        putString("studentId", publicInfo.studentId.ifEmpty { id })
                     }
+                    pref.saveObject(PrefKeys.USER_INFO, user)
                     send(Resource.Success(user))
                     this.cancel()
                 }
@@ -351,7 +352,7 @@ class AuthRepoImpl @Inject constructor(
                                 if (realStudentId != null)
                                     info = tryGet { api.getStudentIdInfo(realStudentId).body() }
                             }
-                            if (info != null && info.studentId != null) {
+                            if (info != null && info.programId != null) {
                                 publicInfo = info.toStudentInfo()
                                 firestore.addMyProgram(publicInfo.toPublicInfo())
                             } else {
@@ -378,9 +379,6 @@ class AuthRepoImpl @Inject constructor(
                             this.cancel()
                         }
 
-                        pref.edit {
-                            putString("studentId", publicInfo.studentId.ifEmpty { id })
-                        }
                         if (publicInfo.firstSemId.isNotEmpty()) {
                             send(Resource.Loading("Getting CGPA Info.."))
                             getCgpa(
@@ -418,7 +416,9 @@ class AuthRepoImpl @Inject constructor(
                                                 pref.edit {
                                                     putString("nm", userProfile.publicInfo.nm)
                                                     putString("proShortName", userProfile.publicInfo.progShortName)
+                                                    putString("studentId", publicInfo.studentId.ifEmpty { id })
                                                 }
+                                                pref.saveObject(PrefKeys.USER_INFO, userProfile)
                                                 send(Resource.Success(userProfile))
                                             } else
                                                 send(Resource.Error("Firebase Server Error.", userProfile))
@@ -545,15 +545,21 @@ class AuthRepoImpl @Inject constructor(
                             loc = locationInfo?.loc.orEmpty()
                         )
                         //paymentInfo //registeredCourse //liveResultInfoList
-                        myRef.update("token", authInfo.accessToken)
-                        myRef.update("privateInfo", privateInfoE)
-                        myRef.update("registeredCourse", registeredCourse)
-                        myRef.update("liveResultInfoList", liveResultInfoList)
+                        val updates = mapOf(
+                            "token" to authInfo.accessToken,
+                            "privateInfo" to privateInfoE,
+                            "registeredCourse" to registeredCourse,
+                            "liveResultInfoList" to liveResultInfoList
+                        )
+
+                        myRef.update(updates)
+
 
                         Log.d("TAG", "getStudentInfoFinal: $privateInfo")
                         pref.edit {
                             putString("nm", authInfo.name)
-//                            putString("proShortName", publicInfo.progShortName)
+                            putString("proShortName", publicInfo.progShortName)
+                            putString("studentId", publicInfo.studentId.ifEmpty { id })
                         }
                         send(Resource.Success(UserProfile(token = authInfo.accessToken)))
                     } catch (e: HttpException) {

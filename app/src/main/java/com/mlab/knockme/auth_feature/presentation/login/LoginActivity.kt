@@ -152,16 +152,10 @@ class LoginActivity : ComponentActivity() {
                     }
                     composable<AuthScreens.LoginScreenPortal>{
                         val context = LocalContext.current
-                        val socialAuthInfo= SocialAuthInfo(
-                            accessToken = AccessToken.getCurrentAccessToken(),
-                            userId = pref.getString("userId","") ?: "",
-                            fbLink = pref.getString("fbLink","") ?: "",
-                            pic = pref.getString("pic","") ?: ""
-                        )
                         val scope = rememberCoroutineScope { Dispatchers.Main }
                         LoginPortalScreen{ id, pass ->
                             var once = true
-                            loginViewModel.getStudentInfo(id, pass, socialAuthInfo)
+                            loginViewModel.getStudentInfo(id, pass)
                             scope.launch{
                                 loginViewModel.infoState.collect {
                                     when (it) {

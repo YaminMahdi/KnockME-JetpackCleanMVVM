@@ -73,11 +73,12 @@ class MainViewModel @Inject constructor(
 
     fun syncPrograms(isOffline: Boolean = true){
         viewModelScope.launch(Dispatchers.IO) {
-            if(!isOffline)
+            val offlineData = pref.readObject<List<ProgramInfo>>(PrefKeys.PROGRAM_LIST).orEmpty()
+            if(!isOffline || offlineData.isEmpty())
                 savedStateHandle["programs"] = mainUseCases.syncPrograms()
             else
-                savedStateHandle["programs"] =
-                    pref.readObject<List<ProgramInfo>>(PrefKeys.PROGRAM_LIST).orEmpty()
+                savedStateHandle["programs"] = offlineData
+
         }
     }
     fun getMeg(
@@ -154,8 +155,8 @@ class MainViewModel @Inject constructor(
         else if(id.isNotEmpty())
             setSearchActive(true)
         if (id.length>9){
-            var userCount=10
-            var done=0
+//            var userCount=10
+//            var done=0
             savedStateHandle["isSearchLoading"] = true
             getChatsProfileJob?.cancel()
             searchJob?.apply {
@@ -164,37 +165,46 @@ class MainViewModel @Inject constructor(
             }
             searchJob=
                 viewModelScope.launch(Dispatchers.IO){
-                    delay(500)
-                    getIdRange(id).forEachIndexed{ i,id->
-                        if(i!=0)
-                            delay(i*250L+700L)
-                        mainUseCases.getOrCreateUserProfileInfo(
-                            id = id, programId = programId, success = { user ->
-                                Log.d("TAG69", "searchUser: $user")
-                                if(user.id==id)
-                                    searchList.add(0,user)
-                                else
-                                    searchList.add(user)
-                                //searchList.sortBy { it.id }  //Array index out of range: 11
-                                val x =mutableListOf<Msg>()
-                                x.addAll(searchList)
-                                savedStateHandle["chatList"] = x
-                                done++
-                                Log.d("countX", "searchUser: $done $userCount")
-                                if(done>=userCount-1)
-                                    lateSearchDeactivate()
-                            }, loading = {
-                                savedStateHandle["loadingText"] = it
-                            }, failed = {
-                                savedStateHandle["loadingText"] = it
-                                userCount--
-                                if(done>=userCount-1)
-                                    lateSearchDeactivate()
-                                Log.d("countX", "searchUser: $done $userCount")
+                    mainUseCases.getOrCreateUserProfileInfo(
+                        id = id, programId = programId, success = block@{ user ->
+//                            if(realId != null) {
+//                                searchUser(realId, programId)
+//                                searchJob?.cancel()
+//                                return@block
+//                            }
+//                            if(!searchJob?.isActive.orFalse()) return@block
+                            Log.d("TAG69", "searchUser: $user")
+//                            if(user.id==id)
+//                                searchList.add(0,user)
+//                            else
+                            searchList.add(user)
+                            //searchList.sortBy { it.id }  //Array index out of range: 11
+//                            val x =mutableListOf<Msg>()
+//                            x.addAll(searchList)
+                            savedStateHandle["chatList"] = searchList.toMutableList().sortedBy { it.id }
+//                            done++
+//                            Log.d("countX", "searchUser: $done $userCount")
+//                            if(done>=userCount-1)
+                            lateSearchDeactivate()
+                        }, loading = {
+                            savedStateHandle["loadingText"] = it
+                        }, failed = {
+                            savedStateHandle["loadingText"] = it
+//                            userCount--
+//                            if(done>=userCount-1)
+//                            Log.d("countX", "searchUser: $done $userCount")
+                            lateSearchDeactivate()
+                        }
+                    )
 
-                            }
-                        )
-                    }
+//                    delay(500)
+//                    getIdRange(id).forEachIndexed{ i,id->
+//                        if(i!=0)
+//                            delay(i*250L+700L)
+//                        yield()
+//                        //all code
+//                    }
+
                 }
 
         }

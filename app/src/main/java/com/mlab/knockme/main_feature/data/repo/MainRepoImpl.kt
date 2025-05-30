@@ -133,13 +133,12 @@ class MainRepoImpl @Inject constructor(
                 val userBasicInfo = document.toObject<UserProfile>()?.toUserBasicInfo()
                 if (userBasicInfo != null) {
                     Log.d("getUserBasicInfo", "DocumentSnapshot data: ${userBasicInfo.publicInfo}")
-
                     success.invoke(userBasicInfo)
                 } else {
                     Log.d("getUserBasicInfo", "No Such User")
-                    getOrCreateUserProfileInfo(id, null,{
-                        if(!it.id.isNullOrEmpty())
-                            getUserBasicInfo(it.id!!,success, failed)
+                    getOrCreateUserProfileInfo(id, null,{ msg->
+                        if(!msg.id.isNullOrEmpty())
+                            getUserBasicInfo(msg.id!!,success, failed)
                     },{},failed)
                     failed.invoke("No user found")
 
@@ -170,7 +169,7 @@ class MainRepoImpl @Inject constructor(
                                 if (realStudentId != null)
                                     info = tryGet { api.getStudentIdInfo(realStudentId).body() }
                             }
-                            if (info != null && info.studentId != null) {
+                            if (info != null && info.programId != null) {
                                 user.publicInfo = info.toStudentInfo().toPublicInfo(
                                     cgpa = user.publicInfo.cgpa,
                                     totalCompletedCredit = user.publicInfo.totalCompletedCredit
@@ -224,24 +223,21 @@ class MainRepoImpl @Inject constructor(
                 val profile = document.toObject<UserProfile>()
                 if (profile != null) {
                     Log.d("getOrCreateUserProfileInfo", "DocumentSnapshot data: ${document.data}")
-                    val msgDis: String
-                    if(profile.publicInfo.cgpa == 0.0) {
-                        msgDis = "ID: ${profile.publicInfo.id}"
+                    if(profile.publicInfo.cgpa == 0.0 || profile.publicInfo.nm.isEmpty() || profile.publicInfo.programId.isEmpty()) {
                         loading.invoke("Server Error. Couldn't Calculate CGPA for ID- $id. Retrying..")
                     } else {
-                        msgDis = "ID: ${profile.publicInfo.id}      CGPA: ${profile.publicInfo.cgpa}"
+                        val msgDis = "ID: ${profile.publicInfo.id}      CGPA: ${profile.publicInfo.cgpa}"
                         loadFromPortal = false
                         loading.invoke("Loaded Result From Backup Server For ID- $id.")
+                        val shortProfile = Msg(
+                            id = id,
+                            nm = profile.publicInfo.nm,
+                            msg = msgDis,
+                            pic = profile.privateInfo.pic,
+                            time = profile.lastUpdatedResultInfo)
+                        //searchData.add(0,shortProfile)
+                        success.invoke(shortProfile)
                     }
-                    val shortProfile = Msg(
-                        id = id,
-                        nm = profile.publicInfo.nm,
-                        msg = msgDis,
-                        pic = profile.privateInfo.pic,
-                        time = profile.lastUpdatedResultInfo)
-                    //searchData.add(0,shortProfile)
-                    success.invoke(shortProfile)
-
                 }
                 if(loadFromPortal) {
                     Log.d("getOrCreateUserProfileInfo", "No user found. Creating One")
@@ -250,17 +246,28 @@ class MainRepoImpl @Inject constructor(
                     GlobalScope.launch(Dispatchers.IO){
                         try {
                             var info = api.getStudentIdInfo(id).body()
-                            if(info?.progShortName.isNullOrEmpty()){
-                                info = tryGet { api.getStudentIdInfo(id).body() }
+                            var realStudentId: String? = null
+                            val realIds = listOf(
+                                id.toStudentRealId(programId, 3),
+                                id.toStudentRealId(programId, 4),
+                                id.toStudentRealId(programId, 5),
+                            )
+                            for (realId in realIds) {
+                                if (info?.programId.isNullOrEmpty())
+                                    info = tryGet { realId?.let { api.getStudentIdInfo(it) }?.body() }
+                                 else {
+                                    realStudentId = realId
+                                    break
+                                }
                             }
                             val studentInfo = info?.toStudentInfo()
                             Log.d("getStudentInfo", "publicInfo: $studentInfo")
-                            if(studentInfo != null && !info.semesterId.isNullOrEmpty())
+                            if(studentInfo != null && !info.programId.isNullOrEmpty())
                             {
                                 firestore.addMyProgram(studentInfo.toPublicInfo())
-                                loading.invoke("ID- $id Is Valid. Getting CGPA Info..")
+                                loading.invoke("ID- ${studentInfo.studentId} Is Valid. Getting CGPA Info..")
                                 getCgpa(
-                                    id = id,
+                                    id = studentInfo.studentId,
                                     api = api,
                                     semesterList = getSemesterList(studentInfo.firstSemId.toInt()),
                                     loading = {
@@ -277,14 +284,9 @@ class MainRepoImpl @Inject constructor(
                                             msgDis = "ID: ${studentInfo.studentId}"
                                             loading.invoke("Server Error. Couldn't Get All Semester SGPA For - $id.")
                                         }
-                                        val publicInfo = PublicInfo(
-                                            id = id,
-                                            nm = studentInfo.studentName,
-                                            progShortName = studentInfo.progShortName,
-                                            batchNo = studentInfo.batchNo,
+                                        val publicInfo = studentInfo.toPublicInfo(
                                             cgpa = cgpa,
-                                            totalCompletedCredit =totalCompletedCredit,
-                                            firstSemId = studentInfo.firstSemId.toInt()
+                                            totalCompletedCredit = totalCompletedCredit
                                         )
                                         val shortProfile = Msg(
                                             id = id,
@@ -295,25 +297,24 @@ class MainRepoImpl @Inject constructor(
                                         )
                                         //searchData.add(0,shortProfile)
                                         success.invoke(shortProfile)
-                                        if(!document.exists()) {
-                                            docRef.set(hashMapOf("publicInfo" to publicInfo)).addOnCompleteListener {
-                                                if(it.isSuccessful) {
-                                                    firestore
-                                                        .collection("public")
+                                        val updates = mapOf(
+                                            "publicInfo" to publicInfo,
+                                            "fullResultInfo" to fullResultInfo,
+                                            "lastUpdatedResultInfo" to System.currentTimeMillis()
+                                        )
+                                        if (!document.exists()) {
+                                            docRef.set(updates).addOnCompleteListener {
+                                                if (it.isSuccessful) {
+                                                    firestore.collection("public")
                                                         .document("info")
                                                         .update("profileCount", FieldValue.increment(1))
                                                     loading.invoke("Info for $id Added To Backup Server.")
-
-                                                } else
+                                                } else {
                                                     loading.invoke("Firebase Server Error. Couldn't Save Info For $id To Backup Server.")
+                                                }
                                             }
-                                            docRef.update("fullResultInfo" , fullResultInfo)
-                                            docRef.update("lastUpdatedResultInfo" , System.currentTimeMillis())
-
                                         } else {
-                                            docRef.update("publicInfo" , publicInfo)
-                                            docRef.update("fullResultInfo" , fullResultInfo)
-                                            docRef.update("lastUpdatedResultInfo" , System.currentTimeMillis())
+                                            docRef.update(updates)
                                         }
                                     })
                             }
@@ -356,8 +357,11 @@ class MainRepoImpl @Inject constructor(
             Log.d("getStudentInfo", "paymentInfo: $paymentInfoNew")
             if(paymentInfo != paymentInfoNew && paymentInfoNew!= null) {
                 success.invoke(paymentInfoNew)
-                docRef.update("paymentInfo" , paymentInfoNew)
-                docRef.update("lastUpdatedPaymentInfo" , System.currentTimeMillis())
+                val updates = mapOf(
+                    "paymentInfo" to paymentInfoNew,
+                    "lastUpdatedPaymentInfo" to System.currentTimeMillis()
+                )
+                docRef.update(updates)
             }
             else failed.invoke("No new data found.")
         }
@@ -399,8 +403,11 @@ class MainRepoImpl @Inject constructor(
             Log.d("getStudentInfo", "registeredCourse: $regCourseInfoNew")
             if (userProfile.regCourseInfo notEqualsIgnoreOrder regCourseInfoNew && regCourseInfoNew.isNotEmpty()){
                 success.invoke(regCourseInfoNew)
-                docRef.update("regCourseInfo" , regCourseInfoNew)
-                docRef.update("lastUpdatedRegCourseInfo" , System.currentTimeMillis())
+                val updates = mapOf(
+                    "regCourseInfo" to regCourseInfoNew,
+                    "lastUpdatedRegCourseInfo" to System.currentTimeMillis()
+                )
+                docRef.update(updates)
             }
             else failed.invoke("No new data found.")
 
@@ -452,8 +459,11 @@ class MainRepoImpl @Inject constructor(
             }
             if(userProfile.liveResultInfo notEqualsIgnoreOrder liveResultInfoListNew && liveResultInfoListNew.isNotEmpty()){
                 success.invoke(liveResultInfoListNew)
-                docRef.update("liveResultInfo" , liveResultInfoListNew)
-                docRef.update("lastUpdatedLiveResultInfo" , System.currentTimeMillis())
+                val updates = mapOf(
+                    "liveResultInfo" to liveResultInfoListNew,
+                    "lastUpdatedLiveResultInfo" to System.currentTimeMillis()
+                )
+                docRef.update(updates)
             }
             else failed.invoke("No new data found.")
 
@@ -496,9 +506,12 @@ class MainRepoImpl @Inject constructor(
                 if(fullResultInfoListNew.size >= fullResultInfoList.size){
                     if((fullResultInfoList notEqualsIgnoreOrder fullResultInfoListNew && fullResultInfoListNew.isNotEmpty()) || (publicInfo.cgpa!=cgpa && cgpa!=0.0)){
                         success.invoke(fullResultInfoListNew, cgpa, totalCompletedCredit)
-                        docRef.update("fullResultInfo" , fullResultInfoListNew)
-                        docRef.update("publicInfo" , publicInfo.copy(cgpa = cgpa, totalCompletedCredit = totalCompletedCredit))
-                        docRef.update("lastUpdatedResultInfo" , System.currentTimeMillis())
+                        val updates = mapOf(
+                            "fullResultInfo" to fullResultInfoListNew,
+                            "publicInfo" to publicInfo.copy(cgpa = cgpa, totalCompletedCredit = totalCompletedCredit),
+                            "lastUpdatedResultInfo" to System.currentTimeMillis()
+                        )
+                        docRef.update(updates)
                     } else failed.invoke("No new data found.")
                 } else failed.invoke("No new data found.")
 
@@ -518,8 +531,11 @@ class MainRepoImpl @Inject constructor(
             Log.d("getStudentInfo", "clearanceInfoList: $clearanceInfoNew")
             if (clearanceInfoNew!= null && clearanceInfoList notEqualsIgnoreOrder clearanceInfoNew && clearanceInfoNew.isNotEmpty()){
                 success.invoke(clearanceInfoNew)
-                docRef.update("clearanceInfo" , clearanceInfoNew)
-                docRef.update("lastUpdatedClearanceInfo" , System.currentTimeMillis())
+                val updates = mapOf(
+                    "clearanceInfo" to clearanceInfoNew,
+                    "lastUpdatedClearanceInfo" to System.currentTimeMillis()
+                )
+                docRef.update(updates)
             }
             else failed.invoke("No new data found.")
 
@@ -573,7 +589,9 @@ class MainRepoImpl @Inject constructor(
                     ?.toObject<ProgramList>()?.list
                     ?: pref.readObject<List<ProgramInfo>>(PrefKeys.PROGRAM_LIST).orEmpty()
                 val combinedList  = (newList + oldList).distinctBy { it.programId }.sortedBy { it.shortName }
-                if(combinedList .size > oldList.size){
+                val isOldSorted = oldList == oldList.sortedBy { it.programId }
+
+                if(combinedList .size > oldList.size || !isOldSorted){
                     programRef.set(ProgramList(combinedList )).await()
                     pref.saveObject(PrefKeys.PROGRAM_LIST, combinedList )
                     combinedList

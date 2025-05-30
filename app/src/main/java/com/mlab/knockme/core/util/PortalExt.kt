@@ -18,10 +18,10 @@ fun String.toStudentRealIdFromEmail(): String? {
     return STUDENT_ID_PATTERN.find(this)?.value
 }
 
-fun String.toStudentRealId(programId: String, serialLength: Int = 3): String? {
+fun String.toStudentRealId(programId: String?, serialLength: Int = 3): String? {
     if (matches(STUDENT_ID_PATTERN)) return this
-    if (length < 6 + serialLength || serialLength < 1) return null
-    val semesterId = substring(2, 5)
+    if (length < 6 + serialLength || serialLength < 1 || programId.isNullOrEmpty()) return null
+    val semesterId = substring(3, 6)
     val studentSerial = takeLast(serialLength)
     return "$semesterId-$programId-$studentSerial"
 }

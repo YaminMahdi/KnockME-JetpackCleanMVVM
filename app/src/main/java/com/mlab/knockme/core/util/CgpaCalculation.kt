@@ -17,15 +17,15 @@ suspend fun getCgpa(
     success: suspend (cgpa: Double, totalCompletedCredit: Double, fullResultInfo: List<FullResultInfo>) -> Unit,
     useSuccessOnly: Boolean = false
 ) {
-    if(semesterList.isEmpty()){
+    if (semesterList.isEmpty()) {
         success.invoke(0.0, 0.0, emptyList())
     }
-    var totalCompletedCredit =0.0
+    var totalCompletedCredit = 0.0
     var weightedCgpa = 0.0
     var nullSemester = 0
     var apiCallCount = 0
     //var totalCreditWeight = 0.0
-    val courseScoreMap : HashMap<String, Double> = HashMap<String, Double> ()
+    val courseScoreMap: HashMap<String, Double> = HashMap<String, Double>()
     //val totalWeightMap : HashMap<String, Double> = HashMap<String, Double> ()
     //var resultFound = 0
     val fullResultInfo = mutableListOf<FullResultInfo>()
@@ -33,23 +33,25 @@ suspend fun getCgpa(
         GlobalScope.launch(Dispatchers.IO) {
             val semesterResultInfo = FullResultInfo()
             try {
-                if(i!=0)
+                if (i != 0)
                     delay(i * 250L + (0..100).random())
                 val resultInfo = tryGet { api.getResultInfo(semesterId, id).body() }
                 Log.d("TAG", "getCgpa $semesterId resultInfo: $resultInfo")
                 if (!resultInfo.isNullOrEmpty()) {
-                    loading.invoke(i+1-nullSemester)
+                    loading.invoke(i + 1 - nullSemester)
                     var creditTaken = 0.0
                     val rInfo = arrayListOf<ResultInfo>()
                     resultInfo.forEach { courseInfo ->
-                        if(courseInfo.pointEquivalent!=0.0){
-                            if(!courseScoreMap.containsKey(courseInfo.customCourseId)) {
-                                courseScoreMap[courseInfo.customCourseId] = courseInfo.pointEquivalent * courseInfo.totalCredit
+                        if (courseInfo.pointEquivalent != 0.0) {
+                            if (!courseScoreMap.containsKey(courseInfo.customCourseId)) {
+                                courseScoreMap[courseInfo.customCourseId] =
+                                    courseInfo.pointEquivalent * courseInfo.totalCredit
                                 totalCompletedCredit += courseInfo.totalCredit
-                            }else{
+                            } else {
                                 val oldCgpaScore = courseScoreMap[courseInfo.customCourseId]!!
-                                var newCgpaScore = courseInfo.pointEquivalent * courseInfo.totalCredit
-                                if(oldCgpaScore > newCgpaScore) newCgpaScore = oldCgpaScore
+                                var newCgpaScore =
+                                    courseInfo.pointEquivalent * courseInfo.totalCredit
+                                if (oldCgpaScore > newCgpaScore) newCgpaScore = oldCgpaScore
                                 courseScoreMap[courseInfo.customCourseId] = newCgpaScore
                             }
                         }
@@ -63,24 +65,26 @@ suspend fun getCgpa(
                     //add a semester result to list
                     semesterResultInfo.resultInfo = rInfo
                     run lit@{
-                        resultInfo.forEach{
+                        resultInfo.forEach {
                             semesterResultInfo.semesterInfo = it.toSemesterInfo(creditTaken)
-                            if(it.cgpa!=0.0) return@lit
+                            if (it.cgpa != 0.0) return@lit
                         }
                     }
                     fullResultInfo.add(semesterResultInfo)  //adding
-                }
-                else{
+                } else {
                     nullSemester++
                 }
                 apiCallCount++
-                if(apiCallCount == semesterList.size){
+                if (apiCallCount == semesterList.size) {
                     weightedCgpa += courseScoreMap.values.sum()
                     var cgpa = weightedCgpa / totalCompletedCredit
-                    cgpa = if(!cgpa.isNaN()) (cgpa* 100.0).roundToInt() / 100.0 else 0.0
+                    cgpa = if (!cgpa.isNaN()) (cgpa * 100.0).roundToInt() / 100.0 else 0.0
+                    Log.d("TAG", "getCgpa: $cgpa")
 //                    delay(300)
                     fullResultInfo.sortBy { it.semesterInfo.semesterId }
                     success.invoke(cgpa, totalCompletedCredit, fullResultInfo)
+                }else {
+                    Log.d("TAG", "getCgpa: $apiCallCount ${semesterList.size}")
                 }
 //                resultFound++
 //                if (resultFound == semesterList.size) {
@@ -102,7 +106,7 @@ suspend fun getCgpa(
 //                this.cancel()
 //            }
             catch (e: Exception) {
-                if(!useSuccessOnly)
+                if (!useSuccessOnly)
                     loading.invoke(-1)
                 Log.d("TAG", "getCgpa: ${e.message} ${e.localizedMessage} $semesterId")
                 this.cancel()
@@ -111,26 +115,32 @@ suspend fun getCgpa(
         }
     }
 }
+
 fun getSemesterList(firstSemId: Int): List<String> {
     val year = Calendar.getInstance().get(Calendar.YEAR)
     val month = Calendar.getInstance().get(Calendar.MONTH)
     val endYearSemesterCount =
-        if (month < 3) 0
-        else if (month < 7) 1
-        else if (month < 11) 2
-        else 3
+        when {
+            month < 3 -> 0
+            month < 4 -> 1
+            month < 7 -> 2
+            month < 10 -> 3
+            else -> 4
+        }
 
     val yearEnd = year % 100
     //val initial = id.slice(0..2).toInt()  //.split('-')[0].toInt()
     val yr: Int = firstSemId / 10
     var semester: Int = firstSemId % 10
+    if (semester > 1)
+        semester--
     val list = mutableListOf<String>()
 
     for (y in yr..yearEnd) {
-        for (s in semester..3) {
+        for (s in semester..4) {
             if (y == yearEnd && s > endYearSemesterCount)
                 break
-            list.add(y.toString() + s.toString())
+            list.add("$y$s")
         }
         semester = 1
     }
